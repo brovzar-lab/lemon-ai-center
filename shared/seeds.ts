@@ -259,4 +259,62 @@ export const seeds: SeedsData = {
 
   spark:
     'What would the Lemon Studios version of A24 look like in Mexico — what is the one greenlight that would change everything about how the industry sees us?',
+
+  captures: [
+    {
+      id: 'seed-cap1',
+      text: 'Call Mirna about updated deal terms',
+      kind: 'todo',
+      createdAt: '2026-04-28T09:30:00Z',
+    },
+    {
+      id: 'seed-cap2',
+      text: 'What if we packaged the Apple pitch as a series instead of a feature?',
+      kind: 'idea',
+      createdAt: '2026-04-28T10:15:00Z',
+    },
+    {
+      id: 'seed-cap3',
+      text: 'Crisanto handle the CANACINE speaker confirmation',
+      kind: 'delegate',
+      createdAt: '2026-04-28T11:00:00Z',
+    },
+  ],
 }
+
+// Demo overview and oneThing for the new brief format
+seeds.brief.overview = [
+  {
+    text: '**Creel.mx deal memo** landed overnight — Mirna awaits your notes before the afternoon call.',
+    citations: [{ sourceType: 'gmail', sourceId: 'seed-th1', snippet: 'Please find the updated deal memo attached. Looking forward to your notes...', confidence: 'high' }],
+  },
+  {
+    text: '**Apple Films** deck revisions needed by EOD — committee meets Thursday.',
+    citations: [{ sourceType: 'gmail', sourceId: 'seed-th2', snippet: 'We need the updated slides by end of day. The committee meets Thursday...', confidence: 'high' }],
+  },
+  {
+    text: '**Morena co-production** LOI needs signature before Friday.',
+    citations: [{ sourceType: 'gmail', sourceId: 'seed-th3', snippet: 'The letter of intent is ready for your signature...', confidence: 'high' }],
+  },
+  {
+    text: 'Q1 closed **8% above projection** — you have leverage for the Andersen call.',
+    citations: [{ sourceType: 'gmail', sourceId: 'seed-th5', snippet: 'Q1 summary. Overall revenue was 8% above projection...', confidence: 'high' }],
+  },
+  {
+    text: 'Two required meetings: *10am creative review*, *3pm Andersen call*.',
+    citations: [
+      { sourceType: 'calendar', sourceId: 'seed-m1', snippet: 'Internal Creative Review — 10:00 AM', confidence: 'high' },
+      { sourceType: 'calendar', sourceId: 'seed-m2', snippet: 'Andersen Partnership Call — 3:00 PM', confidence: 'high' },
+    ],
+  },
+]
+
+seeds.brief.oneThing = {
+  text: 'Review and annotate the Creel.mx deal memo',
+  why: 'Mirna is waiting on your notes before the afternoon call — this unlocks the rest of the day.',
+  citations: [{ sourceType: 'gmail', sourceId: 'seed-th1', snippet: 'Please find the updated deal memo attached...', confidence: 'high' }],
+}
+
+seeds.brief.longBrief = `Good morning, Billy. The Creel deal memo is the clear priority — Mirna Alvarado is waiting on your notes before the afternoon call. Apple Films followed up on the deck; Tyler Gould wants revisions by EOD. The Morena LOI needs signature before Friday. Q1 closed 8% above projection, giving you leverage for the Andersen call at 3pm.
+
+Morning. Looks like the deals are heating up — Creel and Apple both need responses today. I'd block 90 minutes before the 10am creative review, knock out the Creel notes and get the Apple deck revision done. The Morena LOI is straightforward, schedule 15 minutes before 3pm. You're in a strong position right now — use it.`

@@ -1,0 +1,104 @@
+import { useFocusModeStore } from '@/stores/useFocusModeStore'
+import { useRoughMorningStore } from '@/stores/useRoughMorningStore'
+import { useInboxStore } from '@/stores/useInboxStore'
+import { useTaskStore } from '@/stores/useTaskStore'
+
+const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+export function EditorialMasthead() {
+  const focusActive = useFocusModeStore((s) => s.active)
+  const focusToggle = useFocusModeStore((s) => s.toggle)
+  const roughActive = useRoughMorningStore((s) => s.active)
+  const roughToggle = useRoughMorningStore((s) => s.toggle)
+  const threads = useInboxStore((s) => s.threads)
+  const tasks = useTaskStore((s) => s.tasks)
+
+  const today = new Date()
+  const doneCount = tasks.filter((t) => t.done).length
+
+  // Volume number: day of year
+  const startOfYear = new Date(today.getFullYear(), 0, 0)
+  const diff = today.getTime() - startOfYear.getTime()
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+  const timeStr = today.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false })
+
+  return (
+    <header className="pt-6 pb-4">
+      {/* Top stat line */}
+      <p className="text-[10px] font-body font-bold uppercase tracking-[0.3em] text-text-muted mb-3">
+        Vol {dayOfYear} · {DAYS_SHORT[today.getDay()]} {MONTHS_SHORT[today.getMonth()]} {today.getDate()} · CDMX {timeStr} · {threads.length} emails read · 0 drafts queued
+      </p>
+
+      {/* Double rule */}
+      <div className="ed-rule-double mb-4" />
+
+      {/* Title row */}
+      <div className="flex items-end justify-between gap-6 mb-1">
+        <div>
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold text-text-primary tracking-tight leading-none">
+            Executive Briefing
+          </h1>
+          <p className="font-display text-sm italic text-text-tertiary mt-1">
+            By your chief of staff · for Billy Rovzar
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4 pb-1">
+          {/* Stats */}
+          <div className="text-right">
+            <span className="font-display text-3xl font-semibold text-text-primary leading-none">{doneCount}</span>
+            <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mt-0.5">Shipped</p>
+          </div>
+          <div className="text-right">
+            <span className="font-display text-3xl font-semibold text-text-primary leading-none">
+              {(() => {
+                const mins = useFocusModeStore.getState().totalFocusMinutes()
+                const h = Math.floor(mins / 60)
+                const m = mins % 60
+                return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}` : `${m}m`
+              })()}
+            </span>
+            <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mt-0.5">Focus</p>
+          </div>
+
+          {/* Mode pills */}
+          <div className="flex items-center gap-2 ml-4">
+            <button
+              type="button"
+              onClick={roughToggle}
+              className={[
+                'text-[10px] font-body font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
+                roughActive
+                  ? 'bg-accent-coral/15 text-accent-coral border-accent-coral/30'
+                  : 'text-text-muted border-border-medium hover:border-border-strong hover:text-text-secondary',
+              ].join(' ')}
+              aria-label={roughActive ? 'Deactivate rough morning mode' : 'Activate rough morning mode'}
+              aria-pressed={roughActive}
+            >
+              Rough Morning
+            </button>
+            <button
+              type="button"
+              onClick={() => focusToggle()}
+              className={[
+                'text-[10px] font-body font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
+                focusActive
+                  ? 'bg-text-primary text-bg-base border-text-primary'
+                  : 'text-text-muted border-border-medium hover:border-border-strong hover:text-text-secondary',
+              ].join(' ')}
+              aria-label={focusActive ? 'Exit single-task focus mode' : 'Enter single-task focus mode'}
+              aria-pressed={focusActive}
+            >
+              ● Single-Task Mode [F]
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Double rule */}
+      <div className="ed-rule-double mt-4" />
+    </header>
+  )
+}

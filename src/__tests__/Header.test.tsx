@@ -6,7 +6,8 @@ test('Header renders wordmark', () => {
   expect(screen.getByText(/Lemon Studios/i)).toBeInTheDocument()
 })
 
-test('Header has Sync All button', () => {
+test('Header has Sync button', () => {
   render(<Header />)
-  expect(screen.getByRole('button', { name: /sync all/i })).toBeInTheDocument()
+  // Button has aria-label="Refresh all data" but visible text "↻ Sync"
+  expect(screen.getByRole('button', { name: /refresh all data/i })).toBeInTheDocument()
 })

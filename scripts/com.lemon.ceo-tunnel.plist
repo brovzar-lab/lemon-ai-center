@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  CEO Dashboard — Cloudflare Tunnel Launch Agent
+  Installs to: ~/Library/LaunchAgents/com.lemon.ceo-tunnel.plist
+
+  To install:
+    cp scripts/com.lemon.ceo-tunnel.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.lemon.ceo-tunnel.plist
+
+  To view tunnel URL (quick tunnel):
+    tail -f /tmp/ceo-tunnel.log | grep trycloudflare
+
+  To view logs:
+    tail -f /tmp/ceo-tunnel.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.lemon.ceo-tunnel</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/quantumcode/CODE/ceo-dashboard/start-tunnel.sh</string>
+    <string>3001</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/quantumcode/CODE/ceo-dashboard</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    <key>HOME</key>
+    <string>/Users/quantumcode</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Wait 10s before restarting tunnel -->
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/ceo-tunnel.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/ceo-tunnel.error.log</string>
+</dict>
+</plist>

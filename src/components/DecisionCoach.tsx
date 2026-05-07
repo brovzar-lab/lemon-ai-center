@@ -1,0 +1,140 @@
+import { useState, useCallback } from 'react'
+import { useBriefStore } from '@/stores/useBriefStore'
+import type { DecisionOption } from '@shared/types'
+
+type SaveState = 'idle' | 'saving' | 'saved' | 'error'
+
+export function DecisionCoach() {
+  const oneThing = useBriefStore((s) => s.oneThing)
+  const aiOptions = useBriefStore((s) => s.decisionOptions)
+  const isStreaming = useBriefStore((s) => s.isStreaming)
+  const [chosen, setChosen] = useState<DecisionOption | null>(null)
+  const [saveState, setSaveState] = useState<SaveState>('idle')
+
+  const options = aiOptions && aiOptions.length > 0 ? aiOptions : null
+
+  const headline = oneThing?.text
+    ? `${oneThing.text.split(',')[0]}. Pick one:`
+    : null
+
+  // Save the chosen decision to Obsidian via the corrections/captures API
+  const handleChoose = useCallback(async (opt: DecisionOption) => {
+    setChosen(opt)
+    setSaveState('saving')
+
+    try {
+      await fetch('/api/captures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          type: 'decision',
+          context: oneThing?.text ?? '',
+          choice: `${opt.label}: ${opt.text}`,
+          detail: opt.detail,
+          timestamp: new Date().toISOString(),
+        }),
+      })
+      setSaveState('saved')
+    } catch {
+      setSaveState('error')
+    }
+  }, [oneThing])
+
+  // Keyboard navigation — arrow keys between options
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, index: number, total: number) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault()
+      const next = e.currentTarget.parentElement?.children[Math.min(index + 1, total - 1)] as HTMLElement
+      next?.focus()
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      const prev = e.currentTarget.parentElement?.children[Math.max(index - 1, 0)] as HTMLElement
+      prev?.focus()
+    }
+  }, [])
+
+  if (!headline && !isStreaming) return null
+
+  return (
+    <section className="py-4" aria-label="Decision coach">
+      <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-2">
+        Decision Coach
+      </p>
+
+      {headline ? (
+        <p className="text-[13px] font-display font-semibold text-text-primary leading-snug mb-3">
+          {headline}
+        </p>
+      ) : (
+        <p className="text-[11px] font-body text-text-muted italic mb-3">
+          Waiting for AI briefing…
+        </p>
+      )}
+
+      {chosen && options ? (
+        /* Confirmation state after choosing */
+        <div className="p-3 border border-accent-sage/30 bg-accent-sage/5 transition-all">
+          <p className="text-[12px] font-body font-semibold text-text-primary mb-1">
+            ✓ {chosen.label}: {chosen.text}
+          </p>
+          <p className="text-[10px] font-body italic text-text-tertiary">
+            {saveState === 'saving' && 'Saving to your Obsidian vault…'}
+            {saveState === 'saved' && 'Written to decisions log in your vault.'}
+            {saveState === 'error' && 'Could not save — check vault connection.'}
+            {saveState === 'idle' && 'Logged.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => { setChosen(null); setSaveState('idle') }}
+            className="text-[10px] font-body font-semibold text-accent-coral hover:underline mt-2 uppercase tracking-[0.15em]"
+            aria-label="Change your decision"
+          >
+            Change →
+          </button>
+        </div>
+      ) : options ? (
+        <div className="flex flex-col gap-2" role="radiogroup" aria-label="Decision options">
+          {options.map((opt, index) => (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => handleChoose(opt)}
+              onKeyDown={(e) => handleKeyDown(e, index, options.length)}
+              className="flex items-start gap-2.5 text-left p-2.5 border border-border-soft hover:border-border-medium transition-colors group min-h-[44px]"
+              role="radio"
+              aria-checked={false}
+              aria-label={`Option ${opt.label}: ${opt.text}. ${opt.detail}`}
+            >
+              <span className="flex-shrink-0 font-display text-lg font-semibold text-accent-coral leading-none mt-0.5">
+                {opt.label}
+              </span>
+              <div>
+                <p className="text-[12px] font-body font-medium text-text-primary leading-snug">
+                  {opt.text}
+                </p>
+                <p className="text-[10px] font-body italic text-text-tertiary mt-0.5">
+                  {opt.detail}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : isStreaming ? (
+        <div className="flex flex-col gap-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-start gap-2.5 p-2.5 border border-border-soft">
+              <div className="skeleton w-6 h-6 flex-shrink-0 rounded" />
+              <div className="flex-1">
+                <div className="skeleton skeleton-line w-3/4" />
+                <div className="skeleton skeleton-line skeleton-line-short" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <hr className="ed-rule mt-4" />
+    </section>
+  )
+}

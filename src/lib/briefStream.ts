@@ -1,7 +1,14 @@
+import type { Claim } from '@shared/types'
+
 export type BriefSseEvent =
-  | { type: 'cached'; jarvis: string; billy: string; generatedAt?: string; isStale: boolean; isDemo?: boolean }
+  | { type: 'cached'; jarvis: string; billy: string; generatedAt?: string; isStale: boolean; isDemo?: boolean; overview?: Claim[]; oneThing?: Claim & { why: string }; longBrief?: string; decisionOptions?: import('@shared/types').DecisionOption[]; soulNote?: string }
+  | { type: 'overview'; overview: Claim[] }
+  | { type: 'oneThing'; oneThing: Claim & { why: string } }
+  | { type: 'decisionOptions'; decisionOptions: import('@shared/types').DecisionOption[] }
+  | { type: 'soulNote'; soulNote: string }
+  | { type: 'degraded'; reason: string }
   | { type: 'token'; voice: 'jarvis' | 'billy'; text: string }
-  | { type: 'done'; jarvis: string; billy: string; generatedAt: string; briefId: string }
+  | { type: 'done'; jarvis: string; billy: string; generatedAt: string; briefId: string; overview?: Claim[]; oneThing?: Claim & { why: string }; longBrief?: string; decisionOptions?: import('@shared/types').DecisionOption[]; soulNote?: string; degraded?: boolean }
   | { type: 'error'; message: string }
 
 export function parseSseEvent(line: string): BriefSseEvent | null {
@@ -15,6 +22,11 @@ export function parseSseEvent(line: string): BriefSseEvent | null {
 
 export interface BriefStreamCallbacks {
   onCached: (event: Extract<BriefSseEvent, { type: 'cached' }>) => void
+  onOverview?: (overview: Claim[]) => void
+  onOneThing?: (oneThing: Claim & { why: string }) => void
+  onDecisionOptions?: (options: import('@shared/types').DecisionOption[]) => void
+  onSoulNote?: (note: string) => void
+  onDegraded?: (reason: string) => void
   onToken: (voice: 'jarvis' | 'billy', text: string) => void
   onDone: (event: Extract<BriefSseEvent, { type: 'done' }>) => void
   onError: (message: string) => void
@@ -46,6 +58,9 @@ export function startBriefStream(
         const json = await response.json()
         if (json.data) {
           callbacks.onCached({ type: 'cached', ...json.data, isStale: false })
+          // Surface overview/oneThing from cached data if present
+          if (json.data.overview) callbacks.onOverview?.(json.data.overview)
+          if (json.data.oneThing) callbacks.onOneThing?.(json.data.oneThing)
           callbacks.onDone({ type: 'done', ...json.data, briefId: '', generatedAt: json.data.generatedAt ?? '' })
         }
         return
@@ -65,6 +80,11 @@ export function startBriefStream(
           const event = parseSseEvent(line.trim())
           if (!event) continue
           if (event.type === 'cached') callbacks.onCached(event)
+          else if (event.type === 'overview') callbacks.onOverview?.(event.overview)
+          else if (event.type === 'oneThing') callbacks.onOneThing?.(event.oneThing)
+          else if (event.type === 'decisionOptions') callbacks.onDecisionOptions?.(event.decisionOptions)
+          else if (event.type === 'soulNote') callbacks.onSoulNote?.(event.soulNote)
+          else if (event.type === 'degraded') callbacks.onDegraded?.(event.reason)
           else if (event.type === 'token') callbacks.onToken(event.voice, event.text)
           else if (event.type === 'done') callbacks.onDone(event)
           else if (event.type === 'error') callbacks.onError(event.message)

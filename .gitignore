@@ -5,3 +5,16 @@ server/dist
 .DS_Store
 *.local
 .worktrees
+
+# Local-only (not needed on Railway)
+install-hybrid.sh
+start-prod.sh
+start-tunnel.sh
+dashboard-audit.png
+reference_design.png
+.gemini_design_reference.jsx
+.playwright-mcp/
+.agents/
+skills-lock.json
+/tmp/
+vault/

@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { seeds } from '@/data/seeds'
 import { apiFetch } from '@/lib/apiClient'
 
 interface SparkState {
@@ -10,7 +9,7 @@ interface SparkState {
 }
 
 export const useSparkStore = create<SparkState>()((set) => ({
-  text: seeds.spark,
+  text: '',
   isStale: true,
   loading: false,
 

@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { collection, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import { MutationQueue } from '@/lib/mutationQueue'
-import { seeds } from '@/data/seeds'
 import type { Decision } from '@shared/types'
 
 const queue = new MutationQueue()
@@ -26,9 +25,9 @@ interface DecisionState {
 }
 
 export const useDecisionStore = create<DecisionState>()((set, get) => ({
-  decisions: seeds.decisions,
+  decisions: [],
   searchQuery: '',
-  filteredDecisions: seeds.decisions,
+  filteredDecisions: [],
 
   subscribe: (uid) => {
     return onSnapshot(collection(db, `users/${uid}/decisions`), (snap) => {

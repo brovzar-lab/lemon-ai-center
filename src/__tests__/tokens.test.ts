@@ -3,8 +3,9 @@ import tailwindConfig from '../../tailwind.config'
 
 test('design tokens include lemon accent', () => {
   const colors = (tailwindConfig.theme?.extend as any)?.colors
-  expect(colors['accent-lemon']).toBe('#f5d547')
-  expect(colors['bg-base']).toBe('#15110e')
+  // Tokens now use CSS custom properties for light/dark theme support
+  expect(colors['accent-lemon']).toBe('var(--color-accent-lemon)')
+  expect(colors['bg-base']).toBe('var(--color-bg-base)')
 })
 
 test('fonts include display and body', () => {

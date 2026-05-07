@@ -66,6 +66,7 @@ export interface MeetingEvent {
   location?: string
   description?: string
   meetLink?: string
+  prepNotes?: string
 }
 
 export type NotionBlockType =
@@ -134,14 +135,15 @@ export interface SeedsData {
   isDemo: true
   tasks: Task[]
   decisions: Decision[]
-  brief: Pick<Brief, 'jarvis' | 'billy'>
+  brief: Pick<Brief, 'jarvis' | 'billy'> & Partial<Pick<BriefDoc, 'overview' | 'oneThing' | 'longBrief'>>
   threads: InboxThread[]
   meetings: MeetingEvent[]
   notionBlocks: NotionBlock[]
   spark: string
+  captures: Capture[]
 }
 
-export type ActiveContextKind = 'thread' | 'task' | 'decision' | 'spark' | null
+export type ActiveContextKind = 'thread' | 'task' | 'decision' | 'spark' | 'claim' | null
 
 export interface ActiveContext {
   kind: ActiveContextKind
@@ -153,4 +155,70 @@ export interface TagPatterns {
   INT: { domains: string[] }
   INFO: { domains: string[]; subjectIncludes: string[] }
   INDUSTRY: { domains: string[]; senders: string[] }
+}
+
+// --- Editorial Redesign Types ---
+
+export interface Citation {
+  sourceType: 'gmail' | 'calendar' | 'notion' | 'inferred'
+  sourceId: string
+  snippet: string          // ≤120 chars
+  confidence: 'high' | 'med' | 'low'
+}
+
+export interface Claim {
+  text: string             // markdown for **bold** and *italic*
+  citations: Citation[]    // ≥1 required
+}
+
+export interface DecisionOption {
+  label: string              // 'A', 'B', 'C'
+  text: string               // action description
+  detail: string             // tradeoff/context
+}
+
+export interface BriefDoc {
+  overview: Claim[]        // exactly 5 entries
+  oneThing: Claim & { why: string }
+  longBrief: string        // 80-150 word prose, dual-voice
+  decisionOptions?: DecisionOption[]  // A/B/C options for the top decision
+  generatedAt: string
+  inboxSnapshot: string[]
+  model: string
+  promptVersion: string
+  degraded?: boolean       // true if pass-1 JSON failed validation twice
+}
+
+export interface Capture {
+  id: string
+  text: string
+  kind: 'todo' | 'idea' | 'delegate'
+  createdAt: string
+  reviewed?: boolean
+}
+
+export type AIActionType = 'archive' | 'label' | 'draft' | 'delegate' | 'delegate_recalled' | 'snooze' | 'priority_change'
+
+export interface AIAction {
+  id: string
+  type: AIActionType
+  target: { kind: 'thread' | 'task' | 'event'; id: string; label: string }
+  sourceRef?: Citation
+  confidence: 'high' | 'med' | 'low'
+  initiator: 'user' | 'ai'
+  reversible: boolean
+  undone: boolean
+  createdAt: string
+  expiresAt: string        // createdAt + 24h
+}
+
+export interface Delegation {
+  id: string
+  to: string
+  taskTitle: string
+  context: string
+  attachedRefs: Citation[]
+  deadline?: string
+  gmailMessageId?: string
+  createdAt: string
 }

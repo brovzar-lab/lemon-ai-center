@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { seeds } from '@/data/seeds'
 import { apiFetch } from '@/lib/apiClient'
 import type { InboxThread } from '@shared/types'
 
@@ -17,7 +16,8 @@ interface InboxState {
 }
 
 export const useInboxStore = create<InboxState>()((set, get) => ({
-  threads: seeds.threads,
+  // FIX 3: Start empty — no seed data
+  threads: [],
   triageMode: false,
   activeThread: null,
   loading: false,

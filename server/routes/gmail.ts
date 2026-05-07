@@ -43,7 +43,7 @@ gmailRouter.get('/threads', gmailLimit, async (req, res) => {
         const unread = labels.includes('UNREAD')
         const tag: ThreadTag = tagThread({ from, fromDomain, subject, labels }, DEFAULT_TAG_PATTERNS)
         const receivedAt = date ? new Date(date).toISOString() : new Date().toISOString()
-        const priority: ThreadPriority = prioritizeThread({ tag, unread, receivedAt, subject })
+        const priority: ThreadPriority = prioritizeThread({ tag, unread, receivedAt, subject, fromDomain, from })
         results.push({ id: t.id!, subject, from, fromDomain, snippet: t.snippet ?? '', unread, receivedAt, tag, priority, labels })
       } catch { /* skip malformed */ }
     }

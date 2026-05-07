@@ -27,48 +27,65 @@ function makeOAuth2Client() {
   )
 }
 
-const isProd = process.env.NODE_ENV === 'production'
-const STATE_COOKIE = isProd ? '__Host-state' : 'state'
-const STATE_COOKIE_OPTS = {
-  httpOnly: true,
-  secure: isProd,
-  sameSite: 'lax' as const,
-  maxAge: 10 * 60 * 1000,
-  path: '/',
-}
-
+// ── /auth/google/start ──────────────────────────────────────────────────────
 authRouter.get('/google/start', (req, res) => {
   const state = crypto.randomBytes(32).toString('hex')
-  const oauth2Client = makeOAuth2Client()
-  const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-    state,
-    prompt: 'consent',
-    login_hint: process.env.ALLOWED_EMAILS?.split(',')[0] || '',
-    hd: 'lemonfilms.com',
+
+  // Store state SERVER-SIDE in the session (Firestore-backed).
+  req.session.oauthState = state
+
+  req.session.save((err) => {
+    if (err) {
+      console.error('[auth] Failed to save session before OAuth redirect:', err)
+      return res.status(500).send('Session error — please try again')
+    }
+
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI!
+    console.log('[auth] Starting OAuth. redirectUri:', redirectUri, 'sessionID:', req.sessionID)
+
+    const oauth2Client = makeOAuth2Client()
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES,
+      state,
+      prompt: 'consent',
+      login_hint: process.env.ALLOWED_EMAILS?.split(',')[0] || '',
+      hd: 'lemonfilms.com',
+    })
+
+    res.redirect(url)
   })
-  res.cookie(STATE_COOKIE, state, STATE_COOKIE_OPTS)
-  res.redirect(url)
 })
 
+// ── /auth/google/callback ───────────────────────────────────────────────────
 authRouter.get('/google/callback', async (req, res) => {
   const { code, state } = req.query as Record<string, string>
-  const storedState = req.cookies?.[STATE_COOKIE]
+  const storedState = req.session.oauthState
 
-  if (!state || state !== storedState) {
-    return res.status(403).send('State mismatch — possible CSRF')
+  console.log('[auth] Callback. sessionID:', req.sessionID, 'stored:', storedState?.slice(0, 8), 'got:', state?.slice(0, 8))
+
+  if (!state || !storedState || state !== storedState) {
+    console.error('[auth] State mismatch — stored:', storedState?.slice(0, 8), 'received:', state?.slice(0, 8))
+    return res.status(403).send(`
+      <h2>Login failed — state mismatch</h2>
+      <p>This usually means your session cookie was lost between steps.</p>
+      <p><a href="/auth/google/start">Try again</a></p>
+    `)
   }
 
-  res.clearCookie(STATE_COOKIE, { path: '/' })
+  // Clear state immediately after validation
+  delete req.session.oauthState
 
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI!
   const oauth2Client = makeOAuth2Client()
+
   let tokens: any
   try {
     const result = await oauth2Client.getToken(code)
     tokens = result.tokens
-  } catch {
-    return res.status(400).send('Token exchange failed')
+  } catch (err) {
+    console.error('[auth] Token exchange failed:', err)
+    return res.status(400).send('Token exchange failed — please try logging in again.')
   }
 
   oauth2Client.setCredentials(tokens)
@@ -124,13 +141,13 @@ authRouter.get('/google/callback', async (req, res) => {
   res.redirect('/')
 })
 
+// ── /auth/google/logout ─────────────────────────────────────────────────────
 authRouter.get('/google/logout', async (req, res) => {
   const uid = req.session?.uid
   if (uid) {
     await writeAuditLog(uid, 'logout', req.ip || '', req.headers['user-agent'] || '')
   }
   req.session.destroy(() => {})
-  const sidCookie = isProd ? '__Host-sid' : 'sid'
-  res.clearCookie(sidCookie, { path: '/' })
+  res.clearCookie('sid', { path: '/' })
   res.redirect('/')
 })

@@ -10,7 +10,6 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import { MutationQueue } from '@/lib/mutationQueue'
-import { seeds } from '@/data/seeds'
 import type { Task, Bucket, TaskSource } from '@shared/types'
 
 const queue = new MutationQueue()
@@ -26,7 +25,7 @@ interface TaskState {
 }
 
 export const useTaskStore = create<TaskState>()((set, get) => ({
-  tasks: seeds.tasks,
+  tasks: [],
 
   setTasks: (tasks) => set({ tasks }),
 

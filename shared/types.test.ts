@@ -41,6 +41,7 @@ test('SeedsData has isDemo true', () => {
     meetings: [],
     notionBlocks: [],
     spark: '',
+    captures: [],
   }
   expect(seeds.isDemo).toBe(true)
 })

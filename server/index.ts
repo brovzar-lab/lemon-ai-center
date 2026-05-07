@@ -15,31 +15,55 @@ import { calendarRouter } from './routes/calendar'
 import { notionRouter } from './routes/notion'
 import { voiceRouter } from './routes/voice'
 import { draftReplyRouter } from './routes/draftReply'
+import { capturesRouter } from './routes/captures'
+import { actionsRouter } from './routes/actions'
+import { delegationsRouter } from './routes/delegations'
+import { ttsRouter } from './routes/tts'
+import { brainRouter } from './routes/brain'
+import { correctionsRouter } from './routes/corrections'
+import { initBrainEngine } from './lib/brain'
+import { initVaultSync } from './lib/vaultSync'
 import { requireAuth } from './middleware/requireAuth'
 
 export const app = express()
 
 const isProd = process.env.NODE_ENV === 'production'
 
+// Trust Cloudflare Tunnel / reverse proxy headers (X-Forwarded-For, X-Forwarded-Proto)
+app.set('trust proxy', 1)
+
 // Security & logging
 app.use(helmet({ contentSecurityPolicy: isProd ? undefined : false }))
 app.use(morgan(isProd ? 'combined' : 'dev'))
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173',
+  origin: (origin, cb) => {
+    // Allow: no origin (curl/mobile), localhost, tunnel, and lemonfilms.com
+    if (!origin) return cb(null, true)
+    const allowed = [
+      /^http:\/\/localhost/,
+      /\.trycloudflare\.com$/,
+      /\.lemonfilms\.com$/,
+      /\.cloudflareaccess\.com$/,
+    ]
+    if (allowed.some((re) => re.test(origin))) return cb(null, true)
+    // Also allow the ALLOWED_ORIGIN env var if set
+    if (process.env.ALLOWED_ORIGIN && origin === process.env.ALLOWED_ORIGIN) return cb(null, true)
+    cb(new Error(`CORS: origin not allowed — ${origin}`))
+  },
   credentials: true,
 }))
 app.use(express.json())
 app.use(cookieParser())
 app.use(
   session({
-    name: isProd ? '__Host-sid' : 'sid',
+    name: 'sid', // No __Host- prefix — incompatible with Cloudflare Tunnel proxy
     secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
     store: new FirestoreSessionStore(),
     cookie: {
       httpOnly: true,
-      secure: isProd,
+      secure: false, // Cloudflare terminates TLS; we see HTTP internally
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
@@ -66,11 +90,16 @@ app.use('/api/calendar', calendarRouter)
 app.use('/api/notion', notionRouter)
 app.use('/api/voice-profile', voiceRouter)
 app.use('/api/claude/draft-reply', draftReplyRouter)
+app.use('/api/captures', capturesRouter)
+app.use('/api/actions', actionsRouter)
+app.use('/api/delegations', delegationsRouter)
+app.use('/api/tts', ttsRouter)
+app.use('/api/brain', brainRouter)
+app.use('/api/corrections', correctionsRouter)
 
 if (isProd) {
-  // Compiled server runs from server/dist/server/index.js
-  // Vite output is at project_root/dist/
-  const distPath = path.resolve(__dirname, '../../../dist')
+  // Use process.cwd() — always the project root regardless of how tsx is invoked
+  const distPath = path.resolve(process.cwd(), 'dist')
   app.use(express.static(distPath))
   app.get('*', (_req, res) => {
     res.sendFile(path.join(distPath, 'index.html'))
@@ -79,7 +108,19 @@ if (isProd) {
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3001
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Server running on :${PORT}`)
+
+    // On Railway: clone vault from GitHub. Locally: use OBSIDIAN_VAULT_PATH.
+    const vaultPath = initVaultSync()
+    if (vaultPath) {
+      try {
+        await initBrainEngine(vaultPath)
+      } catch (err) {
+        console.error('[brain] Failed to initialize:', (err as Error).message)
+      }
+    } else {
+      console.warn('[brain] No vault available — brain disabled')
+    }
   })
 }

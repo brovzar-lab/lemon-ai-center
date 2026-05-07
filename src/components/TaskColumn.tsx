@@ -3,6 +3,12 @@ import { useTaskStore } from '@/stores/useTaskStore'
 import type { Task, Bucket } from '@shared/types'
 
 const BUCKET_LABELS: Record<Bucket, string> = { now: 'NOW', next: 'NEXT', orbit: 'ORBIT' }
+const BUCKET_SUBLABEL: Record<Bucket, string> = { now: 'today', next: 'this week', orbit: 'watching' }
+const BUCKET_DOT: Record<Bucket, string> = {
+  now: 'bg-accent-coral shadow-[0_0_6px_rgba(217,119,87,0.5)]',
+  next: 'bg-accent-lemon shadow-[0_0_6px_rgba(245,213,71,0.4)]',
+  orbit: 'bg-text-muted',
+}
 
 interface Props {
   bucket: Bucket
@@ -19,9 +25,15 @@ export function TaskColumn({ bucket, tasks }: Props) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase">
-          {BUCKET_LABELS[bucket]}
-        </span>
+        <div className="flex items-center gap-2">
+          <div className={`w-1 h-3.5 rounded-full ${BUCKET_DOT[bucket]}`} />
+          <span className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase">
+            {BUCKET_LABELS[bucket]}
+          </span>
+          <span className="text-[10px] font-body lowercase text-text-muted/60">
+            {BUCKET_SUBLABEL[bucket]}
+          </span>
+        </div>
         <span className="text-[10px] text-text-muted font-body">{active.length}</span>
       </div>
 

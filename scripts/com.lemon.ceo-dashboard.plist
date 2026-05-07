@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  CEO Dashboard — macOS Launch Agent
+  Installs to: ~/Library/LaunchAgents/com.lemon.ceo-dashboard.plist
+
+  To install:
+    cp scripts/com.lemon.ceo-dashboard.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.lemon.ceo-dashboard.plist
+
+  To start/stop:
+    launchctl start com.lemon.ceo-dashboard
+    launchctl stop com.lemon.ceo-dashboard
+
+  To check status:
+    launchctl list | grep ceo-dashboard
+
+  To view logs:
+    tail -f /tmp/ceo-dashboard.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.lemon.ceo-dashboard</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/quantumcode/CODE/ceo-dashboard/start-prod.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/quantumcode/CODE/ceo-dashboard</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    <key>HOME</key>
+    <string>/Users/quantumcode</string>
+  </dict>
+
+  <!-- Start automatically on login -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Restart automatically if it crashes -->
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Wait 5s before restart -->
+  <key>ThrottleInterval</key>
+  <integer>5</integer>
+
+  <!-- Log output -->
+  <key>StandardOutPath</key>
+  <string>/tmp/ceo-dashboard.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/ceo-dashboard.error.log</string>
+</dict>
+</plist>

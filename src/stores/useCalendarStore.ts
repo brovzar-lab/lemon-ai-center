@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { seeds } from '@/data/seeds'
 import { apiFetch } from '@/lib/apiClient'
 import type { MeetingEvent } from '@shared/types'
 
@@ -10,7 +9,8 @@ interface CalendarState {
 }
 
 export const useCalendarStore = create<CalendarState>()((set) => ({
-  events: seeds.meetings,
+  // FIX 4: Start empty — no seed data
+  events: [],
   loading: false,
 
   fetch: async () => {

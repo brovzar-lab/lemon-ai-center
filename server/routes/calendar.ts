@@ -25,13 +25,21 @@ calendarRouter.get('/events', calendarLimit, async (req, res) => {
     })
 
     const items = response.data.items ?? []
-    const events: MeetingEvent[] = items.map((item: any) => ({
+
+    // Filter: only show events with "BR" in title (Billy Rovzar's meetings)
+    // Per briefing-rules.md: "only flag events with 'BR' in the title"
+    const brEvents = items.filter((item: any) => {
+      const title = (item.summary || '').toUpperCase()
+      return title.includes('BR')
+    })
+
+    const events: MeetingEvent[] = brEvents.map((item: any) => ({
       id: item.id,
       title: item.summary || '(No title)',
       start: item.start?.dateTime || item.start?.date || '',
       end: item.end?.dateTime || item.end?.date || '',
       attendees: (item.attendees ?? []).map((a: any) => a.email),
-      isRequired: (item.attendees ?? []).some((a: any) => a.self && a.responseStatus !== 'declined'),
+      isRequired: true, // All BR events are required
       location: item.location,
       description: item.description,
       meetLink: item.hangoutLink,
