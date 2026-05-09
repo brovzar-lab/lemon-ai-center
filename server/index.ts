@@ -22,6 +22,7 @@ import { delegationsRouter } from './routes/delegations'
 import { ttsRouter } from './routes/tts'
 import { brainRouter } from './routes/brain'
 import { correctionsRouter } from './routes/corrections'
+import { tasksRouter } from './routes/tasks'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
 import { requireAuth } from './middleware/requireAuth'
@@ -45,6 +46,7 @@ app.use(cors({
       /\.trycloudflare\.com$/,
       /\.lemonfilms\.com$/,
       /\.cloudflareaccess\.com$/,
+      /\.billyrovzar\.com$/,
     ]
     if (allowed.some((re) => re.test(origin))) return cb(null, true)
     // Also allow the ALLOWED_ORIGIN env var if set
@@ -97,6 +99,7 @@ app.use('/api/delegations', delegationsRouter)
 app.use('/api/tts', ttsRouter)
 app.use('/api/brain', brainRouter)
 app.use('/api/corrections', correctionsRouter)
+app.use('/api/tasks', tasksRouter)
 
 if (isProd) {
   // Use process.cwd() — always the project root regardless of how tsx is invoked
