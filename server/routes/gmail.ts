@@ -45,7 +45,9 @@ gmailRouter.get('/threads', gmailLimit, async (req, res) => {
         const receivedAt = date ? new Date(date).toISOString() : new Date().toISOString()
         const priority: ThreadPriority = prioritizeThread({ tag, unread, receivedAt, subject, fromDomain, from })
         results.push({ id: t.id!, subject, from, fromDomain, snippet: t.snippet ?? '', unread, receivedAt, tag, priority, labels })
-      } catch { /* skip malformed */ }
+      } catch (threadErr) {
+        console.warn('[gmail] Skipping thread', t.id, (threadErr as Error)?.message)
+      }
     }
 
     const order: Record<ThreadPriority, number> = { HOT: 0, MED: 1, LOW: 2 }
