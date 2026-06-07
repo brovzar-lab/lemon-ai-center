@@ -4,6 +4,7 @@ import { db } from '../lib/firebase'
 import { getGmailClient } from '../lib/googleAuth'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
+import { makeRateLimit } from '../middleware/rateLimit'
 
 export const voiceRouter = Router()
 voiceRouter.use(requireAuth)
@@ -22,7 +23,9 @@ voiceRouter.get('/', async (req, res) => {
     if (snap.exists) {
       return res.json({ data: snap.data() })
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[voice] Profile load failed:', err) // A-7: Log Firestore failures
+  }
   // return defaults
   res.json({
     data: {
@@ -48,19 +51,63 @@ voiceRouter.get('/', async (req, res) => {
 })
 
 // PUT /api/voice-profile — save approved profile
+// S-11: Validate body shape before writing to Firestore
 voiceRouter.put('/', csrfCheck, async (req, res) => {
   const uid = req.session.uid!
-  const profile = req.body
+  const body = req.body
+
+  // Validate required structure
+  if (!body || typeof body !== 'object') {
+    return res.status(400).json({ error: { message: 'Invalid profile data' } })
+  }
+  const { summary, patterns, tones, trained, emailsAnalyzed, lastUpdated } = body
+  if (typeof summary !== 'string' || summary.length > 2000) {
+    return res.status(400).json({ error: { message: 'summary must be a string under 2000 chars' } })
+  }
+  if (patterns && typeof patterns !== 'object') {
+    return res.status(400).json({ error: { message: 'patterns must be an object' } })
+  }
+  if (tones && typeof tones !== 'object') {
+    return res.status(400).json({ error: { message: 'tones must be an object' } })
+  }
+
+  // Only write allowed fields
+  const profile: Record<string, unknown> = {
+    summary: summary.slice(0, 2000),
+    trained: trained === true,
+    emailsAnalyzed: typeof emailsAnalyzed === 'number' ? emailsAnalyzed : 0,
+    lastUpdated: typeof lastUpdated === 'string' ? lastUpdated : null,
+  }
+  if (patterns) {
+    profile.patterns = {
+      openings: Array.isArray(patterns.openings) ? patterns.openings.slice(0, 10).map((s: unknown) => String(s).slice(0, 200)) : [],
+      closings: Array.isArray(patterns.closings) ? patterns.closings.slice(0, 10).map((s: unknown) => String(s).slice(0, 200)) : [],
+      avoid: Array.isArray(patterns.avoid) ? patterns.avoid.slice(0, 20).map((s: unknown) => String(s).slice(0, 200)) : [],
+      signature: typeof patterns.signature === 'string' ? patterns.signature.slice(0, 100) : 'Billy',
+    }
+  }
+  if (tones) {
+    const allowedTones = ['inner', 'peer', 'exec', 'legal', 'talent']
+    const cleanTones: Record<string, string> = {}
+    for (const key of allowedTones) {
+      if (typeof tones[key] === 'string') cleanTones[key] = tones[key].slice(0, 500)
+    }
+    profile.tones = cleanTones
+  }
+
   try {
     await db.collection('users').doc(uid).collection('voiceProfile').doc('current').set(profile)
     res.json({ data: { ok: true } })
   } catch (err) {
+    console.error('[voice] Profile save failed:', err)
     res.status(500).json({ error: { message: 'Failed to save voice profile' } })
   }
 })
 
 // POST /api/voice-profile/train — analyze sent emails and propose profile
-voiceRouter.post('/train', csrfCheck, async (req, res) => {
+// A-14: Rate limit expensive Claude + Gmail calls
+const trainLimit = makeRateLimit(300_000, 2) // 2 per 5 minutes
+voiceRouter.post('/train', csrfCheck, trainLimit, async (req, res) => {
   const uid = req.session.uid!
 
   // 1. Fetch last 50 sent emails

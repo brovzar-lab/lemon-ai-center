@@ -11,6 +11,13 @@ import { useFocusModeStore } from '@/stores/useFocusModeStore'
 import { useCaptureStore } from '@/stores/useCaptureStore'
 import { useActionLogStore } from '@/stores/useActionLogStore'
 import { useFeatureFlags } from '@/hooks/useFeatureFlags'
+import { useViewStore } from '@/stores/useViewStore'
+import { WorkspaceTabs } from './workspace/WorkspaceTabs'
+import { DealsView } from './views/DealsView'
+import { ProjectsView } from './views/ProjectsView'
+import { MemoryView } from './views/MemoryView'
+import { ArchiveView } from './views/ArchiveView'
+import { InboxIntelView } from './views/InboxIntelView'
 import type { Bucket } from '@shared/types'
 import { loadVoiceProfile, DEFAULT_VOICE_PROFILE } from '@/lib/voiceProfile'
 import type { VoiceProfile } from '@/lib/voiceProfile'
@@ -46,6 +53,15 @@ import { AILogDrawer } from './AILogDrawer'
 import { RoughMorningPanel } from './RoughMorningPanel'
 import { ExecutiveSummary } from './ExecutiveSummary'
 import { CorrectionInput } from './CorrectionInput'
+import { PriorityStack } from './PriorityStack'
+import { RelationshipPanel } from './RelationshipPanel'
+import { EisenhowerMatrix } from './EisenhowerMatrix'
+import { WaitingOnPanel } from './WaitingOnPanel'
+import { DelegationQueue } from './DelegationQueue'
+import { useDealsStore } from '@/stores/lemon/useDealsStore'
+import { useTodayStore } from '@/stores/useTodayStore'
+import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
+import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
 
 export function Dashboard() {
   const { user, isAuthenticated } = useAuthStore()
@@ -60,7 +76,13 @@ export function Dashboard() {
   const subscribeToCaptures = useCaptureStore((s) => s.subscribe)
   const subscribeToActions = useActionLogStore((s) => s.subscribe)
   const focusActive = useFocusModeStore((s) => s.active)
-  const { newDashboard } = useFeatureFlags()
+  const { newDashboard, opsViews } = useFeatureFlags()
+  const view = useViewStore((s) => s.view)
+  const subscribeDeals = useDealsStore((s) => s.subscribe)
+  const subscribeProjects = useProjectsStore((s) => s.subscribe)
+  const subscribeLemonDelegations = useLemonDelegationsStore((s) => s.subscribe)
+  const fetchToday = useTodayStore((s) => s.fetchToday)
+  const fetchProgress = useTodayStore((s) => s.fetchProgress)
 
   // Voice profile state
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile>(DEFAULT_VOICE_PROFILE)
@@ -81,9 +103,17 @@ export function Dashboard() {
     fetchBrainStatus()
     fetchBrainRecent()
     fetchSpark()
+    fetchToday()
+    fetchProgress()
 
     // Load voice profile
     loadVoiceProfile().then(setVoiceProfile)
+
+    // LEMON workspace subscriptions for the workspace tabs (counts and intel).
+    // Each subscription is a no-op if VITE_LEMON_FIREBASE_* vars are missing.
+    const unsubDeals = opsViews ? subscribeDeals() : () => {}
+    const unsubProjects = opsViews ? subscribeProjects() : () => {}
+    const unsubLemonDelegations = opsViews ? subscribeLemonDelegations() : () => {}
 
     return () => {
       unsubTasks()
@@ -91,8 +121,11 @@ export function Dashboard() {
       unsubCaptures()
       unsubActions()
       stopBrief()
+      unsubDeals()
+      unsubProjects()
+      unsubLemonDelegations()
     }
-  }, [isAuthenticated, user?.uid])
+  }, [isAuthenticated, user?.uid, opsViews, subscribeDeals, subscribeProjects, subscribeLemonDelegations])
 
   const handleReply = (thread: InboxThread) => {
     setReplyEmail({
@@ -129,32 +162,54 @@ export function Dashboard() {
           >
             <EditorialMasthead />
 
-            {/* ══ 3-COLUMN EDITORIAL GRID ══ */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2">
+            {opsViews && <WorkspaceTabs />}
 
-              {/* ── LEFT COLUMN: The Briefing ── */}
-              <section aria-label="Morning briefing" className="flex flex-col gap-0 animate-in">
-                <MorningOverview />
-                <AudioPlayer />
-                <BrainPanel />
-                <BriefPanel />
-              </section>
+            {!opsViews || view === 'briefing' ? (
+              /* ══ 3-COLUMN EDITORIAL GRID ══ */
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2">
 
-              {/* ── CENTER COLUMN: Executive Summary + The One Thing + Calendar ── */}
-              <section aria-label="Priority and schedule" className="flex flex-col gap-0 animate-in animate-in-delay-1">
-                <ExecutiveSummary />
-                <OneThingCard data-focus-keep="true" />
-                <CalendarDayView />
-              </section>
+                {/* ── LEFT COLUMN: The Briefing ── */}
+                <section aria-label="Morning briefing" className="flex flex-col gap-0 animate-in">
+                  <MorningOverview />
+                  <AudioPlayer />
+                  <BrainPanel />
+                  <BriefPanel />
+                </section>
 
-              {/* ── RIGHT COLUMN: Inbox + Decisions + Captures + Wrapup ── */}
-              <aside aria-label="Inbox and actions" className="flex flex-col gap-0 animate-in animate-in-delay-2">
-                <InboxSummary onReply={handleReply} onCreateTask={handleCreateTask} />
-                <DecisionCoach />
-                <CaptureReview />
-                <WrapupCard />
-              </aside>
-            </div>
+                {/* ── CENTER COLUMN: Executive Summary + The One Thing + Calendar ── */}
+                <section aria-label="Priority and schedule" className="flex flex-col gap-0 animate-in animate-in-delay-1">
+                  <PriorityStack />
+                  <ExecutiveSummary />
+                  <OneThingCard data-focus-keep="true" />
+                  <CalendarDayView />
+                  <RelationshipPanel />
+                </section>
+
+                {/* ── RIGHT COLUMN: Inbox + Tasks (email archaeology) + Decisions + Captures + Wrapup ── */}
+                <aside aria-label="Inbox and actions" className="flex flex-col gap-0 animate-in animate-in-delay-2">
+                  <InboxSummary onReply={handleReply} onCreateTask={handleCreateTask} />
+                  <EisenhowerMatrix data={null} />
+                  <div className="mt-6">
+                    <TasksPanel />
+                  </div>
+                  <WaitingOnPanel items={[]} />
+                  <DelegationQueue delegations={[]} />
+                  <DecisionCoach />
+                  <CaptureReview />
+                  <WrapupCard />
+                </aside>
+              </div>
+            ) : view === 'inbox' ? (
+              <InboxIntelView onReply={handleReply} />
+            ) : view === 'deals' ? (
+              <DealsView />
+            ) : view === 'projects' ? (
+              <ProjectsView />
+            ) : view === 'memory' ? (
+              <MemoryView />
+            ) : view === 'archive' ? (
+              <ArchiveView />
+            ) : null}
           </main>
           <GlobalCapture />
           <AILogDrawer />

@@ -82,7 +82,7 @@ brainRouter.get('/note/*', (req, res) => {
   const doc = brain.getDoc(notePath)
   if (!doc) {
     return res.status(404).json({
-      error: { code: 'NOT_FOUND', message: `Note not found: ${notePath}`, retryable: false },
+      error: { code: 'NOT_FOUND', message: 'Note not found', retryable: false },
     })
   }
 

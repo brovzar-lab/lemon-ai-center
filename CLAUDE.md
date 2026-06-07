@@ -1,4 +1,4 @@
-# CEO Dashboard — Claude Code Guidelines
+# Lemon AI Center — Claude Code Guidelines
 
 ## Project
 Billy Rovzar's CEO command center for Lemon Studios. Full-stack: Vite + React 18 + TypeScript frontend, Express proxy backend, Firebase/Firestore, Google OAuth, Anthropic AI.

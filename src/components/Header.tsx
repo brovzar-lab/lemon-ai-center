@@ -12,7 +12,7 @@ interface HeaderProps {
 export function Header({ onOpenSettings }: HeaderProps) {
   const fetchInbox = useInboxStore((s) => s.fetch)
   const fetchCalendar = useCalendarStore((s) => s.fetch)
-  const fetchBrain = useBrainStore((s) => s.fetch)
+  const fetchBrain = useBrainStore((s) => s.fetchStatus)
   const refreshBrief = useBriefStore((s) => s.refresh)
   const isStreaming = useBriefStore((s) => s.isStreaming)
   const theme = useThemeStore((s) => s.theme)

@@ -4,6 +4,7 @@ import path from 'path'
 import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
+import { makeRateLimit } from '../middleware/rateLimit'
 import { getBrainEngine } from '../lib/brain'
 
 export const correctionsRouter = Router()
@@ -14,6 +15,9 @@ const RULES_FILE = 'wiki/personal/productivity/briefing-rules.md'
 function getAnthropicClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 }
+
+// A-11: Rate limit — each call triggers Anthropic API + file write
+const correctionsLimit = makeRateLimit(60_000, 5)
 
 /**
  * POST /api/corrections
@@ -26,7 +30,7 @@ function getAnthropicClient() {
  * 4. The brain engine auto-re-indexes via file watcher
  * 5. Future briefings pick up the new rule
  */
-correctionsRouter.post('/', csrfCheck, async (req, res) => {
+correctionsRouter.post('/', csrfCheck, correctionsLimit, async (req, res) => {
   const { correction, context } = req.body as { correction: string; context?: string }
 
   if (!correction?.trim()) {

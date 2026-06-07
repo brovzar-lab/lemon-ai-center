@@ -2,6 +2,16 @@ import { useFocusModeStore } from '@/stores/useFocusModeStore'
 import { useRoughMorningStore } from '@/stores/useRoughMorningStore'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useTaskStore } from '@/stores/useTaskStore'
+import { useDealsStore } from '@/stores/lemon/useDealsStore'
+import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
+import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
+import { useFeatureFlags } from '@/hooks/useFeatureFlags'
+import { useViewStore } from '@/stores/useViewStore'
+import {
+  detectSlippingThreads,
+  detectOverdueDelegations,
+  detectStallingDeals,
+} from '@/lib/inbox/slipDetection'
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -13,6 +23,16 @@ export function EditorialMasthead() {
   const roughToggle = useRoughMorningStore((s) => s.toggle)
   const threads = useInboxStore((s) => s.threads)
   const tasks = useTaskStore((s) => s.tasks)
+  const deals = useDealsStore((s) => s.deals)
+  const projects = useProjectsStore((s) => s.projects)
+  const delegations = useLemonDelegationsStore((s) => s.delegations)
+  const { opsViews } = useFeatureFlags()
+  const setView = useViewStore((s) => s.setView)
+
+  const slipCount =
+    detectSlippingThreads(threads, deals, projects).length +
+    detectOverdueDelegations(delegations).length +
+    detectStallingDeals(deals).length
 
   const today = new Date()
   const doneCount = tasks.filter((t) => t.done).length
@@ -65,6 +85,16 @@ export function EditorialMasthead() {
 
           {/* Mode pills */}
           <div className="flex items-center gap-2 ml-4">
+            {opsViews && slipCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setView('inbox')}
+                className="text-[10px] font-body font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border bg-accent-coral/15 text-accent-coral border-accent-coral/30 hover:bg-accent-coral/25 transition-colors min-h-[36px]"
+                aria-label={`${slipCount} items at risk — open Inbox Intel`}
+              >
+                ● {slipCount} at risk
+              </button>
+            )}
             <button
               type="button"
               onClick={roughToggle}

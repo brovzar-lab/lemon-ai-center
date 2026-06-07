@@ -2,6 +2,7 @@ if (process.env.NODE_ENV === 'production') require('module-alias/register')
 import 'dotenv/config'
 import express from 'express'
 import path from 'path'
+import crypto from 'crypto'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -23,6 +24,8 @@ import { ttsRouter } from './routes/tts'
 import { brainRouter } from './routes/brain'
 import { correctionsRouter } from './routes/corrections'
 import { tasksRouter } from './routes/tasks'
+import { todayRouter } from './routes/today'
+import { readyRouter } from './routes/ready'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
 import { requireAuth } from './middleware/requireAuth'
@@ -88,16 +91,20 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use(cookieParser())
+// S-6: Fail-fast if SESSION_SECRET is missing — prevents signing cookies with a known default
+const sessionSecret = process.env.SESSION_SECRET
+if (!sessionSecret && isProd) throw new Error('SESSION_SECRET environment variable is required in production')
+
 app.use(
   session({
     name: 'sid', // No __Host- prefix — incompatible with Cloudflare Tunnel proxy
-    secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+    secret: sessionSecret || 'dev-secret-change-me-local-only',
     resave: false,
     saveUninitialized: false,
     store: new FirestoreSessionStore(),
     cookie: {
       httpOnly: true,
-      secure: false, // Cloudflare terminates TLS; we see HTTP internally
+      secure: isProd, // S-7: Enable Secure flag in prod (Cloudflare terminates TLS; trust proxy is set)
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
@@ -109,8 +116,14 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true })
 })
 
+app.use('/api/ready', readyRouter)
+
+// S-8: Use a dedicated random CSRF token — never expose the sessionID to JavaScript
 app.get('/api/csrf', (req, res) => {
-  res.json({ data: { token: req.sessionID } })
+  if (!(req.session as any).csrfToken) {
+    (req.session as any).csrfToken = crypto.randomBytes(32).toString('hex')
+  }
+  res.json({ data: { token: (req.session as any).csrfToken } })
 })
 
 app.get('/api/me', requireAuth, (req, res) => {
@@ -131,6 +144,7 @@ app.use('/api/tts', ttsRouter)
 app.use('/api/brain', brainRouter)
 app.use('/api/corrections', correctionsRouter)
 app.use('/api/tasks', tasksRouter)
+app.use('/api', todayRouter)
 
 if (isProd) {
   // Use process.cwd() — always the project root regardless of how tsx is invoked

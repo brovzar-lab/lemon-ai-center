@@ -90,7 +90,15 @@ authRouter.get('/google/callback', async (req, res) => {
 
   oauth2Client.setCredentials(tokens)
   const oauth2Api = google.oauth2({ version: 'v2', auth: oauth2Client })
-  const { data: userInfo } = await oauth2Api.userinfo.get()
+
+  let userInfo: any
+  try {
+    const response = await oauth2Api.userinfo.get()
+    userInfo = response.data
+  } catch (err) {
+    console.error('[auth] Failed to fetch user info:', err)
+    return res.status(500).send('Failed to fetch user info from Google. Please try again.')
+  }
 
   const email = userInfo.email!
   const uid = userInfo.id!
@@ -138,7 +146,7 @@ authRouter.get('/google/callback', async (req, res) => {
   )
 
   await writeAuditLog(uid, 'login', req.ip || '', req.headers['user-agent'] || '')
-  res.redirect('/')
+  res.redirect(process.env.ALLOWED_ORIGIN || '/')
 })
 
 // ── /auth/google/logout ─────────────────────────────────────────────────────
@@ -149,5 +157,5 @@ authRouter.get('/google/logout', async (req, res) => {
   }
   req.session.destroy(() => {})
   res.clearCookie('sid', { path: '/' })
-  res.redirect('/')
+  res.redirect(process.env.ALLOWED_ORIGIN || '/')
 })

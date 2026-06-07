@@ -21,12 +21,12 @@ ttsRouter.post('/', requireAuth, csrfCheck, async (req, res) => {
       return res.status(503).json({ error: { code: 'NO_API_KEY', message: 'Gemini API key not configured', retryable: false } })
     }
 
-    // Use Gemini's text-to-speech endpoint
+    // S-13: API key in header, not URL query string (prevents leaks in logs/Referer)
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{
             parts: [{ text: `Read this morning brief aloud in a warm, professional tone. Speak naturally as a chief of staff briefing a CEO:\n\n${text.slice(0, 4000)}` }],

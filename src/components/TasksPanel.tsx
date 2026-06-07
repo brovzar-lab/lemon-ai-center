@@ -75,14 +75,20 @@ export function TasksPanel() {
   const saveSuggestions = async () => {
     if (!user) return
     setStage('saving')
+    setError(null)
     const toCreate = suggestions
       .filter((s) => s.included)
       .map((s) => ({ ...s, notes: s.notes ?? undefined }))
-    await bulkCreate(user.uid, toCreate)
-    setSuggestions([])
-    setScanMeta(null)
-    setActivePreset(null)
-    setStage('idle')
+    try {
+      await bulkCreate(user.uid, toCreate)
+      setSuggestions([])
+      setScanMeta(null)
+      setActivePreset(null)
+      setStage('idle')
+    } catch (err) {
+      setError((err as Error).message || 'Could not save tasks')
+      setStage('review')
+    }
   }
 
   const cancel = () => {

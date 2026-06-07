@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build all dashboard UI components — Header, BriefPanel, NextUpBar, TasksPanel, InboxPanel, TriageMode, BrainPanel, SparkCard, DecisionJournal, SkillLauncher, BillyDrawer, MeetingPrepModal — and assemble them into a working Dashboard. After this plan the full CEO Dashboard UI renders, navigates, and responds to keyboard shortcuts.
+**Goal:** Build all dashboard UI components — Header, BriefPanel, NextUpBar, TasksPanel, InboxPanel, TriageMode, BrainPanel, SparkCard, DecisionJournal, SkillLauncher, BillyDrawer, MeetingPrepModal — and assemble them into a working Dashboard. After this plan the full Lemon AI Center UI renders, navigates, and responds to keyboard shortcuts.
 
 **Architecture:** Each component consumes exactly one or two Zustand stores. Components render seed data immediately (stores initialized with seeds). CSS transitions for brief cross-fade (200ms). Portals for Drawer and Modals. Keyboard event listeners scoped to TriageMode only.
 

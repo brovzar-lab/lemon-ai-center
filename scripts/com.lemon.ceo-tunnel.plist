@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  CEO Dashboard — Cloudflare Tunnel Launch Agent
+  Lemon AI Center — Cloudflare Tunnel Launch Agent
   Installs to: ~/Library/LaunchAgents/com.lemon.ceo-tunnel.plist
 
   To install:
@@ -22,12 +22,12 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/quantumcode/CODE/ceo-dashboard/start-tunnel.sh</string>
+    <string>/Users/quantumcode/CODE/lemon-ai-center/start-tunnel.sh</string>
     <string>3001</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/quantumcode/CODE/ceo-dashboard</string>
+  <string>/Users/quantumcode/CODE/lemon-ai-center</string>
 
   <key>EnvironmentVariables</key>
   <dict>

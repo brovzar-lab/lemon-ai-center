@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { db } from '../lib/firebase'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
+import { chatLimit } from '../middleware/rateLimit'
 
 export const draftReplyRouter = Router()
 draftReplyRouter.use(requireAuth)
@@ -46,8 +47,9 @@ function getAnthropicClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 }
 
+// A-12: Rate limit — each call streams from Claude Sonnet
 // POST /api/claude/draft-reply
-draftReplyRouter.post('/', csrfCheck, async (req, res) => {
+draftReplyRouter.post('/', csrfCheck, chatLimit, async (req, res) => {
   const uid = req.session.uid!
   const { email, toneTier = 'peer' } = req.body as {
     email: { from: string; fromEmail: string; subject: string; snippet: string }

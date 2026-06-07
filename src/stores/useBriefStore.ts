@@ -94,8 +94,9 @@ export const useBriefStore = create<BriefState>()((set, get) => ({
       degraded: brief.degraded ?? false,
     }),
 
+  /** Abort or error: stop streaming and clear stale — avoids permanent “updating…” after failed brief */
   revertToLast: () => {
-    set({ isStreaming: false })
+    set({ isStreaming: false, isStale: false })
   },
 
   refresh: (forceRefresh = false) => {
@@ -111,6 +112,7 @@ export const useBriefStore = create<BriefState>()((set, get) => ({
       onSoulNote: (note) => setSoulNote(note),
       onDegraded: () => setDegraded(true),
       onToken: (voice, text) => appendToken(voice, text),
+      onReplaceProse: (text) => set({ billy: text, longBrief: text }),
       onDone: (e) => completeStream({ jarvis: e.jarvis, billy: e.billy, generatedAt: e.generatedAt, briefId: e.briefId, overview: e.overview, oneThing: e.oneThing, longBrief: e.longBrief, decisionOptions: e.decisionOptions, soulNote: e.soulNote, degraded: e.degraded }),
       onError: () => revertToLast(),
     })

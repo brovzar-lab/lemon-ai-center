@@ -175,7 +175,7 @@ export const seeds: SeedsData = {
       subject: 'Anthropic API — your April usage summary',
       from: 'Anthropic',
       fromDomain: 'anthropic.com',
-      snippet: 'Your monthly usage report for the CEO Dashboard project...',
+      snippet: 'Your monthly usage report for the Lemon AI Center project...',
       unread: false,
       receivedAt: '2026-04-27T09:00:00Z',
       tag: 'INFO',

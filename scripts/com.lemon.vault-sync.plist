@@ -7,7 +7,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/quantumcode/CODE/ceo-dashboard/scripts/vault-sync.sh</string>
+        <string>/Users/quantumcode/CODE/lemon-ai-center/scripts/vault-sync.sh</string>
     </array>
     <key>StartInterval</key>
     <integer>1800</integer>

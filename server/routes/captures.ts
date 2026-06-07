@@ -57,16 +57,19 @@ capturesRouter.post('/', csrfCheck, async (req, res) => {
           fs.appendFileSync(decisionsFile, entry, 'utf8')
 
           // On Railway: commit + push so the decision flows back to Mac
+          // S-9: Use execFile with args array to prevent shell injection via dateStr
           if (process.env.OBSIDIAN_VAULT_GIT_URL) {
-            const { exec } = require('child_process')
-            exec(
-              `cd "${vaultPath}" && git add raw/decisions-log.md && git commit -m "decision: ${dateStr}" && git push`,
-              { timeout: 30_000 },
-              (err: Error | null) => {
-                if (err) console.warn('[captures] Git push failed (non-fatal):', err.message)
-                else console.log('[captures] Decision pushed to GitHub')
-              }
-            )
+            const { execFile } = require('child_process')
+            execFile('git', ['add', 'raw/decisions-log.md'], { cwd: vaultPath, timeout: 15_000 }, (err: Error | null) => {
+              if (err) return console.warn('[captures] Git add failed (non-fatal):', err.message)
+              execFile('git', ['commit', '-m', `decision: ${dateStr}`], { cwd: vaultPath, timeout: 15_000 }, (err: Error | null) => {
+                if (err) return console.warn('[captures] Git commit failed (non-fatal):', err.message)
+                execFile('git', ['push'], { cwd: vaultPath, timeout: 30_000 }, (err: Error | null) => {
+                  if (err) console.warn('[captures] Git push failed (non-fatal):', err.message)
+                  else console.log('[captures] Decision pushed to GitHub')
+                })
+              })
+            })
           }
         }
       } catch (vaultErr) {

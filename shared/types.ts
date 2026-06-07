@@ -222,3 +222,105 @@ export interface Delegation {
   gmailMessageId?: string
   createdAt: string
 }
+
+// --- LEMON workspace types (read from secondary Firebase app) ---
+
+export type DealStatus = 'active' | 'pending_signature' | 'in_review' | 'closed'
+
+export interface LemonDeal {
+  id: string
+  name: string
+  status: DealStatus
+  counterparty?: string
+  owner?: string
+  value?: string           // human-formatted, e.g. "$7.5M"
+  next_action?: string
+  project?: string         // slug linking to a LemonProject
+  notes?: string
+  key_dates?: Array<{ label: string; date: string }>
+  created_at?: string
+  updated_at?: string
+}
+
+export type ProjectCategory =
+  | 'development'
+  | 'pre_production'
+  | 'production'
+  | 'post_production'
+  | 'deals_business'
+
+export type ProjectFormat = 'film' | 'series' | 'deal'
+
+export interface LemonProject {
+  id: string
+  title: string
+  category: ProjectCategory
+  format?: ProjectFormat
+  platform?: string
+  status_detail?: string
+  next_action?: string
+  sort_order?: number
+  status?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export type LemonDelegationStatus = 'pending' | 'completed' | 'cancelled'
+
+export interface LemonDelegation {
+  id: string
+  person: string
+  task: string
+  context?: string
+  expected_by?: string
+  status: LemonDelegationStatus
+  email_ref?: string       // gmail message id when extracted from email
+  created_at?: string
+  completed_date?: string | null
+  source?: 'manual' | 'auto'
+}
+
+export interface LemonMemoryEntry {
+  id: string
+  text: string
+  source: 'manual' | 'auto'
+  active: boolean
+  learned_at?: string
+}
+
+export interface LemonArchiveItem {
+  id: string
+  archived_at?: string
+  briefing_date?: string
+  restored: boolean
+  // The archive doc stores a snapshot of the original briefing item, so
+  // the rest of the shape is intentionally loose.
+  title?: string
+  description?: string
+  email_ref?: string
+  tag?: string
+  from?: string
+  [extra: string]: unknown
+}
+
+// "Slip detection" surface data — derived in the client from the
+// existing Gmail and LEMON streams. Intentionally separate from
+// `InboxThread` so we can attach AI-driven reasons later.
+export type SlipReason =
+  | 'awaiting_reply'   // Billy hasn't replied
+  | 'overdue_delegation'
+  | 'no_next_action'
+  | 'tied_to_active_deal'
+  | 'tied_to_active_project'
+
+export interface InboxSlip {
+  threadId: string
+  subject: string
+  from: string
+  ageHours: number
+  priority: ThreadPriority
+  reason: SlipReason
+  linkedDealId?: string
+  linkedProjectId?: string
+  linkedDelegationId?: string
+}

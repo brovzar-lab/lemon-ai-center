@@ -1,4 +1,4 @@
-# Design System — CEO Dashboard
+# Design System — Lemon AI Center
 
 ## Aesthetic
 Warm-dark editorial. Lemon Studios brand identity. Rich chocolate-brown base, warm parchment text, lemon gold accent.

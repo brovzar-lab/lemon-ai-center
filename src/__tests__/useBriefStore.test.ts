@@ -53,4 +53,12 @@ describe('useBriefStore', () => {
     expect(isStale).toBe(false)
     expect(briefId).toBe('abc')
   })
+
+  test('revertToLast clears streaming and stale flags', () => {
+    useBriefStore.getState().beginStream()
+    useBriefStore.getState().revertToLast()
+    const { isStreaming, isStale } = useBriefStore.getState()
+    expect(isStreaming).toBe(false)
+    expect(isStale).toBe(false)
+  })
 })

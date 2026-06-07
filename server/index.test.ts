@@ -24,6 +24,25 @@ describe('Express server', () => {
     expect(res.body).toMatchObject({ ok: true })
   })
 
+  test('GET /api/ready returns 200 with config flags and brain block', async () => {
+    const res = await request(app).get('/api/ready')
+    expect(res.status).toBe(200)
+    expect(res.body.data).toMatchObject({
+      googleOAuthConfigured: expect.any(Boolean),
+      allowedOriginConfigured: expect.any(Boolean),
+      allowedEmailsConfigured: expect.any(Boolean),
+      anthropicConfigured: expect.any(Boolean),
+      geminiConfigured: expect.any(Boolean),
+      vaultConfigured: expect.any(Boolean),
+      brain: {
+        ready: expect.any(Boolean),
+        docCount: expect.any(Number),
+        chunkCount: expect.any(Number),
+        totalBytes: expect.any(Number),
+      },
+    })
+  })
+
   test('GET /unknown returns 404', async () => {
     const res = await request(app).get('/unknown-route-xyz')
     expect(res.status).toBe(404)

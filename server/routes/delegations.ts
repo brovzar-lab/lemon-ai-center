@@ -4,12 +4,14 @@ import { db } from '../lib/firebase'
 import { getGmailClient } from '../lib/googleAuth'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
+import { gmailSendLimit } from '../middleware/rateLimit'
 
 export const delegationsRouter = Router()
 delegationsRouter.use(requireAuth)
 
 /** POST /api/delegations — send a delegation email and log it */
-delegationsRouter.post('/', csrfCheck, async (req, res) => {
+// A-13: Rate limit — each call sends a real email via Gmail
+delegationsRouter.post('/', csrfCheck, gmailSendLimit, async (req, res) => {
   const uid = req.session.uid!
   const { to, toName, taskTitle, context, deadline } = req.body as {
     to: string

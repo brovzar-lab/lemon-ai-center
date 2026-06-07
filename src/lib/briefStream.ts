@@ -8,6 +8,7 @@ export type BriefSseEvent =
   | { type: 'soulNote'; soulNote: string }
   | { type: 'degraded'; reason: string }
   | { type: 'token'; voice: 'jarvis' | 'billy'; text: string }
+  | { type: 'replaceProse'; text: string }
   | { type: 'done'; jarvis: string; billy: string; generatedAt: string; briefId: string; overview?: Claim[]; oneThing?: Claim & { why: string }; longBrief?: string; decisionOptions?: import('@shared/types').DecisionOption[]; soulNote?: string; degraded?: boolean }
   | { type: 'error'; message: string }
 
@@ -28,6 +29,7 @@ export interface BriefStreamCallbacks {
   onSoulNote?: (note: string) => void
   onDegraded?: (reason: string) => void
   onToken: (voice: 'jarvis' | 'billy', text: string) => void
+  onReplaceProse?: (text: string) => void
   onDone: (event: Extract<BriefSseEvent, { type: 'done' }>) => void
   onError: (message: string) => void
 }
@@ -69,26 +71,45 @@ export function startBriefStream(
       const reader = response.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
+      let sawDone = false
 
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
+      const dispatch = (event: BriefSseEvent) => {
+        if (event.type === 'cached') callbacks.onCached(event)
+        else if (event.type === 'overview') callbacks.onOverview?.(event.overview)
+        else if (event.type === 'oneThing') callbacks.onOneThing?.(event.oneThing)
+        else if (event.type === 'decisionOptions') callbacks.onDecisionOptions?.(event.decisionOptions)
+        else if (event.type === 'soulNote') callbacks.onSoulNote?.(event.soulNote)
+        else if (event.type === 'degraded') callbacks.onDegraded?.(event.reason)
+        else if (event.type === 'token') callbacks.onToken(event.voice, event.text)
+        else if (event.type === 'replaceProse') callbacks.onReplaceProse?.(event.text)
+        else if (event.type === 'done') {
+          sawDone = true
+          callbacks.onDone(event)
+        } else if (event.type === 'error') callbacks.onError(event.message)
+      }
+
+      const consumeLines = (lines: string[]) => {
         for (const line of lines) {
           const event = parseSseEvent(line.trim())
           if (!event) continue
-          if (event.type === 'cached') callbacks.onCached(event)
-          else if (event.type === 'overview') callbacks.onOverview?.(event.overview)
-          else if (event.type === 'oneThing') callbacks.onOneThing?.(event.oneThing)
-          else if (event.type === 'decisionOptions') callbacks.onDecisionOptions?.(event.decisionOptions)
-          else if (event.type === 'soulNote') callbacks.onSoulNote?.(event.soulNote)
-          else if (event.type === 'degraded') callbacks.onDegraded?.(event.reason)
-          else if (event.type === 'token') callbacks.onToken(event.voice, event.text)
-          else if (event.type === 'done') callbacks.onDone(event)
-          else if (event.type === 'error') callbacks.onError(event.message)
+          dispatch(event)
         }
+      }
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) {
+          consumeLines(buffer.split('\n'))
+          break
+        }
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        consumeLines(lines)
+      }
+
+      if (!sawDone) {
+        callbacks.onError('Brief stream ended before completion')
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {

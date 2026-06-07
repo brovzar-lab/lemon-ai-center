@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  CEO Dashboard — macOS Launch Agent
-  Installs to: ~/Library/LaunchAgents/com.lemon.ceo-dashboard.plist
+  Lemon AI Center — macOS Launch Agent
+  Installs to: ~/Library/LaunchAgents/com.lemon.lemon-ai-center.plist
 
   To install:
-    cp scripts/com.lemon.ceo-dashboard.plist ~/Library/LaunchAgents/
-    launchctl load ~/Library/LaunchAgents/com.lemon.ceo-dashboard.plist
+    cp scripts/com.lemon.lemon-ai-center.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.lemon.lemon-ai-center.plist
 
   To start/stop:
-    launchctl start com.lemon.ceo-dashboard
-    launchctl stop com.lemon.ceo-dashboard
+    launchctl start com.lemon.lemon-ai-center
+    launchctl stop com.lemon.lemon-ai-center
 
   To check status:
-    launchctl list | grep ceo-dashboard
+    launchctl list | grep lemon-ai-center
 
   To view logs:
-    tail -f /tmp/ceo-dashboard.log
+    tail -f /tmp/lemon-ai-center.log
 -->
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.lemon.ceo-dashboard</string>
+  <string>com.lemon.lemon-ai-center</string>
 
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/quantumcode/CODE/ceo-dashboard/start-prod.sh</string>
+    <string>/Users/quantumcode/CODE/lemon-ai-center/start-prod.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/quantumcode/CODE/ceo-dashboard</string>
+  <string>/Users/quantumcode/CODE/lemon-ai-center</string>
 
   <key>EnvironmentVariables</key>
   <dict>
@@ -54,8 +54,8 @@
 
   <!-- Log output -->
   <key>StandardOutPath</key>
-  <string>/tmp/ceo-dashboard.log</string>
+  <string>/tmp/lemon-ai-center.log</string>
   <key>StandardErrorPath</key>
-  <string>/tmp/ceo-dashboard.error.log</string>
+  <string>/tmp/lemon-ai-center.error.log</string>
 </dict>
 </plist>

@@ -2,5 +2,6 @@
 export function useFeatureFlags() {
   return {
     newDashboard: import.meta.env.VITE_NEW_DASHBOARD === 'true',
+    opsViews: import.meta.env.VITE_OPS_VIEWS === 'true',
   }
 }

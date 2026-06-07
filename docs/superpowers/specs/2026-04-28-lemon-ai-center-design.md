@@ -1,6 +1,6 @@
-# CEO Dashboard — Design Spec
+# Lemon AI Center — Design Spec
 **Date:** 2026-04-28  
-**Project:** brovzar-lab/ceo-dashboard  
+**Project:** brovzar-lab/lemon-ai-center  
 **Owner:** Billy Rovzar / Lemon Studios
 
 ---
@@ -16,7 +16,7 @@ Billy Rovzar's CEO command center for Lemon Studios. Single-page dashboard combi
 ### Monorepo layout
 
 ```
-ceo-dashboard/
+lemon-ai-center/
 ├── src/                    # Vite + React 18 + TypeScript frontend
 │   ├── components/
 │   ├── stores/             # Zustand stores (one per domain)
@@ -514,7 +514,7 @@ fontFamily: {
 
 ```bash
 # Railway (server-side only)
-ANTHROPIC_API_KEY=          # Named lemon-ceo-dashboard in Anthropic console
+ANTHROPIC_API_KEY=          # Named lemon-lemon-ai-center in Anthropic console
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=        # https://{railway-domain}/auth/google/callback
@@ -531,7 +531,7 @@ FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
 
 # Frontend (build-time, Vite — public, non-secret)
-VITE_APP_TITLE=CEO Dashboard
+VITE_APP_TITLE=Lemon AI Center
 ```
 
 ---

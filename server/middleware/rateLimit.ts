@@ -23,3 +23,6 @@ export const gmailSendLimit = makeRateLimit(60_000, 5)
 export const gmailLimit = makeRateLimit(60_000, 60)
 export const calendarLimit = makeRateLimit(60_000, 30)
 export const notionLimit = makeRateLimit(60_000, 20)
+// Email-archaeology generator burns Gmail quota per call (up to 45 thread.get
+// fetches) — keep tight so accidental double-clicks don't sting.
+export const tasksGenerateLimit = makeRateLimit(60_000, 4)

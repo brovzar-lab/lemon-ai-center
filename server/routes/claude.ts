@@ -12,6 +12,7 @@ import {
   BILLY_SYSTEM,
   SPARK_SYSTEM,
   CHAT_SYSTEM,
+  FACT_CHECK_SYSTEM,
   PROMPT_VERSION,
 } from '../lib/prompts'
 import { requireAuth } from '../middleware/requireAuth'
@@ -58,7 +59,7 @@ interface ContextItem {
   snippet: string
 }
 
-async function assembleContext(uid: string): Promise<{ items: ContextItem[]; block: string; threadIds: string[] }> {
+export async function assembleContext(uid: string): Promise<{ items: ContextItem[]; block: string; threadIds: string[] }> {
   const items: ContextItem[] = []
   const threadIds: string[] = []
 
@@ -67,18 +68,28 @@ async function assembleContext(uid: string): Promise<{ items: ContextItem[]; blo
     const gmail = await getGmailClient(uid)
     const response = await gmail.users.threads.list({ userId: 'me', maxResults: MAX_THREADS })
     const threads = response.data.threads || []
-    for (const t of threads.slice(0, MAX_THREADS)) {
-      if (!t.id) continue
-      threadIds.push(t.id)
-      try {
-        const detail = await gmail.users.threads.get({ userId: 'me', id: t.id, format: 'metadata', metadataHeaders: ['Subject', 'From'] })
-        const headers = detail.data.messages?.[0]?.payload?.headers || []
-        const subject = headers.find((h: any) => h.name === 'Subject')?.value ?? '(no subject)'
-        const from = headers.find((h: any) => h.name === 'From')?.value ?? ''
-        const snippet = (detail.data.messages?.[0]?.snippet ?? '').slice(0, MAX_THREAD_SNIPPET_LEN)
-        items.push({ type: 'gmail', id: t.id, label: `${from}: ${subject}`, snippet })
-      } catch {
-        items.push({ type: 'gmail', id: t.id, label: '(thread metadata unavailable)', snippet: '' })
+    // A-3: Parallelize thread fetches with Promise.allSettled to eliminate N+1 queries
+    const BATCH_SIZE = 6
+    const toFetch = threads.slice(0, MAX_THREADS).filter((t) => t.id)
+    for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+      const batch = toFetch.slice(i, i + BATCH_SIZE)
+      const settled = await Promise.allSettled(
+        batch.map(async (t) => {
+          threadIds.push(t.id!)
+          const detail = await gmail.users.threads.get({ userId: 'me', id: t.id!, format: 'metadata', metadataHeaders: ['Subject', 'From'] })
+          const headers = detail.data.messages?.[0]?.payload?.headers || []
+          const subject = headers.find((h: any) => h.name === 'Subject')?.value ?? '(no subject)'
+          const from = headers.find((h: any) => h.name === 'From')?.value ?? ''
+          const snippet = (detail.data.messages?.[0]?.snippet ?? '').slice(0, MAX_THREAD_SNIPPET_LEN)
+          return { type: 'gmail' as const, id: t.id!, label: `${from}: ${subject}`, snippet }
+        }),
+      )
+      for (const result of settled) {
+        if (result.status === 'fulfilled') items.push(result.value)
+        else {
+          // Push placeholder for failed threads
+          items.push({ type: 'gmail', id: 'unknown', label: '(thread metadata unavailable)', snippet: '' })
+        }
       }
     }
   } catch {
@@ -101,8 +112,13 @@ async function assembleContext(uid: string): Promise<{ items: ContextItem[]; blo
     })
     for (const ev of (response.data.items || []).slice(0, MAX_EVENTS)) {
       const summary = ev.summary ?? '(no title)'
-      // Only include events with "BR" in the title (Billy Rovzar's meetings)
-      if (!summary.toUpperCase().includes('BR')) continue
+      // Skip transparent/declined/cancelled events but include everything else.
+      // (Previous version filtered to summaries containing "BR" which dropped most real events
+      //  and starved the AI of context, encouraging hallucinated meetings.)
+      if (ev.transparency === 'transparent') continue
+      if (ev.status === 'cancelled') continue
+      const myAttendee = ev.attendees?.find((a: any) => a.self)
+      if (myAttendee?.responseStatus === 'declined') continue
       const id = ev.id ?? ''
       const start = ev.start?.dateTime ?? ev.start?.date ?? ''
       const desc = (ev.description ?? '').slice(0, MAX_EVENT_DESC_LEN)
@@ -217,10 +233,11 @@ function validateBriefJson(raw: string, contextIds: string[]): { ok: true; data:
   }
 
   // Validate sourceIds exist in context — NO 'inferred' allowed (anti-hallucination)
+  // Vault IDs (vault:<path>) must also match the exact path that was injected.
   const validIds = new Set(contextIds)
   for (const claim of allClaims) {
     for (const cite of claim.citations) {
-      if (!validIds.has(cite.sourceId) && !cite.sourceId?.startsWith('vault:')) {
+      if (!validIds.has(cite.sourceId)) {
         return { ok: false, reason: `sourceId "${cite.sourceId}" not in context` }
       }
     }
@@ -341,6 +358,33 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
         sendEvent({ type: 'token', voice: 'billy', text })
       }
       billyText = longBriefText
+
+      // ---- PASS 3: Self-fact-check (Haiku) ----
+      // Rewrite the prose to remove any name, amount, deadline, or quote
+      // that doesn't appear in the structured JSON from Pass 1.
+      try {
+        const factCheck = await anthropic.messages.create({
+          model: MODEL_SPARK, // Haiku — fast + cheap
+          max_tokens: 500,
+          system: FACT_CHECK_SYSTEM,
+          messages: [
+            {
+              role: 'user',
+              content: `ALLOWED_FACTS:\n${JSON.stringify({ overview: parsedOverview, oneThing: parsedOneThing }, null, 2)}\n\nPROSE:\n${longBriefText}`,
+            },
+          ],
+        })
+        const cleaned = factCheck.content[0].type === 'text' ? factCheck.content[0].text.trim() : ''
+        if (cleaned && cleaned.length > 0) {
+          // Replace billyText with the fact-checked version. Tell the client to swap.
+          longBriefText = cleaned
+          billyText = cleaned
+          sendEvent({ type: 'replaceProse', text: cleaned })
+        }
+      } catch (err) {
+        // Fact-check failure is non-fatal — keep original prose but log.
+        console.warn('[brief] fact-check pass failed:', (err as Error).message)
+      }
     } else {
       // Degraded: fall back to legacy streaming
       const jarvisStream: any = anthropic.messages.stream({
@@ -400,7 +444,8 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
       soulNote: parsedSoulNote,
       degraded,
     })
-  } catch {
+  } catch (err) {
+    console.error('[brief] Generation error:', err) // A-5: Log error for production debugging
     sendEvent({ type: 'error', message: 'Brief generation failed' })
   }
 
