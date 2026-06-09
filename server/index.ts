@@ -104,7 +104,7 @@ app.use(
     store: new FirestoreSessionStore(),
     cookie: {
       httpOnly: true,
-      secure: isProd, // S-7: Enable Secure flag in prod (Cloudflare terminates TLS; trust proxy is set)
+      secure: false, // Cloudflare Tunnel terminates TLS; Railway sees HTTP internally. Secure:true causes redirect loops.
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
