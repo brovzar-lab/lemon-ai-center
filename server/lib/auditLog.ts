@@ -1,7 +1,7 @@
 import { db } from './firebase'
 import { FieldValue } from 'firebase-admin/firestore'
 
-export type AuditEvent = 'login' | 'logout' | 'token_refresh' | 'gmail_send' | 'scope_change'
+export type AuditEvent = 'login' | 'logout' | 'token_refresh' | 'gmail_send' | 'scope_change' | 'triage_defer' | 'triage_undo'
 
 export async function writeAuditLog(
   uid: string,
