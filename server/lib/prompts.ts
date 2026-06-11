@@ -172,7 +172,7 @@ Your job: rewrite the PROSE so that EVERY name, dollar amount, project, deal, de
 
 You may keep general statements that contain no specific entities (e.g., "today is quiet", "no urgent items").
 
-If after deletion fewer than 30 words remain, output exactly: "Quiet morning — nothing urgent in your inbox or calendar yet. I'll surface things as they come in."
+If after deletion fewer than 30 words remain, output exactly: "${(() => { const h = new Date().getHours(); return h < 12 ? 'Quiet morning' : h < 17 ? 'Quiet afternoon' : 'Quiet evening'; })()} — nothing urgent in your inbox or calendar yet. I'll surface things as they come in."
 
 Output ONLY the corrected prose. No commentary, no labels, no markdown.`
 

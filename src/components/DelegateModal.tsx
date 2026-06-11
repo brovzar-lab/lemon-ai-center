@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { TEAM } from '@shared/constants'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useActionLogStore } from '@/stores/useActionLogStore'
@@ -88,7 +89,7 @@ Billy`
       />
       {/* Modal */}
       <div className="relative w-full max-w-lg mx-4 bg-bg-surface border border-border-soft rounded-xl shadow-2xl p-6">
-        <h2 className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase mb-4">
+        <h2 className="text-[11px] font-body font-semibold text-text-muted tracking-widest uppercase mb-4">
           Delegate Task
         </h2>
 
@@ -126,7 +127,7 @@ Billy`
             {/* Edit mode */}
             <div className="space-y-3 mb-5">
               <div>
-                <label className="text-[10px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">To</label>
+                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">To</label>
                 <select
                   value={to.id}
                   onChange={(e) => setTo(TEAM.find((m) => m.id === e.target.value) ?? TEAM[0])}
@@ -140,7 +141,7 @@ Billy`
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Task</label>
+                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Task</label>
                 <input
                   type="text"
                   value={title}
@@ -150,7 +151,7 @@ Billy`
                 />
               </div>
               <div>
-                <label className="text-[10px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Context</label>
+                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Context</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
@@ -160,7 +161,7 @@ Billy`
                 />
               </div>
               <div>
-                <label className="text-[10px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Deadline (optional)</label>
+                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Deadline (optional)</label>
                 <input
                   type="date"
                   value={deadline}
@@ -183,7 +184,7 @@ Billy`
                 disabled={!title.trim()}
                 className="text-[11px] font-body font-semibold uppercase tracking-wider px-5 py-2 rounded-lg border border-border-soft text-text-secondary hover:border-border-medium transition-colors disabled:opacity-40"
               >
-                Preview Email →
+                Preview Email <ArrowRight size={12} />
               </button>
             </div>
           </>

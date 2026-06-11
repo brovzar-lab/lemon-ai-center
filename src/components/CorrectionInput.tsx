@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { X } from 'lucide-react'
 
 type CorrectionState = 'idle' | 'submitting' | 'success' | 'error'
 
@@ -98,7 +99,7 @@ export function CorrectionInput() {
           className="correction-close"
           aria-label="Close"
         >
-          ×
+          <X size={16} />
         </button>
       </div>
 

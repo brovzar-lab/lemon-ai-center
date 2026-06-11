@@ -1,5 +1,6 @@
 import { useUIStore } from '@/stores/useUIStore'
 import { useCalendarStore } from '@/stores/useCalendarStore'
+import { X, ArrowRight } from 'lucide-react'
 
 export function MeetingPrepModal() {
   const { activeModal, closeModal } = useUIStore()
@@ -34,7 +35,7 @@ export function MeetingPrepModal() {
             onClick={closeModal}
             className="text-text-muted hover:text-text-secondary transition-colors text-xl leading-none"
           >
-            ×
+            <X size={18} />
           </button>
         </div>
         <div className="space-y-4">
@@ -56,9 +57,9 @@ export function MeetingPrepModal() {
                     href={meeting.meetLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs font-body text-accent-blue hover:opacity-80 transition-opacity ml-4 shrink-0"
+                    className="text-xs font-body text-accent-blue hover:opacity-80 transition-opacity ml-4 shrink-0 inline-flex items-center gap-1"
                   >
-                    Join →
+                    Join <ArrowRight size={12} />
                   </a>
                 )}
               </div>

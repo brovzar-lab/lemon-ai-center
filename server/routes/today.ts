@@ -19,9 +19,9 @@ setInterval(() => {
   }
 }, 60_000)
 
-todayRouter.get('/today', async (_req, res) => {
+todayRouter.get('/today', async (req, res) => {
   try {
-    const payload = await loadPrecomputed()
+    const payload = await loadPrecomputed(req.session.uid)
     if (!payload) {
       return res.json({ data: { priorities: [], northStar: '', precomputeAge: null, precomputeToday: false } })
     }
@@ -93,9 +93,9 @@ todayRouter.get('/today-progress', async (req, res) => {
   res.json({ data: progress })
 })
 
-todayRouter.get('/relationships', async (_req, res) => {
+todayRouter.get('/relationships', async (req, res) => {
   try {
-    const payload = await loadPrecomputed()
+    const payload = await loadPrecomputed(req.session.uid)
     const flags = payload?.enrichedFlags ?? []
     res.json({ data: { flags } })
   } catch {

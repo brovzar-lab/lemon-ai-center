@@ -143,7 +143,7 @@ export interface SeedsData {
   captures: Capture[]
 }
 
-export type ActiveContextKind = 'thread' | 'task' | 'decision' | 'spark' | 'claim' | null
+export type ActiveContextKind = 'thread' | 'task' | 'decision' | 'spark' | 'claim' | 'meeting' | null
 
 export interface ActiveContext {
   kind: ActiveContextKind

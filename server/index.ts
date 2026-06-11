@@ -3,6 +3,7 @@ import 'dotenv/config'
 import express from 'express'
 import path from 'path'
 import crypto from 'crypto'
+import cron from 'node-cron'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -171,5 +172,23 @@ if (require.main === module) {
     } else {
       console.warn('[brain] No vault available — brain disabled')
     }
+    // Daily cron: trigger precompute at 6:30 AM local time
+    cron.schedule('30 6 * * *', async () => {
+      console.log('[cron] 6:30 AM — triggering daily precompute')
+      try {
+        const { runPrecompute } = await import('./lib/precompute')
+        const { assembleContext } = await import('./routes/claude')
+        // Use a known uid from env, or skip if not configured
+        const cronUid = process.env.CEO_UID
+        if (cronUid) {
+          await runPrecompute(cronUid, assembleContext)
+          console.log('[cron] Daily precompute completed')
+        } else {
+          console.warn('[cron] CEO_UID not set — skipping precompute')
+        }
+      } catch (err) {
+        console.error('[cron] Precompute failed:', (err as Error).message)
+      }
+    })
   })
 }

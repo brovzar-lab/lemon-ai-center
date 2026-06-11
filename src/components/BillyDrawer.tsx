@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useUIStore } from '@/stores/useUIStore'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useBriefStore } from '@/stores/useBriefStore'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { X, ArrowRight } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -15,7 +17,9 @@ export function BillyDrawer() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+  const focusTrapRef = useFocusTrap(drawerOpen && !isClosing)
 
   useEffect(() => {
     if (endRef.current && typeof endRef.current.scrollIntoView === 'function') {
@@ -28,6 +32,24 @@ export function BillyDrawer() {
     setMessages([])
     setInput('')
   }, [activeContext.kind, activeContext.id])
+
+  // Escape key handler
+  useEffect(() => {
+    if (!drawerOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [drawerOpen])
+
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsClosing(false)
+      closeDrawer()
+    }, 200)
+  }
 
   const activeThread = activeContext.kind === 'thread'
     ? threads.find((t) => t.id === activeContext.id)
@@ -63,7 +85,7 @@ export function BillyDrawer() {
     'What action should I take?',
   ] : []
 
-  if (!drawerOpen) return null
+  if (!drawerOpen && !isClosing) return null
 
   const send = async (directMessage?: string) => {
     const msgText = directMessage || input.trim()
@@ -136,10 +158,13 @@ export function BillyDrawer() {
 
   return (
     <div
+      ref={focusTrapRef}
       data-testid="billy-drawer"
       role="complementary"
       aria-label="Billy AI assistant"
-      className="fixed top-0 right-0 h-full z-50 flex flex-col bg-bg-elevated border-l border-border-medium shadow-2xl w-full md:w-[420px]"
+      className={`fixed top-0 right-0 h-full z-50 flex flex-col bg-bg-elevated border-l border-border-medium shadow-2xl w-full md:w-[420px] ${
+        isClosing ? 'animate-[fadeOut_200ms_ease-out_forwards]' : 'animate-in'
+      }`}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft">
         <div className="flex-1 min-w-0">
@@ -153,11 +178,11 @@ export function BillyDrawer() {
         </div>
         <button
           type="button"
-          onClick={closeDrawer}
+          onClick={handleClose}
           aria-label="Close"
-          className="text-text-muted hover:text-text-secondary text-xl leading-none"
+          className="text-text-muted hover:text-text-secondary leading-none p-1"
         >
-          ×
+          <X size={18} />
         </button>
       </div>
 
@@ -175,9 +200,9 @@ export function BillyDrawer() {
                     key={prompt}
                     type="button"
                     onClick={() => { send(prompt); }}
-                    className="text-left text-[12px] font-body text-text-secondary px-3 py-2.5 border border-border-soft rounded-lg hover:border-accent-coral/40 hover:text-text-primary transition-colors"
+                    className="text-left text-[12px] font-body text-text-secondary px-3 py-2.5 border border-border-soft rounded-lg hover:border-accent-coral/40 hover:text-text-primary transition-colors flex items-center gap-1.5"
                   >
-                    {prompt} →
+                    {prompt} <ArrowRight size={12} />
                   </button>
                 ))}
               </div>
@@ -210,10 +235,10 @@ export function BillyDrawer() {
           type="button"
           onClick={() => send()}
           disabled={streaming || !input.trim()}
-          className="px-4 py-2.5 bg-accent-lemon text-bg-base text-sm font-body font-medium rounded-xl hover:opacity-90 disabled:opacity-40 transition-opacity"
+          className="px-4 py-2.5 bg-accent-lemon text-bg-base text-sm font-body font-medium rounded-xl hover:opacity-90 disabled:opacity-40 transition-opacity flex items-center"
           aria-label="Send message"
         >
-          →
+          <ArrowRight size={16} />
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { ArrowRight } from 'lucide-react'
 import { useFeatureFlags } from '@/hooks/useFeatureFlags'
 import type { InboxThread, ThreadPriority } from '@shared/types'
 
@@ -96,7 +97,7 @@ export function ThreadList({ threads, onReply, onCreateTask }: Props) {
                   className="text-[10px] font-body font-medium text-accent-sage hover:text-text-primary px-2 py-1 rounded border border-border-soft"
                   title="Create task from this email"
                 >
-                  → Task
+                  <ArrowRight size={12} className="inline" /> Task
                 </button>
               )}
               {onReply && (
@@ -144,7 +145,7 @@ export function ThreadList({ threads, onReply, onCreateTask }: Props) {
                   className="text-[10px] font-body font-medium text-accent-sage hover:text-text-primary px-2 py-1 rounded border border-border-soft"
                   title="Create task from this email"
                 >
-                  → Task
+                  <ArrowRight size={12} className="inline" /> Task
                 </button>
               )}
               {onReply && (

@@ -1,10 +1,17 @@
 import { useEffect } from 'react'
 import { useTodayStore } from '@/stores/useTodayStore'
+import { Clock, RefreshCw } from 'lucide-react'
 
 const urgencyDot: Record<string, string> = {
   critical: 'bg-accent-coral',
   high: 'bg-accent-lemon',
   medium: 'bg-text-tertiary',
+}
+
+const urgencyLabel: Record<string, string> = {
+  critical: 'critical urgency',
+  high: 'high urgency',
+  medium: 'medium urgency',
 }
 
 const labelColor: Record<string, string> = {
@@ -29,10 +36,10 @@ export function PriorityStack() {
         <span>Today's Priorities</span>
         <button
           onClick={triggerPrecompute}
-          className="text-[10px] font-body text-text-muted hover:text-accent-lemon transition-colors"
+          className="text-[11px] font-body text-text-muted hover:text-accent-lemon transition-colors flex items-center gap-1"
           title="Refresh priorities"
         >
-          ↻ refresh
+          <RefreshCw size={11} /> refresh
         </button>
       </div>
 
@@ -45,8 +52,8 @@ export function PriorityStack() {
 
       {/* Freshness indicator */}
       {!precomputeToday && priorities.length > 0 && (
-        <div className="mb-3 px-3 py-1.5 border border-accent-lemon/20 text-[10px] font-body text-text-muted">
-          ⏳ Priorities from yesterday — refresh for today's data
+        <div className="mb-3 px-3 py-1.5 border border-accent-lemon/20 text-[11px] font-body text-text-muted flex items-center gap-1.5">
+          <Clock size={12} /> Priorities from yesterday — refresh for today's data
         </div>
       )}
 
@@ -71,12 +78,16 @@ export function PriorityStack() {
                 {/* Label badge + urgency dot */}
                 <div className="flex items-center gap-2 mb-1">
                   <span
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-body font-semibold uppercase tracking-[0.15em] border rounded ${labelColor[p.label] || 'text-text-secondary bg-bg-elevated border-border-soft'}`}
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-body font-semibold uppercase tracking-[0.15em] border rounded ${labelColor[p.label] || 'text-text-secondary bg-bg-elevated border-border-soft'}`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${urgencyDot[p.urgency] || urgencyDot.medium}`} />
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${urgencyDot[p.urgency] || urgencyDot.medium}`}
+                      aria-label={urgencyLabel[p.urgency] || 'medium urgency'}
+                      role="img"
+                    />
                     {p.label}
                   </span>
-                  <span className="text-[9px] font-body text-text-muted uppercase tracking-wider">
+                  <span className="text-[11px] font-body text-text-muted uppercase tracking-wider">
                     {p.urgency}
                   </span>
                 </div>
@@ -93,7 +104,7 @@ export function PriorityStack() {
 
                 {/* Thread count */}
                 {p.threadCount > 0 && (
-                  <p className="text-[10px] font-body text-text-muted mt-1">
+                  <p className="text-[11px] font-body text-text-muted mt-1">
                     {p.threadCount} related email{p.threadCount !== 1 ? 's' : ''}
                   </p>
                 )}

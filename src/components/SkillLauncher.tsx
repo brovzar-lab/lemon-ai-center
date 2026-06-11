@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useUIStore } from '@/stores/useUIStore'
+import { X } from 'lucide-react'
 import { SKILLS } from '@/data/skills'
 import type { Skill } from '@shared/types'
 
@@ -44,7 +45,7 @@ export function SkillLauncher() {
           <div className="relative w-full max-w-sm bg-bg-elevated border border-border-medium rounded-2xl p-4 shadow-2xl max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-body font-semibold text-text-primary">Skills</h2>
-              <button type="button" onClick={closeSkillLauncher} className="text-text-muted hover:text-text-secondary text-xl leading-none" aria-label="Close">×</button>
+              <button type="button" onClick={closeSkillLauncher} className="text-text-muted hover:text-text-secondary leading-none p-1" aria-label="Close"><X size={18} /></button>
             </div>
 
             <input

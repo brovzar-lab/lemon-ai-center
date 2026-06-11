@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { X } from 'lucide-react'
 import { TONE_TIERS, trainVoiceProfile, saveVoiceProfile } from '../lib/voiceProfile'
 import VoiceDiff from './VoiceDiff'
 import type { VoiceProfile, ToneTier } from '../lib/voiceProfile'
@@ -45,7 +46,7 @@ export default function SettingsModal({ open, onClose, voiceProfile, onProfileUp
         {/* Header */}
         <div className="modal-header">
           <span className="modal-title">Settings</span>
-          <button onClick={onClose} className="modal-close">&times;</button>
+          <button onClick={onClose} className="modal-close" aria-label="Close"><X size={16} /></button>
         </div>
 
         {/* Voice Profile Section */}

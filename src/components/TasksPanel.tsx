@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { useTaskStore } from '@/stores/useTaskStore'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { TaskColumn } from './TaskColumn'
 import type { Bucket, TaskSource } from '@shared/types'
 
 const BUCKETS: Bucket[] = ['now', 'next', 'orbit']
+const BUCKET_LABELS: Record<Bucket, string> = { now: 'NOW', next: 'NEXT', orbit: 'ORBIT' }
+const BUCKET_SUBLABEL: Record<Bucket, string> = { now: 'today', next: 'this week', orbit: 'watching' }
+const BUCKET_DOT: Record<Bucket, string> = {
+  now: 'bg-accent-coral',
+  next: 'bg-accent-lemon',
+  orbit: 'bg-text-muted',
+}
 
 const PRESETS = [
   { label: 'Last 2 weeks',    sub: 'recent activity',     fromDays: 14,  toDays: 0  },
@@ -26,6 +32,7 @@ export function TasksPanel() {
   const tasks = useTaskStore((s) => s.tasks)
   const create = useTaskStore((s) => s.create)
   const bulkCreate = useTaskStore((s) => s.bulkCreate)
+  const toggleDone = useTaskStore((s) => s.toggleDone)
   const user = useAuthStore((s) => s.user)
 
   const [newTitle, setNewTitle] = useState('')
@@ -35,6 +42,11 @@ export function TasksPanel() {
   const [activePreset, setActivePreset] = useState<typeof PRESETS[number] | null>(null)
   const [scanMeta, setScanMeta] = useState<{ emailCount: number; calCount: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [collapsedBuckets, setCollapsedBuckets] = useState<Record<Bucket, boolean>>({
+    now: false,
+    next: true,
+    orbit: true,
+  })
 
   const addTask = (bucket: Bucket) => {
     if (!newTitle.trim() || !user) return
@@ -91,6 +103,10 @@ export function TasksPanel() {
     }
   }
 
+  const selectAll = () => {
+    setSuggestions((prev) => prev.map((s) => ({ ...s, included: true })))
+  }
+
   const cancel = () => {
     setSuggestions([])
     setScanMeta(null)
@@ -98,21 +114,26 @@ export function TasksPanel() {
     setStage('idle')
   }
 
+  const toggleBucket = (bucket: Bucket) => {
+    setCollapsedBuckets((prev) => ({ ...prev, [bucket]: !prev[bucket] }))
+  }
+
   const includedCount = suggestions.filter((s) => s.included).length
   const activeTasks = tasks.filter((t) => !t.done)
-  const showColumns = (stage === 'idle' || stage === 'picking') && activeTasks.length > 0
+  const showBuckets = (stage === 'idle' || stage === 'picking')
 
   return (
-    <div className="bg-bg-surface border border-border-soft rounded-xl p-4">
-
+    <div>
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase">Tasks</h2>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+          Tasks
+        </p>
         {stage === 'idle' || stage === 'picking' ? (
           <button
             type="button"
             onClick={() => setStage(stage === 'picking' ? 'idle' : 'picking')}
-            className="text-[10px] font-body text-text-muted hover:text-text-secondary tracking-wide uppercase transition-colors flex items-center gap-1"
+            className="text-[11px] font-body text-text-muted hover:text-text-secondary tracking-wide uppercase transition-colors flex items-center gap-1"
           >
             Generate
             <span className={`transition-transform duration-150 ${stage === 'picking' ? 'rotate-180' : ''}`}>↓</span>
@@ -169,8 +190,8 @@ export function TasksPanel() {
             </p>
             <button
               type="button"
-              onClick={() => { suggestions.forEach((_, i) => setSuggestions((p) => p.map((s, idx) => idx === i ? { ...s, included: true } : s))); }}
-              className="text-[10px] font-body text-text-muted hover:text-text-secondary transition-colors"
+              onClick={selectAll}
+              className="text-[11px] font-body text-text-muted hover:text-text-secondary transition-colors"
             >
               select all
             </button>
@@ -190,7 +211,7 @@ export function TasksPanel() {
                   <span className={`text-sm font-body leading-tight ${s.included ? 'text-text-primary' : 'text-text-muted line-through'}`}>
                     {s.title}
                   </span>
-                  <span className="ml-2 text-[10px] font-body uppercase tracking-wide text-text-muted/50">
+                  <span className="ml-2 text-[11px] font-body uppercase tracking-wide text-text-muted/50">
                     {s.bucket}
                   </span>
                 </div>
@@ -224,73 +245,112 @@ export function TasksPanel() {
         </div>
       )}
 
-      {/* ── Task columns (normal state) ── */}
-      {showColumns && (
-        <div className="grid grid-cols-3 gap-3 divide-x divide-border-soft">
-          {BUCKETS.map((bucket) => (
-            <div key={bucket} className="px-2 first:pl-0 last:pr-0">
-              <TaskColumn bucket={bucket} tasks={tasks.filter((t) => t.bucket === bucket)} />
-              {addingTo === bucket ? (
-                <div className="mt-2">
-                  <input
-                    autoFocus
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') addTask(bucket); if (e.key === 'Escape') setAddingTo(null) }}
-                    className="w-full text-xs font-body bg-bg-elevated border border-border-medium rounded px-2 py-1 text-text-primary outline-none focus:border-accent-lemon/40"
-                    placeholder="Add task…"
-                  />
-                </div>
-              ) : (
+      {/* ── Collapsible bucket list (single column) ── */}
+      {showBuckets && (
+        <div className="space-y-2">
+          {BUCKETS.map((bucket) => {
+            const bucketTasks = tasks.filter((t) => t.bucket === bucket)
+            const active = bucketTasks.filter((t) => !t.done)
+            const done = bucketTasks.filter((t) => t.done)
+            const isCollapsed = collapsedBuckets[bucket]
+
+            return (
+              <div key={bucket}>
                 <button
                   type="button"
-                  onClick={() => setAddingTo(bucket)}
-                  className="mt-2 text-[11px] text-text-muted hover:text-text-secondary font-body transition-colors w-full text-left"
+                  onClick={() => toggleBucket(bucket)}
+                  className="flex items-center justify-between w-full py-1.5 group"
+                  aria-expanded={!isCollapsed}
                 >
-                  + add
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${BUCKET_DOT[bucket]}`} />
+                    <span className="text-[11px] font-body font-semibold text-text-muted tracking-widest uppercase">
+                      {BUCKET_LABELS[bucket]}
+                    </span>
+                    <span className="text-[11px] font-body text-text-muted/60 lowercase">
+                      {BUCKET_SUBLABEL[bucket]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-text-muted font-body">{active.length}</span>
+                    <span
+                      className={`text-text-muted/40 group-hover:text-text-secondary text-xs transition-transform duration-200 ${
+                        isCollapsed ? '-rotate-90' : 'rotate-0'
+                      }`}
+                      aria-hidden="true"
+                    >
+                      ▾
+                    </span>
+                  </div>
                 </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
 
-      {/* ── Empty state ── */}
-      {(stage === 'idle' || stage === 'picking') && activeTasks.length === 0 && (
-        <div className="py-3 space-y-3">
-          {error && <p className="text-xs font-body text-accent-coral">{error}</p>}
-          {stage === 'idle' && (
-            <p className="text-xs font-body text-text-muted">
-              No tasks yet — use Generate above to scan your history, or add manually.
-            </p>
-          )}
-          <div className="grid grid-cols-3 gap-3 divide-x divide-border-soft mt-1">
-            {BUCKETS.map((bucket) => (
-              <div key={bucket} className="px-2 first:pl-0 last:pr-0">
-                {addingTo === bucket ? (
-                  <input
-                    autoFocus
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') addTask(bucket); if (e.key === 'Escape') setAddingTo(null) }}
-                    className="w-full text-xs font-body bg-bg-elevated border border-border-medium rounded px-2 py-1 text-text-primary outline-none focus:border-accent-lemon/40"
-                    placeholder="Add task…"
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setAddingTo(bucket)}
-                    className="text-[11px] text-text-muted hover:text-text-secondary font-body transition-colors w-full text-left"
-                  >
-                    + add {bucket}
-                  </button>
+                {!isCollapsed && (
+                  <div className="pl-4 space-y-0.5 pb-2">
+                    {active.map((task) => (
+                      <div
+                        key={task.id}
+                        className="group flex items-start gap-2.5 py-1.5 rounded-lg hover:bg-bg-elevated/50 px-2 -mx-2 transition-colors"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => user && toggleDone(user.uid, task.id)}
+                          className="mt-0.5 w-4 h-4 rounded-full border border-border-medium hover:border-accent-lemon flex-shrink-0 transition-colors"
+                          aria-label="Mark complete"
+                        />
+                        <span className="text-[13px] font-body text-text-primary leading-tight">{task.title}</span>
+                      </div>
+                    ))}
+
+                    {done.length > 0 && (
+                      <div className="opacity-40 mt-1">
+                        {done.slice(0, 2).map((task) => (
+                          <div key={task.id} className="flex items-center gap-2.5 py-1 px-2">
+                            <div className="w-4 h-4 rounded-full bg-accent-sage/40 flex-shrink-0" />
+                            <span className="text-[13px] font-body text-text-muted line-through leading-tight">{task.title}</span>
+                          </div>
+                        ))}
+                        {done.length > 2 && (
+                          <p className="text-[11px] font-body text-text-muted/50 pl-8">
+                            +{done.length - 2} more completed
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Inline add */}
+                    {addingTo === bucket ? (
+                      <div className="mt-1 px-2">
+                        <input
+                          autoFocus
+                          value={newTitle}
+                          onChange={(e) => setNewTitle(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') addTask(bucket); if (e.key === 'Escape') setAddingTo(null) }}
+                          className="w-full text-[13px] font-body bg-bg-elevated border border-border-medium rounded px-2 py-1.5 text-text-primary outline-none focus:border-accent-lemon/40"
+                          placeholder="Add task…"
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setAddingTo(bucket)}
+                        className="text-[11px] text-text-muted hover:text-text-secondary font-body transition-colors text-left px-2 py-1"
+                      >
+                        + add
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
+            )
+          })}
+
+          {activeTasks.length === 0 && stage === 'idle' && (
+            <p className="text-[12px] font-body text-text-muted py-2">
+              No tasks yet — use Generate to scan your history.
+            </p>
+          )}
         </div>
       )}
-
     </div>
   )
 }

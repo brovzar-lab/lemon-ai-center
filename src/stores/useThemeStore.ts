@@ -13,10 +13,23 @@ function applyTheme(t: Theme) {
   localStorage.setItem('lemon-theme', t)
 }
 
-const stored = (typeof localStorage !== 'undefined' && localStorage.getItem('lemon-theme')) as Theme | null
+function getInitialTheme(): Theme {
+  // Respect persisted preference first
+  if (typeof localStorage !== 'undefined') {
+    const stored = localStorage.getItem('lemon-theme') as Theme | null
+    if (stored === 'light' || stored === 'dark') return stored
+  }
+  // Fall back to OS-level dark mode preference
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+  return 'light'
+}
+
+const initial = getInitialTheme()
 
 export const useThemeStore = create<ThemeStore>((set) => ({
-  theme: stored || 'light',
+  theme: initial,
   toggle: () =>
     set((s) => {
       const next = s.theme === 'light' ? 'dark' : 'light'
@@ -31,5 +44,5 @@ export const useThemeStore = create<ThemeStore>((set) => ({
 
 // Apply initial theme on load
 if (typeof document !== 'undefined') {
-  applyTheme(stored || 'light')
+  applyTheme(initial)
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { TONE_TIERS } from '../lib/voiceProfile'
+import { X } from 'lucide-react'
 import type { ToneTier } from '../lib/voiceProfile'
 
 interface EmailContext {
@@ -148,7 +149,7 @@ export default function ReplyModal({ email, onClose }: Props) {
         {/* Header */}
         <div className="modal-header">
           <span className="modal-title">Reply to {email.from}</span>
-          <button onClick={onClose} className="modal-close">&times;</button>
+          <button onClick={onClose} className="modal-close" aria-label="Close"><X size={16} /></button>
         </div>
 
         {/* Email summary */}

@@ -69,7 +69,7 @@ ${briefs.join('\n')}`
     return {
       personName: data.name,
       personSlug: slug,
-      daysSince: 0, // Would need Firestore last-contact data for real values
+      daysSince: -1, // TODO: compute from Gmail last-contact timestamps
       lastContactLabel: 'Today',
       flagType: 'stale' as const,
       rankScore: MAX_FLAGS - i,

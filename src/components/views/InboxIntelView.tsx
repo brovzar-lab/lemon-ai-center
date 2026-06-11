@@ -198,7 +198,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
                   <button
                     type="button"
                     onClick={() => setView('deals')}
-                    className="text-[10px] font-body font-medium uppercase tracking-wider text-accent-lemon hover:opacity-80"
+                    className="text-[11px] font-body font-medium uppercase tracking-wider text-accent-lemon hover:opacity-80"
                   >
                     Open deal · {deal.name}
                   </button>
@@ -206,7 +206,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
                   <button
                     type="button"
                     onClick={() => setView('projects')}
-                    className="text-[10px] font-body font-medium uppercase tracking-wider text-accent-lemon hover:opacity-80"
+                    className="text-[11px] font-body font-medium uppercase tracking-wider text-accent-lemon hover:opacity-80"
                   >
                     Open project · {project.title}
                   </button>
@@ -280,17 +280,17 @@ function Lane({
           className="inline-block w-2 h-2 rounded-full"
           style={{ background: accent }}
         />
-        <h3 className="text-[10px] font-body font-bold uppercase tracking-[0.18em] text-text-secondary">
+        <h3 className="text-[11px] font-body font-bold uppercase tracking-[0.18em] text-text-secondary">
           {title}
         </h3>
-        <span className="text-[10px] font-body tabular-nums text-text-muted ml-auto">
+        <span className="text-[11px] font-body tabular-nums text-text-muted ml-auto">
           {count}
         </span>
       </header>
       {isEmpty ? (
         <div className="bg-bg-surface border border-border-soft rounded-xl px-4 py-5 text-center">
           <p className="text-[12px] font-body italic text-text-secondary">{emptyTitle}</p>
-          <p className="text-[10px] font-body text-text-muted mt-1 leading-snug max-w-md mx-auto">
+          <p className="text-[11px] font-body text-text-muted mt-1 leading-snug max-w-md mx-auto">
             {emptyBody}
           </p>
         </div>
@@ -324,7 +324,7 @@ function SlipCard({
     <li className="bg-bg-surface border border-border-soft rounded-xl px-4 py-3 group hover:border-border-medium transition-colors">
       <div className="flex items-start gap-3">
         <span
-          className={`inline-flex items-center text-[9px] font-body font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${priorityClass} flex-shrink-0`}
+          className={`inline-flex items-center text-[11px] font-body font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${priorityClass} flex-shrink-0`}
         >
           {slip.priority}
         </span>
@@ -335,7 +335,7 @@ function SlipCard({
           <p className="text-[11px] font-body text-text-tertiary line-clamp-2 mt-0.5 leading-snug">
             {thread.snippet}
           </p>
-          <div className="flex items-center gap-2 mt-1.5 text-[10px] font-body text-text-muted flex-wrap">
+          <div className="flex items-center gap-2 mt-1.5 text-[11px] font-body text-text-muted flex-wrap">
             <span>{thread.from}</span>
             <span>·</span>
             <span className="font-mono">{ageLabel}</span>
@@ -343,7 +343,7 @@ function SlipCard({
           {footer && <div className="mt-2">{footer}</div>}
         </div>
         {actions && (
-          <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
             {actions}
           </div>
         )}
@@ -370,7 +370,7 @@ function DelegationRow({
         <p className="text-[13px] font-body font-semibold text-text-primary leading-snug">
           {delegation.task}
         </p>
-        <div className="flex items-center gap-2 mt-1 text-[10px] font-body text-text-muted flex-wrap">
+        <div className="flex items-center gap-2 mt-1 text-[11px] font-body text-text-muted flex-wrap">
           <span className="text-accent-blue font-medium">{delegation.person}</span>
           {expected && (
             <>
@@ -393,7 +393,7 @@ function DelegationRow({
       <button
         type="button"
         onClick={onComplete}
-        className="text-[10px] font-body font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-border-soft hover:border-accent-sage/40 hover:text-accent-sage text-text-secondary transition-colors flex-shrink-0"
+        className="text-[11px] font-body font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-border-soft hover:border-accent-sage/40 hover:text-accent-sage text-text-secondary transition-colors flex-shrink-0"
       >
         Mark done
       </button>
@@ -408,7 +408,7 @@ function DealStalling({ deal, onOpen }: { deal: LemonDeal; onOpen: () => void })
         <p className="text-[13px] font-body font-semibold text-text-primary leading-snug">
           {deal.name}
         </p>
-        <div className="flex items-center gap-2 mt-1 text-[10px] font-body text-text-muted">
+        <div className="flex items-center gap-2 mt-1 text-[11px] font-body text-text-muted">
           {deal.counterparty && <span>{deal.counterparty}</span>}
           {!deal.next_action && (
             <span className="text-accent-coral font-medium">No next action set</span>
@@ -418,7 +418,7 @@ function DealStalling({ deal, onOpen }: { deal: LemonDeal; onOpen: () => void })
       <button
         type="button"
         onClick={onOpen}
-        className="text-[10px] font-body font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
+        className="text-[11px] font-body font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
       >
         Open
       </button>
@@ -437,7 +437,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="text-[10px] font-body font-medium uppercase tracking-wider px-2 py-1 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors"
+      className="text-[11px] font-body font-medium uppercase tracking-wider px-2 py-1 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors"
     >
       {children}
     </button>
@@ -458,7 +458,7 @@ function PulseStat({
   return (
     <div className="bg-bg-surface border border-border-soft rounded-xl px-4 py-3">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[10px] font-body font-bold uppercase tracking-wider text-text-muted">
+        <span className="text-[11px] font-body font-bold uppercase tracking-wider text-text-muted">
           {label}
         </span>
         <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
@@ -467,7 +467,7 @@ function PulseStat({
         <span className="font-display text-3xl font-semibold text-text-primary leading-none tabular-nums">
           {value}
         </span>
-        <span className="text-[10px] font-body italic text-text-muted">{hint}</span>
+        <span className="text-[11px] font-body italic text-text-muted">{hint}</span>
       </div>
     </div>
   )

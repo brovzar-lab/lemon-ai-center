@@ -6,7 +6,7 @@ export function WrapupCard() {
 
   const total = tasks.length
   const done = tasks.filter((t) => t.done).length
-  const dropped = 0 // TODO: track dropped tasks
+  // TODO: track dropped tasks — not displaying until real data is available
 
   // Real focus time from store
   const focusMinutes = useFocusModeStore((s) => s.totalFocusMinutes())
@@ -24,7 +24,7 @@ export function WrapupCard() {
         Wrap-up
       </p>
       <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-4">
-        End of Day · Debrief at 6:30PM
+        End of Day · {new Date().getHours() >= 16 ? 'End of day review' : 'Day in progress'}
       </p>
 
       {/* 3-stat row — large display numbers */}
@@ -38,7 +38,7 @@ export function WrapupCard() {
           <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-text-muted mt-1">Deep Focus</p>
         </div>
         <div>
-          <span className="font-display text-3xl font-semibold text-text-primary leading-none block">{dropped}</span>
+          <span className="font-display text-3xl font-semibold text-text-primary leading-none block">&mdash;</span>
           <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-text-muted mt-1">Dropped</p>
         </div>
       </div>

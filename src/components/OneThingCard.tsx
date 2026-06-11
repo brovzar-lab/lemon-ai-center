@@ -2,6 +2,7 @@ import { useBriefStore } from '@/stores/useBriefStore'
 import { useFocusModeStore } from '@/stores/useFocusModeStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { Cite } from './Cite'
+import { ArrowRight } from 'lucide-react'
 import type { Citation } from '@shared/types'
 
 export function OneThingCard() {
@@ -31,12 +32,12 @@ export function OneThingCard() {
 
   return (
     <section
-      className="border-t border-border-medium border-b border-b-border-medium py-6"
+      className="border-l-4 border-l-accent-coral border-t border-border-medium border-b border-b-border-medium py-6 px-4 bg-gradient-to-br from-bg-surface to-bg-elevated shadow-lg shadow-black/5 rounded-r-md"
       data-focus-keep="true"
     >
       {/* Section label */}
-      <p className="text-[10px] font-body font-bold uppercase tracking-[0.3em] text-accent-coral mb-3">
-        ↓ The One Thing Right Now
+      <p className="text-[11px] font-body font-bold uppercase tracking-[0.3em] text-accent-coral mb-3">
+        The One Thing Right Now
       </p>
 
       {oneThing ? (
@@ -46,7 +47,7 @@ export function OneThingCard() {
             {oneThing.text}
             {oneThing.citations.map((cite: Citation, j: number) => (
               <Cite key={j} source={cite}>
-                <sup className="text-[9px] font-body font-semibold text-accent-coral ml-1">{j + 1}</sup>
+                <sup className="text-[11px] font-body font-semibold text-accent-coral ml-1">{j + 1}</sup>
               </Cite>
             ))}
           </h2>
@@ -66,10 +67,10 @@ export function OneThingCard() {
             <button
               type="button"
               onClick={handleStartNow}
-              className="text-[11px] font-body font-bold uppercase tracking-[0.15em] px-5 py-2.5 bg-accent-coral text-white hover:bg-accent-coral/90 transition-colors min-h-[40px]"
+              className="text-[11px] font-body font-bold uppercase tracking-[0.15em] px-5 py-2.5 bg-accent-coral text-white hover:bg-accent-coral/90 transition-colors min-h-[40px] flex items-center gap-1.5 animate-[breathe_3s_ease-in-out_infinite]"
               aria-label="Start working on this task now"
             >
-              Start Now →
+              Start Now <ArrowRight size={14} />
             </button>
             <button
               type="button"
@@ -82,10 +83,10 @@ export function OneThingCard() {
             <button
               type="button"
               onClick={handleDelegate}
-              className="text-[11px] font-body font-bold uppercase tracking-[0.15em] px-4 py-2.5 border border-border-medium text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors min-h-[40px]"
+              className="text-[11px] font-body font-bold uppercase tracking-[0.15em] px-4 py-2.5 border border-border-medium text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors min-h-[40px] flex items-center gap-1.5"
               aria-label="Open AI assistant to delegate this task"
             >
-              Hand to Crisanto →
+              Delegate <ArrowRight size={14} />
             </button>
           </div>
         </>

@@ -11,6 +11,7 @@ import { useFocusModeStore } from '@/stores/useFocusModeStore'
 import { useCaptureStore } from '@/stores/useCaptureStore'
 import { useActionLogStore } from '@/stores/useActionLogStore'
 import { useFeatureFlags } from '@/hooks/useFeatureFlags'
+import { usePollingEngine } from '@/hooks/usePollingEngine'
 import { useViewStore } from '@/stores/useViewStore'
 import { WorkspaceTabs } from './workspace/WorkspaceTabs'
 import { DealsView } from './views/DealsView'
@@ -44,8 +45,6 @@ import { MorningOverview } from './MorningOverview'
 import { OneThingCard } from './OneThingCard'
 import { CalendarDayView } from './CalendarDayView'
 import { InboxSummary } from './InboxSummary'
-import { DecisionCoach } from './DecisionCoach'
-import { CaptureReview } from './CaptureReview'
 import { WrapupCard } from './WrapupCard'
 import { AudioPlayer } from './AudioPlayer'
 import { GlobalCapture } from './GlobalCapture'
@@ -55,9 +54,9 @@ import { ExecutiveSummary } from './ExecutiveSummary'
 import { CorrectionInput } from './CorrectionInput'
 import { PriorityStack } from './PriorityStack'
 import { RelationshipPanel } from './RelationshipPanel'
-import { EisenhowerMatrix } from './EisenhowerMatrix'
 import { WaitingOnPanel } from './WaitingOnPanel'
 import { DelegationQueue } from './DelegationQueue'
+import { CollapsibleSection } from './CollapsibleSection'
 import { useDealsStore } from '@/stores/lemon/useDealsStore'
 import { useTodayStore } from '@/stores/useTodayStore'
 import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
@@ -65,6 +64,7 @@ import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStor
 
 export function Dashboard() {
   const { user, isAuthenticated } = useAuthStore()
+  usePollingEngine()
   const { refresh: refreshBrief } = useBriefStore()
   const fetchInbox = useInboxStore((s) => s.fetch)
   const fetchCalendar = useCalendarStore((s) => s.fetch)
@@ -88,6 +88,10 @@ export function Dashboard() {
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile>(DEFAULT_VOICE_PROFILE)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replyEmail, setReplyEmail] = useState<{ threadId: string; from: string; fromEmail: string; subject: string; snippet: string } | null>(null)
+
+  // Time-based visibility
+  const hour = new Date().getHours()
+  const showWrapup = hour >= 16 // Show wrapup after 4pm
 
   useEffect(() => {
     if (!isAuthenticated || !user) return
@@ -157,7 +161,8 @@ export function Dashboard() {
       {newDashboard ? (
         <FocusModeProvider>
           <main
-            className="max-w-[1400px] mx-auto px-6 pb-16"
+            id="main-content"
+            className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16"
             data-focus={focusActive ? 'on' : 'off'}
           >
             <EditorialMasthead />
@@ -165,39 +170,75 @@ export function Dashboard() {
             {opsViews && <WorkspaceTabs />}
 
             {!opsViews || view === 'briefing' ? (
-              /* ══ 3-COLUMN EDITORIAL GRID ══ */
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2">
+              /* ══ REBALANCED LAYOUT: Sidebar (1fr) + Wide Center (2fr) ══ */
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 lg:gap-8 mt-2">
 
-                {/* ── LEFT COLUMN: The Briefing ── */}
+                {/* ── LEFT SIDEBAR: Briefing ── */}
                 <section aria-label="Morning briefing" className="flex flex-col gap-0 animate-in">
-                  <MorningOverview />
+                  <CollapsibleSection
+                    id="morning-overview"
+                    title="Morning Overview"
+                    autoCollapseOutside={{ start: 5, end: 12 }}
+                  >
+                    <MorningOverview />
+                  </CollapsibleSection>
                   <AudioPlayer />
-                  <BrainPanel />
-                  <BriefPanel />
+                  <CollapsibleSection id="brain" title="Brain" defaultOpen={false}>
+                    <BrainPanel />
+                  </CollapsibleSection>
+                  <CollapsibleSection id="full-brief" title="Full Brief" defaultOpen={false}>
+                    <BriefPanel />
+                  </CollapsibleSection>
                 </section>
 
-                {/* ── CENTER COLUMN: Executive Summary + The One Thing + Calendar ── */}
-                <section aria-label="Priority and schedule" className="flex flex-col gap-0 animate-in animate-in-delay-1">
-                  <PriorityStack />
-                  <ExecutiveSummary />
+                {/* ── CENTER (Wide): Hero + Priorities + Calendar + Inbox + Tasks ── */}
+                <section aria-label="Command center" className="flex flex-col gap-0 animate-in animate-in-delay-1">
+                  {/* HERO: The One Thing — always visible, always first */}
                   <OneThingCard data-focus-keep="true" />
-                  <CalendarDayView />
-                  <RelationshipPanel />
-                </section>
 
-                {/* ── RIGHT COLUMN: Inbox + Tasks (email archaeology) + Decisions + Captures + Wrapup ── */}
-                <aside aria-label="Inbox and actions" className="flex flex-col gap-0 animate-in animate-in-delay-2">
-                  <InboxSummary onReply={handleReply} onCreateTask={handleCreateTask} />
-                  <EisenhowerMatrix data={null} />
-                  <div className="mt-6">
-                    <TasksPanel />
+                  {/* Priority + Calendar side by side on desktop, stacked on tablet */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                    <div>
+                      <PriorityStack />
+                      <RelationshipPanel />
+                    </div>
+                    <div>
+                      <CalendarDayView />
+                    </div>
                   </div>
+
+                  <hr className="ed-rule my-4" />
+
+                  {/* Executive Summary */}
+                  <CollapsibleSection id="exec-summary" title="Executive Summary">
+                    <ExecutiveSummary />
+                  </CollapsibleSection>
+
+                  <hr className="ed-rule my-2" />
+
+                  {/* Inbox — smart grouped */}
+                  <InboxSummary onReply={handleReply} onCreateTask={handleCreateTask} />
+
+                  {/* Tasks — collapsible buckets */}
+                  <CollapsibleSection id="tasks" title="Tasks">
+                    <TasksPanel />
+                  </CollapsibleSection>
+
+                  {/* Waiting On + Delegations — only if populated */}
                   <WaitingOnPanel items={[]} />
                   <DelegationQueue delegations={[]} />
-                  <DecisionCoach />
-                  <CaptureReview />
-                  <WrapupCard />
-                </aside>
+
+                  {/* Wrapup — only visible after 4pm */}
+                  {showWrapup && (
+                    <CollapsibleSection
+                      id="wrapup"
+                      title="End of Day"
+                      autoCollapseOutside={{ start: 16, end: 23 }}
+                    >
+                      <WrapupCard />
+                    </CollapsibleSection>
+                  )}
+                </section>
               </div>
             ) : view === 'inbox' ? (
               <InboxIntelView onReply={handleReply} />

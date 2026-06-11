@@ -191,7 +191,7 @@ export function AudioPlayer() {
           Line {lineIndex + 1} of {lines.length || 1}
         </p>
         <p className="font-display text-[13px] italic text-text-secondary leading-relaxed">
-          "{transcript || (lines[0] ? `Hey Billy, good morning. ${lines[0]}` : 'Loading brief...')}"
+          "{transcript || (lines[0] ? `${new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}. ${lines[0]}` : 'Loading brief...')}"
         </p>
       </div>
 

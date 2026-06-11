@@ -1,3 +1,5 @@
+import { Clock } from 'lucide-react'
+
 export interface WaitingOnItem {
   person: string
   subject: string
@@ -17,7 +19,7 @@ export function WaitingOnPanel({ items }: { items: WaitingOnItem[] }) {
   return (
     <section aria-label="Waiting on replies" className="pb-4">
       <div className="ed-section-label mb-3 flex items-center gap-2">
-        <span className="text-text-muted">⏳</span>
+        <Clock size={14} className="text-text-muted" />
         <span>Waiting On</span>
         <span className="text-[10px] font-body text-text-muted ml-auto">
           {items.length} pending

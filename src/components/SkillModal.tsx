@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useTaskStore } from '@/stores/useTaskStore'
@@ -119,7 +120,7 @@ export function SkillModal() {
               <p className="text-[11px] font-body text-text-muted mt-0.5">{skill.description}</p>
             )}
           </div>
-          <button type="button" aria-label="Close" onClick={closeModal} className="text-text-muted hover:text-text-secondary text-xl leading-none">×</button>
+          <button type="button" aria-label="Close" onClick={closeModal} className="text-text-muted hover:text-text-secondary leading-none p-1"><X size={18} /></button>
         </div>
 
         <textarea

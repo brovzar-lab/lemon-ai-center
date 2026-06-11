@@ -4,6 +4,12 @@ import { Dashboard } from '@/components/Dashboard'
 export function App() {
   return (
     <AuthGate>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-bg-base focus:px-4 focus:py-2 focus:rounded focus:ring-2 focus:ring-accent-coral"
+      >
+        Skip to content
+      </a>
       <Dashboard />
     </AuthGate>
   )

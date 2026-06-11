@@ -28,8 +28,10 @@
     "googleapis": "^140.0.0",
     "gray-matter": "^4.0.3",
     "helmet": "^8.1.0",
+    "lucide-react": "^1.17.0",
     "module-alias": "^2.3.4",
     "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zustand": "^4.5.0"
@@ -43,6 +45,7 @@
     "@types/express-session": "^1.17.10",
     "@types/flexsearch": "^0.7.6",
     "@types/node": "^20.11.5",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "@types/supertest": "^6.0.2",

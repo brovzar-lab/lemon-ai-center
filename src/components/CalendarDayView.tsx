@@ -1,14 +1,33 @@
 import { useCalendarStore } from '@/stores/useCalendarStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { ArrowRight } from 'lucide-react'
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+function isPast(iso: string): boolean {
+  return new Date(iso) < new Date()
+}
+
+function isNext(events: { start: string; end: string }[], idx: number): boolean {
+  // The first event whose end time is in the future
+  return !isPast(events[idx].end) && (idx === 0 || isPast(events[idx - 1].end))
+}
+
+function getDuration(start: string, end: string): string {
+  const mins = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000)
+  if (mins < 60) return `${mins}m`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m ? `${h}h ${m}m` : `${h}h`
 }
 
 export function CalendarDayView() {
   const events = useCalendarStore((s) => s.events)
   const loading = useCalendarStore((s) => s.loading)
   const openModal = useUIStore((s) => s.openModal)
+  const setActiveContext = useUIStore((s) => s.setActiveContext)
 
   const required = events.filter((e) => e.isRequired)
 
@@ -16,74 +35,110 @@ export function CalendarDayView() {
     <section className="mt-6" aria-label="Today's calendar">
       {/* Section label */}
       <div className="flex items-center justify-between mb-1">
-        <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+        <p className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
           Today's Calendar
         </p>
         {required.length > 0 && (
-          <span className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-accent-coral flex items-center gap-1">
+          <span className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-accent-coral flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-accent-coral inline-block" aria-hidden="true" />
-            Required
+            {required.length} required
           </span>
         )}
       </div>
 
-      <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-4">
-        The Day Ahead · Chronological
-      </p>
-
-      {/* M6: Loading skeleton */}
+      {/* Loading skeleton */}
       {loading && events.length === 0 ? (
-        <div className="grid grid-cols-2 gap-3" aria-busy="true" aria-label="Loading calendar events">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="p-3 border border-border-soft">
-              <div className="skeleton skeleton-line w-20" />
-              <div className="skeleton skeleton-line w-full" />
-              <div className="skeleton skeleton-line skeleton-line-short" />
+        <div className="space-y-3 mt-4" aria-busy="true" aria-label="Loading calendar events">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-3">
+              <div className="skeleton w-14 h-4 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="skeleton skeleton-line w-3/4" />
+                <div className="skeleton skeleton-line skeleton-line-short" />
+              </div>
             </div>
           ))}
         </div>
       ) : events.length === 0 ? (
-        <p className="text-[11px] font-body text-text-muted italic">No meetings scheduled today.</p>
+        <p className="text-[12px] font-body text-text-muted italic mt-3">No meetings scheduled today.</p>
       ) : (
-        <>
-          <p className="text-[11px] font-body text-text-tertiary mb-4">
-            {events.length} meetings · pick one to prep for
-          </p>
+        <div className="mt-4" role="list" aria-label="Today's meetings">
+          {events.map((event, idx) => {
+            const past = isPast(event.end)
+            const next = isNext(events, idx)
 
-          {/* 2-column meeting grid */}
-          <div className="grid grid-cols-2 gap-3" role="list" aria-label="Today's meetings">
-            {events.map((event) => (
+            return (
               <button
                 key={event.id}
                 type="button"
-                onClick={() => openModal('meeting-prep')}
-                className="text-left p-3 border border-border-soft hover:border-border-medium transition-colors group"
+                onClick={() => {
+                  setActiveContext({ kind: 'meeting', id: event.id })
+                  openModal('meeting-prep')
+                }}
+                className={`w-full text-left flex gap-3 py-3 group transition-colors relative ${
+                  past ? 'opacity-40' : ''
+                } ${next ? 'bg-bg-elevated/50 -mx-3 px-3 rounded-lg border border-accent-lemon/20' : ''}`}
                 role="listitem"
-                aria-label={`${formatTime(event.start)} — ${event.title}${event.isRequired ? ' (required)' : ''}`}
+                aria-label={`${formatTime(event.start)} — ${event.title}${event.isRequired ? ' (required)' : ''}${next ? ' (next)' : ''}`}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[13px] font-body font-semibold tabular-nums text-text-primary">
+                {/* Timeline spine */}
+                <div className="flex flex-col items-center flex-shrink-0 w-14">
+                  <span className={`text-[13px] font-body font-semibold tabular-nums ${
+                    next ? 'text-accent-lemon' : 'text-text-primary'
+                  }`}>
                     {formatTime(event.start)}
                   </span>
-                  {event.isRequired && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent-coral flex-shrink-0" aria-hidden="true" />
+                  <span className="text-[11px] font-body text-text-tertiary">
+                    {getDuration(event.start, event.end)}
+                  </span>
+                </div>
+
+                {/* Dot + line */}
+                <div className="flex flex-col items-center flex-shrink-0 pt-1.5">
+                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                    next ? 'bg-accent-lemon ring-2 ring-accent-lemon/20' :
+                    event.isRequired ? 'bg-accent-coral' :
+                    past ? 'bg-text-muted/30' : 'bg-text-muted/60'
+                  }`} aria-hidden="true" />
+                  {idx < events.length - 1 && (
+                    <div className="w-px flex-1 min-h-[16px] bg-border-soft mt-1" aria-hidden="true" />
                   )}
                 </div>
-                <p className="text-[13px] font-body font-medium text-text-primary leading-snug mb-1">
-                  {event.title}
-                  <span className="text-text-muted ml-1 group-hover:text-accent-coral transition-colors" aria-hidden="true">→</span>
-                </p>
-                <p className="text-[10px] font-body text-text-muted">
-                  {event.isRequired ? 'Required' : 'Optional'} · {event.attendees?.slice(0, 2).join(', ')}
-                  {event.attendees && event.attendees.length > 2 && ` +${event.attendees.length - 2}`}
-                </p>
-                <p className="text-[10px] font-body text-text-tertiary mt-0.5">
-                  Prep: {event.prepNotes || 'none'}
-                </p>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0 pb-1">
+                  <p className={`text-[14px] font-body font-medium leading-snug ${
+                    next ? 'text-text-primary' : 'text-text-primary'
+                  }`}>
+                    {event.title}
+                    {next && (
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-accent-lemon">
+                        Next
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-[11px] font-body text-text-muted mt-0.5">
+                    {event.isRequired ? 'Required' : 'Optional'}
+                    {event.meetLink && ' · Video'}
+                    {event.attendees && event.attendees.length > 0 && (
+                      <> · {event.attendees.slice(0, 3).join(', ')}
+                        {event.attendees.length > 3 && ` +${event.attendees.length - 3}`}
+                      </>
+                    )}
+                  </p>
+                  {event.prepNotes && (
+                    <p className="text-[11px] font-body text-text-tertiary mt-0.5 italic">
+                      {event.prepNotes}
+                    </p>
+                  )}
+                </div>
+
+                {/* Hover arrow */}
+                <span className="text-text-muted ml-1 group-hover:text-accent-coral transition-colors inline-flex items-center" aria-hidden="true"><ArrowRight size={12} /></span>
               </button>
-            ))}
-          </div>
-        </>
+            )
+          })}
+        </div>
       )}
     </section>
   )

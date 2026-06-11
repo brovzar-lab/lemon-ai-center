@@ -18,7 +18,6 @@ import {
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { briefLimit, chatLimit, sparkLimit } from '../middleware/rateLimit'
-import { seeds } from '@shared/seeds'
 import type { Citation, Claim } from '@shared/types'
 
 export const claudeRouter = Router()
@@ -262,7 +261,13 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
     const cacheDoc = await db.collection(`users/${uid}/briefs`).doc(briefId).get()
     if (cacheDoc.exists) {
       const cached = cacheDoc.data()!
-      return res.json({ data: { ...cached, isStale: false }, streaming: false })
+      // Time-based TTL: regenerate if brief is older than 4 hours
+      const cachedGeneratedAt = cached.generatedAt?.toDate?.() ?? cached.generatedAt
+      const briefAgeMs = cachedGeneratedAt ? Date.now() - new Date(cachedGeneratedAt).getTime() : Infinity
+      if (briefAgeMs < 4 * 60 * 60 * 1000) {
+        return res.json({ data: { ...cached, isStale: false }, streaming: false })
+      }
+      // Brief is older than 4 hours — fall through to regeneration
     }
   }
 
@@ -292,8 +297,8 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
 
   const sendEvent = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
 
-  // Send stale/seed data immediately
-  const initial = staleBrief ?? { jarvis: seeds.brief.jarvis, billy: seeds.brief.billy, isDemo: true }
+  // Send stale data or indicate generation in progress (no demo seed fallback)
+  const initial = staleBrief ?? { jarvis: '', billy: '', isDemo: false, isGenerating: true }
   sendEvent({ type: 'cached', ...initial, isStale: true })
 
   const anthropic = getAnthropicClient()

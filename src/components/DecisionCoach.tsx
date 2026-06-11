@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useBriefStore } from '@/stores/useBriefStore'
+import { ArrowRight } from 'lucide-react'
 import type { DecisionOption } from '@shared/types'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
@@ -90,7 +91,7 @@ export function DecisionCoach() {
             className="text-[10px] font-body font-semibold text-accent-coral hover:underline mt-2 uppercase tracking-[0.15em]"
             aria-label="Change your decision"
           >
-            Change →
+            Change <ArrowRight size={12} className="inline" />
           </button>
         </div>
       ) : options ? (

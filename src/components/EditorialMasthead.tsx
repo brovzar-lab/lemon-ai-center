@@ -7,6 +7,7 @@ import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
 import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
 import { useFeatureFlags } from '@/hooks/useFeatureFlags'
 import { useViewStore } from '@/stores/useViewStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 import {
   detectSlippingThreads,
   detectOverdueDelegations,
@@ -28,6 +29,7 @@ export function EditorialMasthead() {
   const delegations = useLemonDelegationsStore((s) => s.delegations)
   const { opsViews } = useFeatureFlags()
   const setView = useViewStore((s) => s.setView)
+  const authUser = useAuthStore((s) => s.user)
 
   const slipCount =
     detectSlippingThreads(threads, deals, projects).length +
@@ -44,11 +46,22 @@ export function EditorialMasthead() {
 
   const timeStr = today.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false })
 
+  // Extract city name from timezone (e.g., 'America/Mexico_City' -> 'Mexico City')
+  const tzCity = (() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const city = tz.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'
+      return city
+    } catch {
+      return 'Local'
+    }
+  })()
+
   return (
     <header className="pt-6 pb-4">
       {/* Top stat line */}
       <p className="text-[10px] font-body font-bold uppercase tracking-[0.3em] text-text-muted mb-3">
-        Vol {dayOfYear} · {DAYS_SHORT[today.getDay()]} {MONTHS_SHORT[today.getMonth()]} {today.getDate()} · CDMX {timeStr} · {threads.length} emails read · 0 drafts queued
+        Vol {dayOfYear} · {DAYS_SHORT[today.getDay()]} {MONTHS_SHORT[today.getMonth()]} {today.getDate()} · {tzCity} {timeStr} · {threads.length} emails read
       </p>
 
       {/* Double rule */}
@@ -61,7 +74,7 @@ export function EditorialMasthead() {
             Executive Briefing
           </h1>
           <p className="font-display text-sm italic text-text-tertiary mt-1">
-            By your chief of staff · for Billy Rovzar
+            By your chief of staff · for {authUser?.displayName || 'CEO'}
           </p>
         </div>
 

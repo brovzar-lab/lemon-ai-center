@@ -42,6 +42,19 @@
   --color-border-strong: rgba(200, 160, 110, 0.22);
 }
 
+/* ═══════════════════════════════════════════
+   THEME SWITCH TRANSITIONS
+   ═══════════════════════════════════════════ */
+html {
+  transition: background-color 300ms ease;
+}
+
+html *,
+html *::before,
+html *::after {
+  transition: background-color 200ms ease, border-color 200ms ease, color 150ms ease;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -88,9 +101,10 @@ a:focus-visible,
 
 /* m2: Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  html,
+  html *,
+  html *::before,
+  html *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -108,6 +122,23 @@ a:focus-visible,
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* E1b: Exit animations for drawers/modals */
+@keyframes slideDown {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(8px); opacity: 0; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* E3: Breathing CTA pulse for One Thing card */
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-accent-coral); }
+  50% { box-shadow: 0 0 0 4px transparent; }
 }
 
 .animate-in {
@@ -132,16 +163,16 @@ a:focus-visible,
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .skeleton-line {
-  height: 14px;
-  margin-bottom: 8px;
+  height: 10px;
+  margin-bottom: 6px;
 }
 
 .skeleton-line-short {
-  width: 60%;
+  width: 55%;
 }
 
 @layer components {
