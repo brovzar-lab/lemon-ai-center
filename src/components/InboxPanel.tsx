@@ -1,6 +1,7 @@
 import { useInboxStore } from '@/stores/useInboxStore'
 import { ThreadList } from './ThreadList'
 import { TriageMode } from './TriageMode'
+import { ArrowRight } from 'lucide-react'
 import type { InboxThread } from '@shared/types'
 
 interface InboxPanelProps {
@@ -17,7 +18,7 @@ export function InboxPanel({ onReply, onCreateTask }: InboxPanelProps) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase">Inbox</h2>
           <button type="button" onClick={enterTriage} className="text-[11px] font-body font-medium text-accent-lemon hover:opacity-80 transition-opacity">
-            Triage →
+            Triage <ArrowRight size={12} className="inline" />
           </button>
         </div>
         {loading ? (

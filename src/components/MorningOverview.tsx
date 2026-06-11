@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useBriefStore } from '@/stores/useBriefStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { Cite } from './Cite'
+import { ArrowRight } from 'lucide-react'
 import type { Claim, Citation } from '@shared/types'
 
 /** Render a claim's text with inline citation annotations */
@@ -84,7 +85,7 @@ export function MorningOverview() {
                   <CitedText claim={claim} />
                 </p>
                 <p className="text-[10px] font-body text-accent-coral/70 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Click to discuss with Billy AI →
+                  Click to discuss with Billy AI <ArrowRight size={12} className="inline" />
                 </p>
               </div>
             </li>

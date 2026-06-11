@@ -1,4 +1,5 @@
 import { useCaptureStore } from '@/stores/useCaptureStore'
+import { ArrowRight } from 'lucide-react'
 import type { Capture } from '@shared/types'
 
 type CaptureKind = Capture['kind']
@@ -56,7 +57,7 @@ export function CaptureReview() {
             className="mt-3 text-[11px] font-body font-semibold text-accent-coral hover:underline uppercase tracking-[0.15em] min-h-[36px]"
             aria-label={`Triage all ${todayCaptures.length} captures`}
           >
-            Triage All {todayCaptures.length} →
+            Triage All {todayCaptures.length} <ArrowRight size={12} className="inline" />
           </button>
         </>
       ) : (

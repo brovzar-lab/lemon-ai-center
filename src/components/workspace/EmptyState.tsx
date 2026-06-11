@@ -1,3 +1,5 @@
+import { ArrowRight } from 'lucide-react'
+
 interface EmptyStateProps {
   title: string
   body?: string
@@ -21,7 +23,7 @@ export function EmptyState({ title, body, cta }: EmptyStateProps) {
           onClick={cta.onClick}
           className="mt-4 text-[11px] font-body font-medium uppercase tracking-wider text-accent-lemon hover:opacity-80 transition-opacity"
         >
-          {cta.label} →
+          {cta.label} <ArrowRight size={12} className="inline" />
         </button>
       )}
     </div>

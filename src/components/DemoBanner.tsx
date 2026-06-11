@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/useAuthStore'
+import { ArrowRight } from 'lucide-react'
 
 export function DemoBanner() {
   const isDemo = useAuthStore((s) => s.isDemo)
@@ -13,7 +14,7 @@ export function DemoBanner() {
         href="/auth/google/start"
         className="text-xs font-body font-medium text-accent-lemon hover:opacity-80 transition-opacity"
       >
-        Sign in with Google →
+        Sign in with Google <ArrowRight size={12} className="inline" />
       </a>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useSparkStore } from '@/stores/useSparkStore'
+import { ArrowRight } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
 
 export function SparkCard() {
@@ -24,7 +25,7 @@ export function SparkCard() {
         onClick={() => fetch()}
         className="mt-3 self-start text-[11px] font-body text-text-muted hover:text-accent-lemon transition-colors"
       >
-        new spark →
+        new spark <ArrowRight size={12} className="inline" />
       </button>
     </div>
   )

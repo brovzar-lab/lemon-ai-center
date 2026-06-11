@@ -1,3 +1,5 @@
+import { ArrowRight } from 'lucide-react'
+
 export interface DelegationExtracted {
   person: string
   role: string
@@ -20,7 +22,7 @@ export function DelegationQueue({ delegations }: { delegations: DelegationExtrac
   return (
     <section aria-label="Delegation queue" className="pb-4">
       <div className="ed-section-label mb-3 flex items-center gap-2">
-        <span className="text-text-muted">→</span>
+        <ArrowRight size={12} className="text-text-muted" />
         <span>To Delegate</span>
         <span className="text-[10px] font-body text-text-muted ml-auto">
           {delegations.length} item{delegations.length !== 1 ? 's' : ''}
@@ -67,7 +69,7 @@ export function DelegationQueue({ delegations }: { delegations: DelegationExtrac
             {/* Action — appears on hover */}
             <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button className="text-[10px] font-body text-accent-lemon hover:text-accent-coral transition-colors">
-                Send to {d.person} →
+                Send to {d.person} <ArrowRight size={12} className="inline" />
               </button>
             </div>
           </li>
