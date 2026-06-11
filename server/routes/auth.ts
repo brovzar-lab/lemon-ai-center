@@ -48,7 +48,7 @@ authRouter.get('/google/start', (req, res) => {
       access_type: 'offline',
       scope: SCOPES,
       state,
-      prompt: 'consent',
+      prompt: 'select_account consent',
       login_hint: process.env.ALLOWED_EMAILS?.split(',')[0] || '',
       hd: 'lemonfilms.com',
     })
