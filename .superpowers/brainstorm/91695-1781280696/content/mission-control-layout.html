@@ -1,0 +1,119 @@
+<h2>Mission Control — which layout is home?</h2>
+<p class="subtitle">Three directions for the new home screen, mocked with your real world. Same data in all three — what differs is hierarchy and density. Click the one that feels right.</p>
+
+<style>
+  .mc { background:#241a14; border-radius:10px; padding:14px; font-family:Georgia,serif; color:#f2e8d8; font-size:11px; line-height:1.45; }
+  .mc * { box-sizing:border-box; }
+  .mc .gold { color:#f5c518; }
+  .mc .dim { color:#a89b8a; }
+  .mc .red { color:#e07856; }
+  .mc .panel { background:#2e2219; border:1px solid #3d2f23; border-radius:8px; padding:10px; margin-bottom:8px; }
+  .mc .ttl { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:#a89b8a; margin-bottom:6px; }
+  .mc .bar { height:6px; background:#3d2f23; border-radius:3px; overflow:hidden; margin:4px 0; }
+  .mc .bar > div { height:100%; background:#f5c518; }
+  .mc .row { display:flex; gap:8px; }
+  .mc .col { flex:1; min-width:0; }
+  .mc .chip { display:inline-block; background:#3d2f23; border-radius:4px; padding:1px 6px; margin:1px 2px 1px 0; font-size:9px; color:#d8c9b4; }
+  .mc .hot { background:#4a2a20; color:#e07856; }
+  .mc .strip { display:flex; gap:6px; background:#1c1410; border-radius:8px; padding:8px 10px; margin-bottom:8px; align-items:center; flex-wrap:wrap; }
+</style>
+
+<div class="options">
+
+  <div class="option" data-choice="war-room" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>The War Room — dense command grid</h3>
+      <p>Everything visible at once. Five fronts as columns: Fund · Slate · Shows · Deals · You. Maximum information, CEO-terminal energy. Trades calm for total awareness.</p>
+      <div class="mc">
+        <div class="strip">
+          <span class="red">⬤ OXIDO Yr-2 funding: 567 days</span>
+          <span class="gold">⬤ ADVISOR: You haven't touched Matadero in 3 weeks — it blocks slate position 4</span>
+        </div>
+        <div class="row">
+          <div class="col panel"><div class="ttl">Fund — Lemon Trust I</div>
+            <b class="gold">$182M / $300M MXN</b>
+            <div class="bar"><div style="width:61%"></div></div>
+            <span class="dim">GBM: docs in review · Cinépolis: mtg Fri</span>
+          </div>
+          <div class="col panel"><div class="ttl">Slate — 7 scripts</div>
+            Papá en la Luna <span class="chip">draft 3</span><br>
+            Matadero <span class="chip hot">stale 21d</span><br>
+            La Cigüeña <span class="chip">outline</span>
+          </div>
+          <div class="col panel"><div class="ttl">Shows</div>
+            Las Azules S2 <span class="chip">post</span><br>
+            Los Corruptores <span class="chip">delivery</span>
+          </div>
+          <div class="col panel"><div class="ttl">Deals</div>
+            Magnetic Labs <span class="chip">closed</span><br>
+            Spain ×3 <span class="chip hot">stalled</span>
+          </div>
+          <div class="col panel"><div class="ttl">You</div>
+            Burnout: <b class="red">71</b>/100<br>
+            <span class="dim">11 mtgs this wk · 2 late nights</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col panel" style="flex:2"><div class="ttl">Today</div>10:00 GBM follow-up · 13:00 Las Azules mix review · One Thing: send trust docs to Mauricio</div>
+          <div class="col panel"><div class="ttl">Waiting on</div>Erica: budget v4 <span class="chip hot">overdue 3d</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="spine" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>The Spine — editorial, ranked feed</h3>
+      <p>Keeps your warm editorial DNA. The Advisor speaks first, then the five fronts stack as wide bands ranked by what needs you most <em>today</em>. Order changes daily — the app re-ranks itself. Calm, one-thing-at-a-time.</p>
+      <div class="mc">
+        <div class="panel" style="border-left:3px solid #f5c518">
+          <div class="ttl">Advisor · Thursday June 12</div>
+          <b>Three things deserve you today.</b> <span class="dim">The GBM docs are the bottleneck on $118M of the raise — finish them before noon. Matadero is now your most-avoided script (21 days). And you booked meetings over both writing blocks this week.</span>
+        </div>
+        <div class="panel"><div class="ttl">1 · Fund raise <span class="gold">— needs you</span></div>
+          <b class="gold">$182M / $300M MXN (61%)</b>
+          <div class="bar"><div style="width:61%"></div></div>
+          <span class="dim">Next: trust docs → Mauricio (GBM) · Cinépolis meeting Friday · 2 investor threads slipping</span>
+        </div>
+        <div class="panel"><div class="ttl">2 · Writing — your 7 scripts</div>
+          Matadero <span class="chip hot">21d untouched</span> Papá en la Luna <span class="chip">draft 3 · on pace</span> <span class="dim">+5 more →</span>
+        </div>
+        <div class="panel"><div class="ttl">3 · Shows · 4 · Deals · 5 · You</div>
+          <span class="dim">Quiet today — Las Azules on track, Spain unchanged, burnout 71 and rising ↗</span>
+        </div>
+        <div class="panel"><div class="ttl">Today</div>10:00 GBM · 13:00 mix review · <span class="gold">One Thing: send trust docs</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="cockpit" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>The Cockpit — persistent status bar + two columns</h3>
+      <p>A thin always-on status bar (fund %, deadline countdowns, slipping count, burnout) lives on top of <em>every</em> view. Home splits in two: Business left, Today right. Status bar follows you into Deals, Projects, everywhere.</p>
+      <div class="mc">
+        <div class="strip" style="justify-content:space-between">
+          <span class="gold">FUND 61%</span><span class="red">OXIDO 567d</span><span>SLIPPING 4</span><span class="red">BURNOUT 71↗</span><span class="dim">scan 04:30 ✓</span>
+        </div>
+        <div class="row">
+          <div class="col panel">
+            <div class="ttl">Business</div>
+            <b class="gold">Lemon Trust I — $182M/$300M</b>
+            <div class="bar"><div style="width:61%"></div></div>
+            Matadero <span class="chip hot">stale</span> · Spain <span class="chip hot">stalled</span><br>
+            <span class="dim">Las Azules S2 post · Corruptores delivery</span>
+          </div>
+          <div class="col panel">
+            <div class="ttl">Today</div>
+            <span class="gold">One Thing: send trust docs to Mauricio</span><br>
+            10:00 GBM follow-up · 13:00 mix review<br>
+            <span class="dim">Advisor: protect tomorrow's writing block — Matadero, 21 days.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

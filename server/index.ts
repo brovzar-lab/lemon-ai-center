@@ -3,7 +3,6 @@ import 'dotenv/config'
 import express from 'express'
 import path from 'path'
 import crypto from 'crypto'
-import cron from 'node-cron'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -28,8 +27,10 @@ import { tasksRouter } from './routes/tasks'
 import { todayRouter } from './routes/today'
 import { readyRouter } from './routes/ready'
 import { scanRouter } from './routes/scan'
+import { engineRouter } from './routes/engine'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
+import { initEngine } from './lib/engine'
 import { requireAuth } from './middleware/requireAuth'
 
 export const app = express()
@@ -148,6 +149,7 @@ app.use('/api/corrections', correctionsRouter)
 app.use('/api/tasks', tasksRouter)
 app.use('/api', todayRouter)
 app.use('/api/scan', scanRouter)
+app.use('/api/engine', engineRouter)
 
 if (isProd) {
   // Use process.cwd() — always the project root regardless of how tsx is invoked
@@ -174,23 +176,10 @@ if (require.main === module) {
     } else {
       console.warn('[brain] No vault available — brain disabled')
     }
-    // Daily cron: trigger precompute at 6:30 AM local time
-    cron.schedule('30 6 * * *', async () => {
-      console.log('[cron] 6:30 AM — triggering daily precompute')
-      try {
-        const { runPrecompute } = await import('./lib/precompute')
-        const { assembleContext } = await import('./routes/claude')
-        // Use a known uid from env, or skip if not configured
-        const cronUid = process.env.CEO_UID
-        if (cronUid) {
-          await runPrecompute(cronUid, assembleContext)
-          console.log('[cron] Daily precompute completed')
-        } else {
-          console.warn('[cron] CEO_UID not set — skipping precompute')
-        }
-      } catch (err) {
-        console.error('[cron] Precompute failed:', (err as Error).message)
-      }
-    })
+    // The Engine: all scheduled jobs (inbox scan, morning assembly,
+    // slip detection, nightly metrics, evening wrap, weekly review,
+    // watchlist) + boot catch-up. Replaces the old 6:30 precompute cron —
+    // precompute now runs inside morning_assembly at 5:30.
+    initEngine()
   })
 }
