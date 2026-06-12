@@ -132,6 +132,14 @@ export function BillyDrawer() {
                 updated[updated.length - 1] = { role: 'assistant', text: assistantText }
                 return updated
               })
+            } else if (event.type === 'action' && typeof event.result === 'string') {
+              // Tool call executed server-side — show what changed
+              assistantText += `${assistantText ? '\n' : ''}⚡ ${event.result}\n`
+              setMessages((m) => {
+                const updated = [...m]
+                updated[updated.length - 1] = { role: 'assistant', text: assistantText }
+                return updated
+              })
             } else if (event.type === 'error') {
               assistantText = `Error: ${event.message}`
               setMessages((m) => {

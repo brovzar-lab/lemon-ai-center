@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Flame, Feather } from 'lucide-react'
 import { TONE_TIERS, trainVoiceProfile, saveVoiceProfile } from '../lib/voiceProfile'
 import VoiceDiff from './VoiceDiff'
+import { useMissionStore } from '@/stores/useMissionStore'
 import type { VoiceProfile, ToneTier } from '../lib/voiceProfile'
 
 interface Props {
@@ -16,6 +17,8 @@ export default function SettingsModal({ open, onClose, voiceProfile, onProfileUp
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [proposed, setProposed] = useState<VoiceProfile | null>(null)
   const [emailsAnalyzed, setEmailsAnalyzed] = useState(0)
+  const advisorTone = useMissionStore((s) => s.advisorTone)
+  const setAdvisorTone = useMissionStore((s) => s.setAdvisorTone)
 
   if (!open) return null
 
@@ -47,6 +50,48 @@ export default function SettingsModal({ open, onClose, voiceProfile, onProfileUp
         <div className="modal-header">
           <span className="modal-title">Settings</span>
           <button onClick={onClose} className="modal-close" aria-label="Close"><X size={16} /></button>
+        </div>
+
+        {/* Advisor Tone Section */}
+        <div className="settings-section">
+          <div className="settings-section-header">
+            <div>
+              <h3 className="settings-section-title">Advisor Tone</h3>
+              <p className="settings-section-desc">
+                How the daily note and weekly review talk to you.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => void setAdvisorTone('brutal')}
+              className="settings-train-btn"
+              style={{
+                opacity: advisorTone === 'brutal' ? 1 : 0.45,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              aria-pressed={advisorTone === 'brutal'}
+            >
+              <Flame size={14} /> Brutally honest
+            </button>
+            <button
+              type="button"
+              onClick={() => void setAdvisorTone('consigliere')}
+              className="settings-train-btn"
+              style={{
+                opacity: advisorTone === 'consigliere' ? 1 : 0.45,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              aria-pressed={advisorTone === 'consigliere'}
+            >
+              <Feather size={14} /> Consigliere
+            </button>
+          </div>
         </div>
 
         {/* Voice Profile Section */}
