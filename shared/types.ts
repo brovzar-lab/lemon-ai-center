@@ -197,7 +197,15 @@ export interface Capture {
   reviewed?: boolean
 }
 
-export type AIActionType = 'archive' | 'label' | 'draft' | 'delegate' | 'delegate_recalled' | 'snooze' | 'priority_change'
+export type AIActionType =
+  | 'archive'
+  | 'label'
+  | 'draft'
+  | 'delegate'
+  | 'delegate_recalled'
+  | 'snooze'
+  | 'priority_change'
+  | 'calendar_block'
 
 export interface AIAction {
   id: string
@@ -210,6 +218,11 @@ export interface AIAction {
   undone: boolean
   createdAt: string
   expiresAt: string        // createdAt + 24h
+  // Outward-facing actions queue for one-tap approval (autonomy boundary).
+  // 'pending' renders in the Spine's approvals strip.
+  approvalStatus?: 'pending' | 'approved' | 'dismissed'
+  // Action-specific data, e.g. calendar_block: { date, startHour, endHour, title }
+  payload?: Record<string, unknown>
 }
 
 export interface Delegation {
@@ -301,6 +314,208 @@ export interface LemonArchiveItem {
   tag?: string
   from?: string
   [extra: string]: unknown
+}
+
+// ─────────────────────────────────────────────────────────────
+// Mission Control types (2026-06 overhaul)
+// All collections live under users/{uid}/... in primary Firestore.
+// Singleton computed docs live in the `state` collection:
+//   state/fronts, state/slips, state/burnout, state/quotes,
+//   state/eveningWrap, state/fund
+// ─────────────────────────────────────────────────────────────
+
+export type FrontKey = 'fund' | 'writing' | 'shows' | 'deals' | 'you'
+export type FrontStatus = 'quiet' | 'attention' | 'critical'
+
+export interface FrontItem {
+  text: string
+  detail?: string
+  refKind?: 'investor' | 'script' | 'deadline' | 'deal' | 'project' | 'delegation' | 'venture' | 'burnout'
+  refId?: string
+  severity?: 'info' | 'warn' | 'critical'
+}
+
+export interface Front {
+  key: FrontKey
+  rank: number             // 1 = needs you most today
+  headline: string         // one-line state of this front
+  status: FrontStatus      // quiet fronts collapse in the Spine
+  items: FrontItem[]
+}
+
+export interface FrontsDoc {
+  fronts: Front[]
+  computedAt: string
+}
+
+export type InvestorStage = 'contacted' | 'interested' | 'docs' | 'committed' | 'passed'
+
+export interface Investor {
+  id: string
+  name: string
+  org?: string
+  stage: InvestorStage
+  amountMXN?: number       // committed or discussed amount
+  lastTouch?: string       // ISO date of last interaction
+  nextAction?: string
+  notes?: string
+  source?: 'manual' | 'auto'
+  created_at?: string
+  updated_at?: string
+}
+
+export interface FundStateDoc {
+  targetMXN: number        // e.g. 300_000_000
+  notes?: string
+  updated_at?: string
+}
+
+export type ScriptStage = 'idea' | 'outline' | 'draft' | 'polish' | 'delivered'
+
+export interface Script {
+  id: string
+  title: string
+  slatePosition?: number
+  stage: ScriptStage
+  draftNumber?: number
+  lastTouchedAt?: string   // from vault file activity or manual
+  targetDate?: string
+  vaultPath?: string       // wiki note path inside the Obsidian vault
+  notes?: string
+  source?: 'manual' | 'auto'
+  created_at?: string
+  updated_at?: string
+}
+
+export interface Deadline {
+  id: string
+  title: string
+  date: string             // ISO date
+  severity: 'hard' | 'soft'
+  linkedEntity?: string
+  notes?: string
+  source?: 'manual' | 'auto'
+}
+
+export type EngineSlipKind = 'delegation' | 'deal' | 'script' | 'deadline'
+
+export interface EngineSlip {
+  id: string
+  kind: EngineSlipKind
+  refId?: string
+  summary: string
+  detail?: string
+  severity: 'warn' | 'critical'
+  detectedAt: string
+}
+
+export interface SlipsDoc {
+  slips: EngineSlip[]
+  computedAt: string
+}
+
+export type AdvisorTone = 'brutal' | 'consigliere'
+
+export interface AdvisorCallout {
+  text: string
+  refKind?: string
+  refId?: string
+}
+
+export interface AdvisorNote {
+  date: string             // YYYY-MM-DD, also the doc id in advisor/
+  headline: string
+  body: string
+  callouts: AdvisorCallout[]
+  tone: AdvisorTone
+  generatedAt: string
+  degraded?: boolean
+}
+
+export interface WeeklyReview {
+  weekOf: string           // Monday YYYY-MM-DD, doc id in advisor_weekly/
+  attentionByFront: Partial<Record<FrontKey, number>>  // hours
+  summary: string
+  stalls: string[]
+  risks: string[]
+  recommendation: string   // exactly one strategic recommendation
+  generatedAt: string
+}
+
+export interface BurnoutDay {
+  date: string             // YYYY-MM-DD
+  meetingHours: number
+  lateNightEmails: number  // sent 22:00–06:00
+  weekendActive: boolean
+  writingMinutes?: number
+  daysSinceBreak: number
+  score: number            // 0–100
+}
+
+export interface BurnoutDoc extends BurnoutDay {
+  trend: number[]          // last 7 scores, oldest first
+}
+
+export interface AIVenture {
+  id: string
+  name: string
+  stage?: string
+  nextAction?: string
+  lastTouch?: string
+  notes?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface WatchlistItem {
+  id: string               // doc id = lowercase ticker
+  ticker: string
+  shares?: number
+  costBasisUSD?: number
+  notes?: string
+}
+
+export interface QuoteSnapshot {
+  ticker: string
+  price: number
+  change: number
+  changePct: number
+  asOf: string
+}
+
+export interface QuotesDoc {
+  quotes: QuoteSnapshot[]
+  computedAt: string
+}
+
+export interface EveningWrapDoc {
+  date: string
+  summary: string
+  tomorrow: string[]
+  generatedAt: string
+}
+
+export type EngineJobId =
+  | 'inbox_scan'
+  | 'morning_assembly'
+  | 'slip_detect'
+  | 'nightly'
+  | 'evening_wrap'
+  | 'weekly_review'
+  | 'watchlist'
+  | 'seed_from_vault'
+
+export interface EngineJobStatus {
+  jobId: EngineJobId
+  lastRun?: string
+  lastSuccess?: string
+  status: 'idle' | 'running' | 'ok' | 'error'
+  error?: string
+  durationMs?: number
+}
+
+export interface AdvisorSettingsDoc {
+  tone: AdvisorTone
 }
 
 // "Slip detection" surface data — derived in the client from the

@@ -61,6 +61,19 @@ import { useDealsStore } from '@/stores/lemon/useDealsStore'
 import { useTodayStore } from '@/stores/useTodayStore'
 import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
 import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
+// Mission Control (Spine + trackers)
+import { useTrackersStore } from '@/stores/useTrackersStore'
+import { useMissionStore } from '@/stores/useMissionStore'
+import { AdvisorCard } from './spine/AdvisorCard'
+import { FrontBands } from './spine/FrontBands'
+import { ApprovalsStrip } from './spine/ApprovalsStrip'
+import { EngineStatus } from './spine/EngineStatus'
+import { EveningWrapCard } from './spine/EveningWrapCard'
+import { FundView } from './views/FundView'
+import { WritingView } from './views/WritingView'
+import { YouView } from './views/YouView'
+import type { WaitingOnItem } from './WaitingOnPanel'
+import type { DelegationExtracted } from './DelegationQueue'
 
 export function Dashboard() {
   const { user, isAuthenticated } = useAuthStore()
@@ -81,6 +94,9 @@ export function Dashboard() {
   const subscribeDeals = useDealsStore((s) => s.subscribe)
   const subscribeProjects = useProjectsStore((s) => s.subscribe)
   const subscribeLemonDelegations = useLemonDelegationsStore((s) => s.subscribe)
+  const subscribeTrackers = useTrackersStore((s) => s.subscribe)
+  const subscribeMission = useMissionStore((s) => s.subscribe)
+  const lemonDelegations = useLemonDelegationsStore((s) => s.delegations)
   const fetchToday = useTodayStore((s) => s.fetchToday)
   const fetchProgress = useTodayStore((s) => s.fetchProgress)
 
@@ -92,6 +108,38 @@ export function Dashboard() {
   // Time-based visibility
   const hour = new Date().getHours()
   const showWrapup = hour >= 16 // Show wrapup after 4pm
+  const eveningMode = hour >= 18
+
+  // Wire the once-dead panels with real delegation data:
+  // Waiting On = pending without a due date (aging since created)
+  // To Delegate queue = pending with a due date (urgency by proximity)
+  const pendingDelegations = lemonDelegations.filter((d) => d.status === 'pending')
+  const waitingOnItems: WaitingOnItem[] = pendingDelegations
+    .filter((d) => !d.expected_by)
+    .map((d) => ({
+      person: d.person,
+      subject: d.task,
+      daysWaiting: d.created_at
+        ? Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86_400_000))
+        : 0,
+      threadId: d.email_ref ?? d.id,
+    }))
+  const delegationQueueItems: DelegationExtracted[] = pendingDelegations
+    .filter((d) => d.expected_by)
+    .map((d) => {
+      const daysOut = Math.floor(
+        (new Date(d.expected_by!).getTime() - Date.now()) / 86_400_000,
+      )
+      return {
+        person: d.person,
+        role: '',
+        task: d.task,
+        source: d.source === 'auto' ? 'inbox scan' : 'manual',
+        emailRef: d.email_ref ?? '',
+        expectedBy: d.expected_by ?? null,
+        urgency: daysOut < 0 ? 'high' : daysOut <= 3 ? 'medium' : 'low',
+      }
+    })
 
   useEffect(() => {
     if (!isAuthenticated || !user) return
@@ -118,6 +166,9 @@ export function Dashboard() {
     const unsubDeals = opsViews ? subscribeDeals() : () => {}
     const unsubProjects = opsViews ? subscribeProjects() : () => {}
     const unsubLemonDelegations = opsViews ? subscribeLemonDelegations() : () => {}
+    // Mission Control: trackers + engine-computed state (always on)
+    const unsubTrackers = subscribeTrackers()
+    const unsubMission = subscribeMission()
 
     return () => {
       unsubTasks()
@@ -128,8 +179,10 @@ export function Dashboard() {
       unsubDeals()
       unsubProjects()
       unsubLemonDelegations()
+      unsubTrackers()
+      unsubMission()
     }
-  }, [isAuthenticated, user?.uid, opsViews, subscribeDeals, subscribeProjects, subscribeLemonDelegations])
+  }, [isAuthenticated, user?.uid, opsViews, subscribeDeals, subscribeProjects, subscribeLemonDelegations, subscribeTrackers, subscribeMission])
 
   const handleReply = (thread: InboxThread) => {
     setReplyEmail({
@@ -191,9 +244,24 @@ export function Dashboard() {
                   </CollapsibleSection>
                 </section>
 
-                {/* ── CENTER (Wide): Hero + Priorities + Calendar + Inbox + Tasks ── */}
+                {/* ── CENTER (Wide): The Spine — Advisor first, fronts ranked, then today ── */}
                 <section aria-label="Command center" className="flex flex-col gap-0 animate-in animate-in-delay-1">
-                  {/* HERO: The One Thing — always visible, always first */}
+                  {/* Engine heartbeats + failure banners — never silent staleness */}
+                  <EngineStatus />
+
+                  {/* The Advisor speaks first */}
+                  <AdvisorCard />
+
+                  {/* Outward actions awaiting one-tap approval */}
+                  <ApprovalsStrip />
+
+                  {/* The five fronts, ranked by what needs Billy today */}
+                  <FrontBands />
+
+                  {/* Evening mode: the wrap surfaces after 18:00 */}
+                  {eveningMode && <EveningWrapCard />}
+
+                  {/* HERO: The One Thing — always visible */}
                   <OneThingCard data-focus-keep="true" />
 
                   {/* Priority + Calendar side by side on desktop, stacked on tablet */}
@@ -224,9 +292,9 @@ export function Dashboard() {
                     <TasksPanel />
                   </CollapsibleSection>
 
-                  {/* Waiting On + Delegations — only if populated */}
-                  <WaitingOnPanel items={[]} />
-                  <DelegationQueue delegations={[]} />
+                  {/* Waiting On + Delegations — live from the delegation tracker */}
+                  <WaitingOnPanel items={waitingOnItems} />
+                  <DelegationQueue delegations={delegationQueueItems} />
 
                   {/* Wrapup — only visible after 4pm */}
                   {showWrapup && (
@@ -246,6 +314,12 @@ export function Dashboard() {
               <DealsView />
             ) : view === 'projects' ? (
               <ProjectsView />
+            ) : view === 'fund' ? (
+              <FundView />
+            ) : view === 'writing' ? (
+              <WritingView />
+            ) : view === 'you' ? (
+              <YouView />
             ) : view === 'memory' ? (
               <MemoryView />
             ) : view === 'archive' ? (

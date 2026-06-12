@@ -3,7 +3,6 @@ import 'dotenv/config'
 import express from 'express'
 import path from 'path'
 import crypto from 'crypto'
-import cron from 'node-cron'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -28,8 +27,10 @@ import { tasksRouter } from './routes/tasks'
 import { todayRouter } from './routes/today'
 import { readyRouter } from './routes/ready'
 import { scanRouter } from './routes/scan'
+import { engineRouter } from './routes/engine'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
+import { initEngine } from './lib/engine'
 import { requireAuth } from './middleware/requireAuth'
 
 export const app = express()
@@ -132,6 +133,22 @@ app.get('/api/me', requireAuth, (req, res) => {
   res.json({ data: { uid: req.session.uid, email: req.session.email } })
 })
 
+// Firebase custom token — lets the browser authenticate the Firestore
+// client SDK as the session user, so security rules can enforce
+// request.auth.uid == userId on users/{uid}/** reads/writes.
+app.get('/api/firebase-token', requireAuth, async (req, res) => {
+  try {
+    const { getAuth } = await import('firebase-admin/auth')
+    const token = await getAuth().createCustomToken(req.session.uid!)
+    res.json({ data: { token } })
+  } catch (err) {
+    console.error('[auth] Custom token failed:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'TOKEN_FAILED', message: 'Could not mint Firebase token', retryable: true },
+    })
+  }
+})
+
 app.use('/auth', authRouter)
 app.use('/api/claude', claudeRouter)
 app.use('/api/gmail', gmailRouter)
@@ -148,6 +165,7 @@ app.use('/api/corrections', correctionsRouter)
 app.use('/api/tasks', tasksRouter)
 app.use('/api', todayRouter)
 app.use('/api/scan', scanRouter)
+app.use('/api/engine', engineRouter)
 
 if (isProd) {
   // Use process.cwd() — always the project root regardless of how tsx is invoked
@@ -174,23 +192,10 @@ if (require.main === module) {
     } else {
       console.warn('[brain] No vault available — brain disabled')
     }
-    // Daily cron: trigger precompute at 6:30 AM local time
-    cron.schedule('30 6 * * *', async () => {
-      console.log('[cron] 6:30 AM — triggering daily precompute')
-      try {
-        const { runPrecompute } = await import('./lib/precompute')
-        const { assembleContext } = await import('./routes/claude')
-        // Use a known uid from env, or skip if not configured
-        const cronUid = process.env.CEO_UID
-        if (cronUid) {
-          await runPrecompute(cronUid, assembleContext)
-          console.log('[cron] Daily precompute completed')
-        } else {
-          console.warn('[cron] CEO_UID not set — skipping precompute')
-        }
-      } catch (err) {
-        console.error('[cron] Precompute failed:', (err as Error).message)
-      }
-    })
+    // The Engine: all scheduled jobs (inbox scan, morning assembly,
+    // slip detection, nightly metrics, evening wrap, weekly review,
+    // watchlist) + boot catch-up. Replaces the old 6:30 precompute cron —
+    // precompute now runs inside morning_assembly at 5:30.
+    initEngine()
   })
 }

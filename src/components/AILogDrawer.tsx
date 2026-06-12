@@ -11,6 +11,7 @@ const TYPE_LABELS: Record<AIAction['type'], string> = {
   delegate_recalled: 'Recall Noted',
   snooze: 'Snoozed',
   priority_change: 'Re-prioritized',
+  calendar_block: 'Calendar Block',
 }
 
 export function AILogDrawer() {

@@ -1,0 +1,54 @@
+<h2>The Engine — how the system stays alive</h2>
+<p class="subtitle">Everything runs on a schedule, server-side, while you sleep. By the time you open it at 6am, the work is done. Green = new, dim = already exists.</p>
+
+<style>
+  .arch { font-family:Georgia,serif; font-size:12px; line-height:1.5; }
+  .arch .lane { display:flex; gap:10px; margin-bottom:6px; align-items:stretch; }
+  .arch .box { background:#2e2219; border:1px solid #3d2f23; border-radius:8px; padding:10px 12px; flex:1; color:#f2e8d8; }
+  .arch .new { border-color:#f5c518; box-shadow:0 0 0 1px #f5c51833; }
+  .arch .ttl { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:#a89b8a; margin-bottom:4px; }
+  .arch .new .ttl { color:#f5c518; }
+  .arch .dim { color:#a89b8a; font-size:11px; }
+  .arch .arrow { text-align:center; color:#a89b8a; font-size:16px; margin:2px 0; }
+  .arch .wrap { background:#241a14; border-radius:10px; padding:14px; }
+  .arch .loop { border-left:2px dashed #f5c518; margin-left:8px; padding-left:10px; color:#f5c518; font-size:11px; margin-top:8px; }
+</style>
+
+<div class="arch"><div class="wrap">
+
+  <div class="lane">
+    <div class="box"><div class="ttl">Gmail</div><span class="dim">threads, sent-mail timestamps</span></div>
+    <div class="box"><div class="ttl">Calendar</div><span class="dim">meetings, writing blocks</span></div>
+    <div class="box"><div class="ttl">Obsidian Brain</div><span class="dim">4,271 notes · projects · taste profile</span></div>
+    <div class="box"><div class="ttl">LEMON Firestore</div><span class="dim">deals · projects · delegations</span></div>
+    <div class="box new"><div class="ttl">Market data</div><span class="dim">watchlist quotes</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="box new" style="margin-bottom:6px">
+    <div class="ttl">The Engine — scheduled jobs (server, runs without you)</div>
+    <b>04:30</b> inbox scan → auto-extract deals, projects, delegations, memories &nbsp;·&nbsp;
+    <b>05:30</b> rank the five fronts + generate brief & Advisor daily note &nbsp;·&nbsp;
+    <b>hourly</b> slip detection (overdue delegations, stalled deals, stale scripts, unanswered threads) &nbsp;·&nbsp;
+    <b>nightly</b> burnout metrics + learning loop (corrections → memory) &nbsp;·&nbsp;
+    <b>18:00</b> evening wrap + tomorrow preview &nbsp;·&nbsp;
+    <b>Sun 17:00</b> weekly CEO review
+    <div class="dim" style="margin-top:4px">Every job writes a heartbeat — the UI always shows "scan 04:30 ✓". Failures show as banners, never silent staleness.</div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="lane">
+    <div class="box new"><div class="ttl">Trackers (new first-class data)</div>Fund raise · 7 scripts · deadline radar · burnout score · AI ventures · watchlist</div>
+    <div class="box new"><div class="ttl">Advisor output</div>Daily note (brutal ⇄ consigliere toggle) · Weekly CEO review</div>
+    <div class="box"><div class="ttl">Existing stores</div><span class="dim">brief · tasks · inbox · calendar · memory</span></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="box"><div class="ttl">The Spine (home)</div>Advisor speaks first → five fronts ranked by what needs you today → Today panel. Deals / Projects / Fund / You views one tap away.</div>
+
+  <div class="loop">↻ Learning loop: your corrections, snoozes, and swaps are distilled nightly into Memory · a daily digest is written <b>back into the vault</b> (git commit) so your brain and your dashboard stay one organism.</div>
+
+</div></div>

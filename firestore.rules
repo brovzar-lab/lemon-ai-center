@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    // Allowed users list
+    match /allowed_users/{email} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read, write: if isAuthed() && request.auth.uid == userId;
+
+      // Memory collections — per user, server writes only
+      match /global_memories/{memId} {
+        allow read: if isAuthed() && request.auth.uid == userId;
+        allow write: if false; // server only
+      }
+      match /conv_memories/{memId} {
+        allow read: if isAuthed() && request.auth.uid == userId;
+        allow write: if false; // server only
+      }
+
+      // Lemon AI Center — owner-scoped access to the app's subcollections
+      // (tasks, decisions, captures, delegations, actions, briefs, memories,
+      // deals, projects, investors, scripts, deadlines, ventures, watchlist,
+      // state, advisor, advisor_weekly, engine_jobs, burnout_days, settings,
+      // archive, spark_cache, meta).
+      // google_tokens stays server-only (encrypted refresh tokens), and the
+      // server-only memory collections above keep their write:false rules
+      // by being excluded here.
+      match /{collectionId}/{docId} {
+        allow read, write: if isAuthed()
+          && request.auth.uid == userId
+          && !(collectionId in ['google_tokens', 'global_memories', 'conv_memories']);
+      }
+    }
+
+    // Conversations
+    match /conversations/{conversationId} {
+      allow read: if isAuthed() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.uid in resource.data.sharedWith
+      );
+      allow create: if isAuthed() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuthed() && resource.data.ownerId == request.auth.uid;
+      allow delete: if isAuthed() && resource.data.ownerId == request.auth.uid;
+
+      match /messages/{msgId} {
+        allow read: if isAuthed() &&
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.ownerId == request.auth.uid;
+        allow create: if isAuthed() &&
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.ownerId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // Drive corpus — server write only, authenticated read
+    match /system/corpus/chunks/{chunkId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+    match /system/corpus/files/{fileId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Obsidian notes — localhost-only write (enforced in API), authenticated read
+    match /system/obsidian/notes/{noteId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Sync status docs
+    match /system/{docId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Documents metadata
+    match /documents/{documentId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Audit log — server only
+    match /audit_log/{eventId} {
+      allow read, write: if false;
+    }
+  }
+}

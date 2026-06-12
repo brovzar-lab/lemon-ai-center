@@ -16,7 +16,8 @@ export const useSparkStore = create<SparkState>()((set) => ({
   fetch: async () => {
     set({ loading: true })
     try {
-      const data = await apiFetch<{ text: string; cached: boolean }>('/api/claude/spark')
+      // POST — the server route is POST-only (a GET here 404'd silently for months)
+      const data = await apiFetch<{ text: string; cached: boolean }>('/api/claude/spark', { method: 'POST' })
       set({ text: data.text, isStale: data.cached, loading: false })
     } catch {
       set({ loading: false })
