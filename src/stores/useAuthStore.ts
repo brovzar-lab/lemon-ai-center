@@ -35,6 +35,14 @@ export const useAuthStore = create<AuthState>()((set) => ({
       const res = await fetch('/api/me')
       if (res.ok) {
         const json = await res.json()
+        // Authenticate the Firestore client SDK BEFORE stores subscribe —
+        // security rules require request.auth.uid == userId.
+        try {
+          const { ensureFirebaseAuth } = await import('@/lib/firebaseAuth')
+          await ensureFirebaseAuth()
+        } catch (err) {
+          console.warn('[auth] Firebase client sign-in failed:', err)
+        }
         set({ user: json.data, isAuthenticated: true, isDemo: false, loading: false })
       } else {
         set({ user: null, isAuthenticated: false, isDemo: true, loading: false })

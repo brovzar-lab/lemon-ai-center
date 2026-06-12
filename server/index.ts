@@ -133,6 +133,22 @@ app.get('/api/me', requireAuth, (req, res) => {
   res.json({ data: { uid: req.session.uid, email: req.session.email } })
 })
 
+// Firebase custom token — lets the browser authenticate the Firestore
+// client SDK as the session user, so security rules can enforce
+// request.auth.uid == userId on users/{uid}/** reads/writes.
+app.get('/api/firebase-token', requireAuth, async (req, res) => {
+  try {
+    const { getAuth } = await import('firebase-admin/auth')
+    const token = await getAuth().createCustomToken(req.session.uid!)
+    res.json({ data: { token } })
+  } catch (err) {
+    console.error('[auth] Custom token failed:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'TOKEN_FAILED', message: 'Could not mint Firebase token', retryable: true },
+    })
+  }
+})
+
 app.use('/auth', authRouter)
 app.use('/api/claude', claudeRouter)
 app.use('/api/gmail', gmailRouter)
