@@ -126,7 +126,19 @@ Trackers are **seeded from the vault** at first run (fund details, slate, deadli
 - Engine scheduler tested via injected clock; jobs tested as plain async functions.
 - Existing typecheck (`npm run typecheck`) and test suite must stay green.
 
-## 12. Out of scope (this milestone)
+## 12. Fresh-eyes revision (2026-06-12, pre-build)
+
+Reviewed against the actual codebase before building. Changes:
+
+1. **Boot catch-up:** every engine job writes a ledger doc; on server boot, any job whose last success is older than its period runs immediately. Railway restarts must not silently kill the schedule.
+2. **Approvals strip:** pending outward-facing `AIAction`s render as a one-tap approve/dismiss strip at the top of the Spine's Today panel.
+3. **Chat with tools:** the Billy Drawer chat gets Anthropic tool use over the trackers (update investor stage/amount, script stage, deadlines, ventures, watchlist, deals, delegations). Internal reorganization is allowed directly per the autonomy boundary; outward actions still queue as AIActions.
+4. **Vault seeding concretized:** a first-run idempotent `seed-from-vault` job extracts investors, the 7 scripts, hard deadlines, and AI ventures from named wiki notes (`wiki/deals/lemon-trust-i.md`, `wiki/projects/*.md`, `wiki/deals/*.md`) via Claude, skipping any collection that already has data.
+5. **Simplified data plumbing:** the secondary LEMON Firebase is already deprecated — all data lives in primary Firestore under `users/{uid}/...`. New trackers are plain Firestore collections (`investors`, `scripts`, `deadlines`, `ventures`, `watchlist`, plus `state/*` singleton docs for fronts/slips/burnout/quotes/wrap and `advisor/*` notes). The client subscribes in real time using the existing store pattern; no new REST CRUD layer. Engine-only routes: `GET /api/engine/status`, `POST /api/engine/run/:jobId`.
+6. **Shows front** derives from the existing projects store — no new collection.
+7. **Home view id** stays `'briefing'` for localStorage compatibility but renders the new Spine; new view ids: `'fund'`, `'writing'`, `'you'`.
+
+## 13. Out of scope (this milestone)
 
 - Sending email / changing calendar without approval (full-copilot mode)
 - Brokerage integration or trade execution
