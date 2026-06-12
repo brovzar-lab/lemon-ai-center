@@ -27,7 +27,9 @@ Confirm these **Variables** on the **lemon-ai-center** service (see `.env.exampl
 | `ALLOWED_ORIGIN` | Must match the site origin for CSRF on writes, e.g. `https://ceo.billyrovzar.com` |
 | `ANTHROPIC_API_KEY` | Briefing + task generation |
 | `GEMINI_API_KEY` | Optional (e.g. TTS) |
-| `OBSIDIAN_VAULT_GIT_URL` | **Production:** private Git URL for the Obsidian vault; server clones to `./vault` at startup and indexes the Brain. Without this (and without `OBSIDIAN_VAULT_PATH` on disk), Brain stays disabled. |
+| `OBSIDIAN_VAULT_GIT_URL` | **Production:** private Git URL for the Obsidian vault; server clones to `./vault` at startup and indexes the Brain. Without this (and without `OBSIDIAN_VAULT_PATH` on disk), Brain stays disabled — and the engine's vault write-back + script touch-tracking no-op. |
+| `CEO_UID` | **Required for the Engine.** Billy's Firebase uid — all scheduled jobs (inbox scan, morning assembly, slip detection, nightly metrics, weekly review) run as this user. Without it the engine is disabled and only manual triggers work. |
+| `FINNHUB_API_KEY` | Optional — enables watchlist stock quotes on the You view (weekday close snapshot). Without it the watchlist works manually, just without prices. |
 | `TOKEN_ENCRYPTION_KEY`, `SESSION_SECRET` | Sessions |
 | Firebase Admin + client vars | As in `.env.example` |
 
