@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDealsStore } from '@/stores/lemon/useDealsStore'
 import { BoardKanban, type BoardColumnDef } from '@/components/workspace/BoardKanban'
 import { EmptyState } from '@/components/workspace/EmptyState'
+import { ScanInboxButton } from '@/components/ScanInboxButton'
 import type { LemonDeal, DealStatus } from '@shared/types'
 
 const COLUMNS: BoardColumnDef<DealStatus>[] = [
@@ -204,11 +205,16 @@ export function DealsView() {
           <div className="w-4 h-4 mx-auto rounded-full border-2 border-accent-lemon border-t-transparent animate-spin" />
         </div>
       ) : deals.length === 0 ? (
+        <>
         <EmptyState
           title="No deals yet"
-          body="Add your first deal or run a sync from LEMON's Python pipeline."
+          body="Add your first deal or scan your inbox to auto-populate."
           cta={{ label: 'Add a deal', onClick: () => setShowForm(true) }}
         />
+        <div className="mt-4">
+          <ScanInboxButton />
+        </div>
+        </>
       ) : (
         <BoardKanban
           columns={COLUMNS}

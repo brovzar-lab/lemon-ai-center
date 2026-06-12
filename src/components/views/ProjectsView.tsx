@@ -3,6 +3,7 @@ import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
 import { useTaskStore } from '@/stores/useTaskStore'
 import { BoardKanban, type BoardColumnDef } from '@/components/workspace/BoardKanban'
 import { EmptyState } from '@/components/workspace/EmptyState'
+import { ScanInboxButton } from '@/components/ScanInboxButton'
 import type { LemonProject, ProjectCategory, ProjectFormat } from '@shared/types'
 
 const COLUMNS: BoardColumnDef<ProjectCategory>[] = [
@@ -213,11 +214,16 @@ export function ProjectsView() {
           <div className="w-4 h-4 mx-auto rounded-full border-2 border-accent-lemon border-t-transparent animate-spin" />
         </div>
       ) : projects.length === 0 ? (
+        <>
         <EmptyState
           title="No projects yet"
-          body="Add your first project or wait for the next LEMON sync."
+          body="Add your first project or scan your inbox to auto-populate."
           cta={{ label: 'Add a project', onClick: () => setShowForm(true) }}
         />
+        <div className="mt-4">
+          <ScanInboxButton />
+        </div>
+        </>
       ) : (
         <BoardKanban
           columns={COLUMNS}

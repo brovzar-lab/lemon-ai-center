@@ -27,6 +27,7 @@ import { correctionsRouter } from './routes/corrections'
 import { tasksRouter } from './routes/tasks'
 import { todayRouter } from './routes/today'
 import { readyRouter } from './routes/ready'
+import { scanRouter } from './routes/scan'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
 import { requireAuth } from './middleware/requireAuth'
@@ -146,6 +147,7 @@ app.use('/api/brain', brainRouter)
 app.use('/api/corrections', correctionsRouter)
 app.use('/api/tasks', tasksRouter)
 app.use('/api', todayRouter)
+app.use('/api/scan', scanRouter)
 
 if (isProd) {
   // Use process.cwd() — always the project root regardless of how tsx is invoked

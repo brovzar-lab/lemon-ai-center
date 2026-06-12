@@ -4,6 +4,7 @@ import { useBrainStore } from '@/stores/useBrainStore'
 import { useBriefStore } from '@/stores/useBriefStore'
 import { useThemeStore } from '@/stores/useThemeStore'
 import { SyncingPill } from './SyncingPill'
+import { ScanInboxButton } from './ScanInboxButton'
 import { Moon, Sun, Settings, RefreshCw } from 'lucide-react'
 
 interface HeaderProps {
@@ -38,6 +39,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
       </div>
       <div className="flex items-center gap-2">
         <SyncingPill />
+        <ScanInboxButton compact />
         {/* Theme toggle */}
         <button
           type="button"
