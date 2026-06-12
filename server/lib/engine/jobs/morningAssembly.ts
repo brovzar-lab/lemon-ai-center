@@ -1,5 +1,6 @@
 import { runSlipDetect } from './slipDetect'
 import { generateAdvisorNote } from './advisor'
+import { proposeWritingBlock } from './writingBlock'
 
 /**
  * 05:30 — the morning is assembled before Billy wakes up:
@@ -22,6 +23,12 @@ export async function runMorningAssembly(uid: string): Promise<void> {
     await generateAdvisorNote(uid)
   } catch (err) {
     errors.push(`advisor: ${(err as Error).message}`)
+  }
+
+  try {
+    await proposeWritingBlock(uid)
+  } catch (err) {
+    errors.push(`writing block: ${(err as Error).message}`)
   }
 
   try {

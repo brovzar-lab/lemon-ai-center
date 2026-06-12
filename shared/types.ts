@@ -197,7 +197,15 @@ export interface Capture {
   reviewed?: boolean
 }
 
-export type AIActionType = 'archive' | 'label' | 'draft' | 'delegate' | 'delegate_recalled' | 'snooze' | 'priority_change'
+export type AIActionType =
+  | 'archive'
+  | 'label'
+  | 'draft'
+  | 'delegate'
+  | 'delegate_recalled'
+  | 'snooze'
+  | 'priority_change'
+  | 'calendar_block'
 
 export interface AIAction {
   id: string
@@ -210,6 +218,11 @@ export interface AIAction {
   undone: boolean
   createdAt: string
   expiresAt: string        // createdAt + 24h
+  // Outward-facing actions queue for one-tap approval (autonomy boundary).
+  // 'pending' renders in the Spine's approvals strip.
+  approvalStatus?: 'pending' | 'approved' | 'dismissed'
+  // Action-specific data, e.g. calendar_block: { date, startHour, endHour, title }
+  payload?: Record<string, unknown>
 }
 
 export interface Delegation {
