@@ -5,10 +5,23 @@ export type ViewId =
   | 'inbox'
   | 'deals'
   | 'projects'
+  | 'fund'
+  | 'writing'
+  | 'you'
   | 'memory'
   | 'archive'
 
-const VALID_VIEWS: ViewId[] = ['briefing', 'inbox', 'deals', 'projects', 'memory', 'archive']
+const VALID_VIEWS: ViewId[] = [
+  'briefing',
+  'inbox',
+  'deals',
+  'projects',
+  'fund',
+  'writing',
+  'you',
+  'memory',
+  'archive',
+]
 
 const STORAGE_KEY = 'lemon-ai-center.view'
 

@@ -42,8 +42,11 @@ export function WorkspaceTabs() {
           '2': 'inbox',
           '3': 'deals',
           '4': 'projects',
-          '5': 'memory',
-          '6': 'archive',
+          '5': 'fund',
+          '6': 'writing',
+          '7': 'you',
+          '8': 'memory',
+          '9': 'archive',
         }
         const next = map[e.key]
         if (next) {
@@ -68,8 +71,11 @@ export function WorkspaceTabs() {
     { id: 'inbox', label: 'Inbox Intel', count: inboxCount, hint: 'g 2' },
     { id: 'deals', label: 'Deals', count: deals.filter((d) => d.status !== 'closed').length, hint: 'g 3' },
     { id: 'projects', label: 'Projects', count: projects.length, hint: 'g 4' },
-    { id: 'memory', label: 'Memory', hint: 'g 5' },
-    { id: 'archive', label: 'Archive', hint: 'g 6' },
+    { id: 'fund', label: 'Fund', hint: 'g 5' },
+    { id: 'writing', label: 'Writing', hint: 'g 6' },
+    { id: 'you', label: 'You', hint: 'g 7' },
+    { id: 'memory', label: 'Memory', hint: 'g 8' },
+    { id: 'archive', label: 'Archive', hint: 'g 9' },
   ]
 
   return (
@@ -121,11 +127,11 @@ export function WorkspaceTabs() {
       <span
         aria-hidden
         className="hidden md:inline text-[9px] font-body uppercase tracking-[0.18em] text-text-muted whitespace-nowrap ml-auto pl-3"
-        title="Press g then 1–6 to switch views"
+        title="Press g then 1–9 to switch views"
       >
         <kbd className="px-1 rounded bg-bg-elevated text-text-tertiary font-mono">g</kbd>
         <span className="mx-1">+</span>
-        <kbd className="px-1 rounded bg-bg-elevated text-text-tertiary font-mono">1–6</kbd>
+        <kbd className="px-1 rounded bg-bg-elevated text-text-tertiary font-mono">1–9</kbd>
         <span className="ml-2 italic">to switch</span>
       </span>
     </nav>

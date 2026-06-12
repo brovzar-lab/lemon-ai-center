@@ -19,11 +19,11 @@ const FRONT_LABELS: Record<FrontKey, string> = {
 }
 
 const FRONT_VIEWS: Record<FrontKey, ViewId> = {
-  fund: 'fund' as ViewId,
-  writing: 'writing' as ViewId,
+  fund: 'fund',
+  writing: 'writing',
   shows: 'projects',
   deals: 'deals',
-  you: 'you' as ViewId,
+  you: 'you',
 }
 
 function statusDot(status: Front['status']): string {
