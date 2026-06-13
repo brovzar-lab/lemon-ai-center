@@ -46,8 +46,10 @@ app.use(helmet({
     ? {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
+          // Cloudflare Tunnel injects its analytics beacon
+          scriptSrc: ["'self'", 'https://static.cloudflareinsights.com'],
+          // Google Fonts stylesheet (Fraunces/Inter)
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           imgSrc: ["'self'", 'data:', 'https:'],
           fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
           connectSrc: [
@@ -57,16 +59,27 @@ app.use(helmet({
             'https://*.firebaseio.com',
             'wss://*.firebaseio.com',
             'https://firebase.googleapis.com',
+            'https://*.firebaseapp.com',
             'https://identitytoolkit.googleapis.com',
             'https://securetoken.googleapis.com',
+            'https://www.gstatic.com',
             // Google APIs (OAuth, Gmail, Calendar)
             'https://www.googleapis.com',
             'https://oauth2.googleapis.com',
             'https://accounts.google.com',
             // Anthropic
             'https://api.anthropic.com',
+            // Cloudflare analytics beacon
+            'https://static.cloudflareinsights.com',
           ],
-          frameSrc: ["'none'"],
+          // Firebase Auth runs an iframe on the project's authDomain to manage
+          // client auth state. 'none' here breaks signInWithCustomToken with
+          // auth/network-request-failed, which blocks every Firestore read.
+          frameSrc: [
+            "'self'",
+            'https://*.firebaseapp.com',
+            'https://accounts.google.com',
+          ],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
         },

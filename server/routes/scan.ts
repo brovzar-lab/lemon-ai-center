@@ -20,14 +20,18 @@ scanRouter.post('/inbox', csrfCheck, async (req, res) => {
   const uid = req.session.uid!
   const maxThreads = Math.min(Number(req.body.maxThreads) || 40, 60)
 
-  // Prevent concurrent scans
+  // Prevent concurrent scans. Only an actively-running, non-stale lock
+  // blocks a new scan — a "completed" lock must NOT (the old check looked
+  // only at age + existence, so a finished scan blocked the next one for
+  // 10 minutes and surfaced a false "scan already running").
   const lockRef = db.doc(`users/${uid}/meta/scan_lock`)
   const lockSnap = await lockRef.get()
   if (lockSnap.exists) {
     const lockData = lockSnap.data()
     const lockAge = Date.now() - (lockData?.startedAt?.toMillis?.() ?? 0)
-    // Allow re-scan if lock is older than 10 minutes (stale)
-    if (lockAge < 10 * 60 * 1000) {
+    const isRunning = lockData?.status === 'running'
+    // Block only if a scan is genuinely running and the lock isn't stale (>10m)
+    if (isRunning && lockAge < 10 * 60 * 1000) {
       return res.status(409).json({
         error: {
           code: 'SCAN_IN_PROGRESS',
