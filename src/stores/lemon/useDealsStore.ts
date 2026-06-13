@@ -7,8 +7,6 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  query,
-  orderBy,
 } from 'firebase/firestore'
 import { lemonDb, isLemonWorkspaceConfigured, opsPath } from '@/lib/firestoreLemon'
 import type { LemonDeal, DealStatus } from '@shared/types'
@@ -33,21 +31,31 @@ export const useDealsStore = create<DealsState>()((set) => ({
     const path = opsPath('deals')
     if (!path) return () => {}
     set({ loading: true })
-    const q = query(
-      collection(lemonDb, path),
-      orderBy('status'),
-      orderBy('updated_at', 'desc'),
-    )
+    // No server-side orderBy: a compound orderBy needs a composite Firestore
+    // index, and without it the listener fails (silently) and the board shows
+    // empty. Read unordered and sort client-side instead.
+    const statusRank: Record<string, number> = {
+      active: 0,
+      pending_signature: 1,
+      in_review: 2,
+      closed: 3,
+    }
     const unsub = onSnapshot(
-      q,
+      collection(lemonDb, path),
       (snap) => {
-        const deals: LemonDeal[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<LemonDeal, 'id'>),
-        }))
+        const deals: LemonDeal[] = snap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as Omit<LemonDeal, 'id'>) }))
+          .sort(
+            (a, b) =>
+              (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9) ||
+              String(b.updated_at ?? '').localeCompare(String(a.updated_at ?? '')),
+          )
         set({ deals, loading: false })
       },
-      () => set({ loading: false }),
+      (err) => {
+        console.error('[deals] subscription error:', err)
+        set({ loading: false })
+      },
     )
     return unsub
   },

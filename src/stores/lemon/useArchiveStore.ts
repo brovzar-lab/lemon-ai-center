@@ -5,10 +5,6 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
-  query,
-  orderBy,
-  where,
-  limit,
 } from 'firebase/firestore'
 import { lemonDb, isLemonWorkspaceConfigured, opsPath } from '@/lib/firestoreLemon'
 import type { LemonArchiveItem } from '@shared/types'
@@ -30,23 +26,22 @@ export const useArchiveStore = create<ArchiveState>()((set) => ({
     const path = opsPath('ops_archive')
     if (!path) return () => {}
     set({ loading: true })
-    const q = query(
-      collection(lemonDb, path),
-      where('restored', '==', false),
-      orderBy('archived_at', 'desc'),
-      limit(100),
-    )
+    // where + orderBy on different fields needs a composite index; filter and
+    // sort client-side instead so a missing index can't blank the view.
     const unsub = onSnapshot(
-      q,
+      collection(lemonDb, path),
       (snap) => {
-        const items: LemonArchiveItem[] = snap.docs.map((d) => ({
-          id: d.id,
-          restored: false,
-          ...(d.data() as Omit<LemonArchiveItem, 'id'>),
-        }))
+        const items: LemonArchiveItem[] = snap.docs
+          .map((d) => ({ id: d.id, restored: false, ...(d.data() as Omit<LemonArchiveItem, 'id'>) }))
+          .filter((it) => !it.restored)
+          .sort((a, b) => String(b.archived_at ?? '').localeCompare(String(a.archived_at ?? '')))
+          .slice(0, 100)
         set({ items, loading: false })
       },
-      () => set({ loading: false }),
+      (err) => {
+        console.error('[archive] subscription error:', err)
+        set({ loading: false })
+      },
     )
     return unsub
   },

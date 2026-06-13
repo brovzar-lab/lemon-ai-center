@@ -7,8 +7,6 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  query,
-  orderBy,
 } from 'firebase/firestore'
 import { lemonDb, isLemonWorkspaceConfigured, opsPath } from '@/lib/firestoreLemon'
 import type { LemonProject, ProjectCategory } from '@shared/types'
@@ -33,21 +31,25 @@ export const useProjectsStore = create<ProjectsState>()((set) => ({
     const path = opsPath('projects')
     if (!path) return () => {}
     set({ loading: true })
-    const q = query(
-      collection(lemonDb, path),
-      orderBy('category'),
-      orderBy('sort_order'),
-    )
+    // No server-side orderBy: a compound orderBy needs a composite Firestore
+    // index, and without it the listener fails (silently) and the board shows
+    // empty. Read unordered and sort client-side instead.
     const unsub = onSnapshot(
-      q,
+      collection(lemonDb, path),
       (snap) => {
-        const projects: LemonProject[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<LemonProject, 'id'>),
-        }))
+        const projects: LemonProject[] = snap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as Omit<LemonProject, 'id'>) }))
+          .sort(
+            (a, b) =>
+              (a.category ?? '').localeCompare(b.category ?? '') ||
+              (a.sort_order ?? 0) - (b.sort_order ?? 0),
+          )
         set({ projects, loading: false })
       },
-      () => set({ loading: false }),
+      (err) => {
+        console.error('[projects] subscription error:', err)
+        set({ loading: false })
+      },
     )
     return unsub
   },
