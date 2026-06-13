@@ -32,7 +32,11 @@ export const useArchiveStore = create<ArchiveState>()((set) => ({
       collection(lemonDb, path),
       (snap) => {
         const items: LemonArchiveItem[] = snap.docs
-          .map((d) => ({ id: d.id, restored: false, ...(d.data() as Omit<LemonArchiveItem, 'id'>) }))
+          .map((d): LemonArchiveItem => ({
+            restored: false,
+            ...(d.data() as Omit<LemonArchiveItem, 'id'>),
+            id: d.id,
+          }))
           .filter((it) => !it.restored)
           .sort((a, b) => String(b.archived_at ?? '').localeCompare(String(a.archived_at ?? '')))
           .slice(0, 100)
