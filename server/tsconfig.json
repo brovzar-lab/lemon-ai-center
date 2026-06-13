@@ -16,5 +16,12 @@
     }
   },
   "include": ["../server/**/*", "../shared/**/*"],
-  "exclude": ["node_modules", "../src", "dist"]
+  "exclude": [
+    "node_modules",
+    "../src",
+    "dist",
+    "../**/*.test.ts",
+    "../**/*.test.tsx",
+    "../**/__tests__/**"
+  ]
 }
