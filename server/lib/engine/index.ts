@@ -39,8 +39,8 @@ const DAY = 24 * HOUR
 export const JOBS: JobDef[] = [
   {
     id: 'inbox_scan',
-    schedule: '30 4 * * *',
-    periodMs: DAY,
+    schedule: '30 */2 * * *',   // every 2 hours — always-fresh inbox intelligence
+    periodMs: 2 * HOUR,
     catchUp: true,
     run: (uid) => runInboxScan(uid, 40),
   },
