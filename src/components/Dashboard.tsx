@@ -3,77 +3,59 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useCalendarStore } from '@/stores/useCalendarStore'
 import { useBrainStore } from '@/stores/useBrainStore'
-import { useSparkStore } from '@/stores/useSparkStore'
 import { useBriefStore } from '@/stores/useBriefStore'
 import { useTaskStore } from '@/stores/useTaskStore'
 import { useDecisionStore } from '@/stores/useDecisionStore'
-import { useFocusModeStore } from '@/stores/useFocusModeStore'
 import { useCaptureStore } from '@/stores/useCaptureStore'
 import { useActionLogStore } from '@/stores/useActionLogStore'
-import { useFeatureFlags } from '@/hooks/useFeatureFlags'
 import { usePollingEngine } from '@/hooks/usePollingEngine'
 import { useViewStore } from '@/stores/useViewStore'
-import { WorkspaceTabs } from './workspace/WorkspaceTabs'
-import { DealsView } from './views/DealsView'
-import { ProjectsView } from './views/ProjectsView'
-import { MemoryView } from './views/MemoryView'
-import { ArchiveView } from './views/ArchiveView'
-import { InboxIntelView } from './views/InboxIntelView'
-import type { Bucket } from '@shared/types'
+import { useTimeMode } from '@/hooks/useTimeMode'
 import { loadVoiceProfile, DEFAULT_VOICE_PROFILE } from '@/lib/voiceProfile'
 import type { VoiceProfile } from '@/lib/voiceProfile'
-import type { InboxThread } from '@shared/types'
+import type { InboxThread, Bucket } from '@shared/types'
+
+// Structural components
 import { Header } from './Header'
-import { DemoBanner } from './DemoBanner'
-import { BriefPanel } from './BriefPanel'
-import { NextUpBar } from './NextUpBar'
-import { TasksPanel } from './TasksPanel'
-import { InboxPanel } from './InboxPanel'
-import { BrainPanel } from './BrainPanel'
-import { SparkCard } from './SparkCard'
-import { DecisionJournal } from './DecisionJournal'
+import { EditorialMasthead } from './EditorialMasthead'
+import { WorkspaceTabs } from './workspace/WorkspaceTabs'
+import { GlobalCapture } from './GlobalCapture'
+import { AILogDrawer } from './AILogDrawer'
+
+// The three editions
+import { MorningEdition } from './editions/MorningEdition'
+import { MiddayEdition } from './editions/MiddayEdition'
+import { EveningEdition } from './editions/EveningEdition'
+
+// Tab views (kept — not deleted)
+import { DealsView } from './views/DealsView'
+import { ProjectsView } from './views/ProjectsView'
+import { WritingView } from './views/WritingView'
+
+// These views are still accessible but not in the primary tabs:
+// Import them conditionally so the code isn't lost
+import { FundView } from './views/FundView'
+import { YouView } from './views/YouView'
+import { InboxIntelView } from './views/InboxIntelView'
+import { MemoryView } from './views/MemoryView'
+import { ArchiveView } from './views/ArchiveView'
+
+// Modals & overlays (all kept)
 import { SkillLauncher } from './SkillLauncher'
 import { BillyDrawer } from './BillyDrawer'
 import { MeetingPrepModal } from './MeetingPrepModal'
 import { SkillModal } from './SkillModal'
 import ReplyModal from './ReplyModal'
 import SettingsModal from './SettingsModal'
-// Editorial redesign components
-import { FocusModeProvider } from './FocusModeProvider'
-import { EditorialMasthead } from './EditorialMasthead'
-import { MorningOverview } from './MorningOverview'
-import { OneThingCard } from './OneThingCard'
-import { CalendarDayView } from './CalendarDayView'
-import { InboxSummary } from './InboxSummary'
-import { WrapupCard } from './WrapupCard'
-import { AudioPlayer } from './AudioPlayer'
-import { GlobalCapture } from './GlobalCapture'
-import { AILogDrawer } from './AILogDrawer'
-import { RoughMorningPanel } from './RoughMorningPanel'
-import { ExecutiveSummary } from './ExecutiveSummary'
 import { CorrectionInput } from './CorrectionInput'
-import { PriorityStack } from './PriorityStack'
-import { RelationshipPanel } from './RelationshipPanel'
-import { WaitingOnPanel } from './WaitingOnPanel'
-import { DelegationQueue } from './DelegationQueue'
-import { CollapsibleSection } from './CollapsibleSection'
+
+// Stores
 import { useDealsStore } from '@/stores/lemon/useDealsStore'
-import { useTodayStore } from '@/stores/useTodayStore'
 import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
 import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
-// Mission Control (Spine + trackers)
 import { useTrackersStore } from '@/stores/useTrackersStore'
 import { useMissionStore } from '@/stores/useMissionStore'
-import { AdvisorCard } from './spine/AdvisorCard'
-import { FrontBands } from './spine/FrontBands'
-import { ApprovalsStrip } from './spine/ApprovalsStrip'
-import { EngineStatus } from './spine/EngineStatus'
-import { EveningWrapCard } from './spine/EveningWrapCard'
-import { FundView } from './views/FundView'
-import { WritingView } from './views/WritingView'
-import { YouView } from './views/YouView'
-import type { WaitingOnItem } from './WaitingOnPanel'
-import type { DelegationExtracted } from './DelegationQueue'
+import { useTodayStore } from '@/stores/useTodayStore'
 
 export function Dashboard() {
   const { user, isAuthenticated } = useAuthStore()
@@ -83,63 +65,28 @@ export function Dashboard() {
   const fetchCalendar = useCalendarStore((s) => s.fetch)
   const fetchBrainStatus = useBrainStore((s) => s.fetchStatus)
   const fetchBrainRecent = useBrainStore((s) => s.fetchRecent)
-  const fetchSpark = useSparkStore((s) => s.fetch)
   const subscribeToTasks = useTaskStore((s) => s.subscribe)
   const subscribeToDecisions = useDecisionStore((s) => s.subscribe)
   const subscribeToCaptures = useCaptureStore((s) => s.subscribe)
   const subscribeToActions = useActionLogStore((s) => s.subscribe)
-  const focusActive = useFocusModeStore((s) => s.active)
-  const { newDashboard, opsViews } = useFeatureFlags()
   const view = useViewStore((s) => s.view)
   const subscribeDeals = useDealsStore((s) => s.subscribe)
   const subscribeProjects = useProjectsStore((s) => s.subscribe)
   const subscribeLemonDelegations = useLemonDelegationsStore((s) => s.subscribe)
   const subscribeTrackers = useTrackersStore((s) => s.subscribe)
   const subscribeMission = useMissionStore((s) => s.subscribe)
-  const lemonDelegations = useLemonDelegationsStore((s) => s.delegations)
   const fetchToday = useTodayStore((s) => s.fetchToday)
   const fetchProgress = useTodayStore((s) => s.fetchProgress)
 
-  // Voice profile state
+  // Voice profile state (kept — voice is a core feature)
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile>(DEFAULT_VOICE_PROFILE)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [replyEmail, setReplyEmail] = useState<{ threadId: string; from: string; fromEmail: string; subject: string; snippet: string } | null>(null)
+  const [replyEmail, setReplyEmail] = useState<{
+    threadId: string; from: string; fromEmail: string; subject: string; snippet: string
+  } | null>(null)
 
-  // Time-based visibility
-  const hour = new Date().getHours()
-  const showWrapup = hour >= 16 // Show wrapup after 4pm
-  const eveningMode = hour >= 18
-
-  // Wire the once-dead panels with real delegation data:
-  // Waiting On = pending without a due date (aging since created)
-  // To Delegate queue = pending with a due date (urgency by proximity)
-  const pendingDelegations = lemonDelegations.filter((d) => d.status === 'pending')
-  const waitingOnItems: WaitingOnItem[] = pendingDelegations
-    .filter((d) => !d.expected_by)
-    .map((d) => ({
-      person: d.person,
-      subject: d.task,
-      daysWaiting: d.created_at
-        ? Math.max(0, Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86_400_000))
-        : 0,
-      threadId: d.email_ref ?? d.id,
-    }))
-  const delegationQueueItems: DelegationExtracted[] = pendingDelegations
-    .filter((d) => d.expected_by)
-    .map((d) => {
-      const daysOut = Math.floor(
-        (new Date(d.expected_by!).getTime() - Date.now()) / 86_400_000,
-      )
-      return {
-        person: d.person,
-        role: '',
-        task: d.task,
-        source: d.source === 'auto' ? 'inbox scan' : 'manual',
-        emailRef: d.email_ref ?? '',
-        expectedBy: d.expected_by ?? null,
-        urgency: daysOut < 0 ? 'high' : daysOut <= 3 ? 'medium' : 'low',
-      }
-    })
+  // The edition system — drives the entire Command Center layout
+  const { edition } = useTimeMode()
 
   useEffect(() => {
     if (!isAuthenticated || !user) return
@@ -154,19 +101,16 @@ export function Dashboard() {
     fetchCalendar()
     fetchBrainStatus()
     fetchBrainRecent()
-    fetchSpark()
     fetchToday()
     fetchProgress()
 
-    // Load voice profile
+    // Load voice profile (kept — audio briefing is a core feature)
     loadVoiceProfile().then(setVoiceProfile)
 
-    // LEMON workspace subscriptions for the workspace tabs (counts and intel).
-    // Each subscription is a no-op if VITE_LEMON_FIREBASE_* vars are missing.
-    const unsubDeals = opsViews ? subscribeDeals() : () => {}
-    const unsubProjects = opsViews ? subscribeProjects() : () => {}
-    const unsubLemonDelegations = opsViews ? subscribeLemonDelegations() : () => {}
-    // Mission Control: trackers + engine-computed state (always on)
+    // Workspace subscriptions
+    const unsubDeals = subscribeDeals()
+    const unsubProjects = subscribeProjects()
+    const unsubLemonDelegations = subscribeLemonDelegations()
     const unsubTrackers = subscribeTrackers()
     const unsubMission = subscribeMission()
 
@@ -182,7 +126,7 @@ export function Dashboard() {
       unsubTrackers()
       unsubMission()
     }
-  }, [isAuthenticated, user?.uid, opsViews, subscribeDeals, subscribeProjects, subscribeLemonDelegations, subscribeTrackers, subscribeMission])
+  }, [isAuthenticated, user?.uid, subscribeDeals, subscribeProjects, subscribeLemonDelegations, subscribeTrackers, subscribeMission])
 
   const handleReply = (thread: InboxThread) => {
     setReplyEmail({
@@ -208,146 +152,51 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-bg-base text-text-primary font-body">
-      <DemoBanner />
       <Header onOpenSettings={() => setSettingsOpen(true)} />
 
-      {newDashboard ? (
-        <FocusModeProvider>
-          <main
-            id="main-content"
-            className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16"
-            data-focus={focusActive ? 'on' : 'off'}
-          >
-            <EditorialMasthead />
+      <main
+        id="main-content"
+        className="max-w-[880px] mx-auto px-4 sm:px-6 pb-16"
+      >
+        <EditorialMasthead />
+        <WorkspaceTabs />
 
-            {opsViews && <WorkspaceTabs />}
+        {/* ═══ COMMAND CENTER ═══ */}
+        {view === 'briefing' ? (
+          edition === 'morning' ? (
+            <MorningEdition onReply={handleReply} />
+          ) : edition === 'midday' ? (
+            <MiddayEdition onReply={handleReply} />
+          ) : (
+            <EveningEdition />
+          )
 
-            {!opsViews || view === 'briefing' ? (
-              /* ══ REBALANCED LAYOUT: Sidebar (1fr) + Wide Center (2fr) ══ */
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 lg:gap-8 mt-2">
+        /* ═══ PRIMARY TABS ═══ */
+        ) : view === 'deals' ? (
+          <DealsView />
+        ) : view === 'projects' ? (
+          <ProjectsView />
+        ) : view === 'writing' ? (
+          <WritingView />
 
-                {/* ── LEFT SIDEBAR: Briefing ── */}
-                <section aria-label="Morning briefing" className="flex flex-col gap-0 animate-in">
-                  <CollapsibleSection
-                    id="morning-overview"
-                    title="Morning Overview"
-                    autoCollapseOutside={{ start: 5, end: 12 }}
-                  >
-                    <MorningOverview />
-                  </CollapsibleSection>
-                  <AudioPlayer />
-                  <CollapsibleSection id="brain" title="Brain" defaultOpen={false}>
-                    <BrainPanel />
-                  </CollapsibleSection>
-                  <CollapsibleSection id="full-brief" title="Full Brief" defaultOpen={false}>
-                    <BriefPanel />
-                  </CollapsibleSection>
-                </section>
+        /* ═══ SECONDARY VIEWS (accessible but not in primary tabs) ═══ */
+        ) : view === 'inbox' ? (
+          <InboxIntelView onReply={handleReply} />
+        ) : view === 'fund' ? (
+          <FundView />
+        ) : view === 'you' ? (
+          <YouView />
+        ) : view === 'memory' ? (
+          <MemoryView />
+        ) : view === 'archive' ? (
+          <ArchiveView />
+        ) : null}
+      </main>
 
-                {/* ── CENTER (Wide): The Spine — Advisor first, fronts ranked, then today ── */}
-                <section aria-label="Command center" className="flex flex-col gap-0 animate-in animate-in-delay-1">
-                  {/* Engine heartbeats + failure banners — never silent staleness */}
-                  <EngineStatus />
+      <GlobalCapture />
+      <AILogDrawer />
 
-                  {/* The Advisor speaks first */}
-                  <AdvisorCard />
-
-                  {/* Outward actions awaiting one-tap approval */}
-                  <ApprovalsStrip />
-
-                  {/* The five fronts, ranked by what needs Billy today */}
-                  <FrontBands />
-
-                  {/* Evening mode: the wrap surfaces after 18:00 */}
-                  {eveningMode && <EveningWrapCard />}
-
-                  {/* HERO: The One Thing — always visible */}
-                  <OneThingCard data-focus-keep="true" />
-
-                  {/* Priority + Calendar side by side on desktop, stacked on tablet */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-                    <div>
-                      <PriorityStack />
-                      <RelationshipPanel />
-                    </div>
-                    <div>
-                      <CalendarDayView />
-                    </div>
-                  </div>
-
-                  <hr className="ed-rule my-4" />
-
-                  {/* Executive Summary */}
-                  <CollapsibleSection id="exec-summary" title="Executive Summary">
-                    <ExecutiveSummary />
-                  </CollapsibleSection>
-
-                  <hr className="ed-rule my-2" />
-
-                  {/* Inbox — smart grouped */}
-                  <InboxSummary onReply={handleReply} onCreateTask={handleCreateTask} />
-
-                  {/* Tasks — collapsible buckets */}
-                  <CollapsibleSection id="tasks" title="Tasks">
-                    <TasksPanel />
-                  </CollapsibleSection>
-
-                  {/* Waiting On + Delegations — live from the delegation tracker */}
-                  <WaitingOnPanel items={waitingOnItems} />
-                  <DelegationQueue delegations={delegationQueueItems} />
-
-                  {/* Wrapup — only visible after 4pm */}
-                  {showWrapup && (
-                    <CollapsibleSection
-                      id="wrapup"
-                      title="End of Day"
-                      autoCollapseOutside={{ start: 16, end: 23 }}
-                    >
-                      <WrapupCard />
-                    </CollapsibleSection>
-                  )}
-                </section>
-              </div>
-            ) : view === 'inbox' ? (
-              <InboxIntelView onReply={handleReply} />
-            ) : view === 'deals' ? (
-              <DealsView />
-            ) : view === 'projects' ? (
-              <ProjectsView />
-            ) : view === 'fund' ? (
-              <FundView />
-            ) : view === 'writing' ? (
-              <WritingView />
-            ) : view === 'you' ? (
-              <YouView />
-            ) : view === 'memory' ? (
-              <MemoryView />
-            ) : view === 'archive' ? (
-              <ArchiveView />
-            ) : null}
-          </main>
-          <GlobalCapture />
-          <AILogDrawer />
-          <RoughMorningPanel />
-        </FocusModeProvider>
-      ) : (
-        /* Legacy layout — preserved exactly as-is */
-        <main className="max-w-[1440px] mx-auto px-4 pb-16">
-          <BriefPanel />
-          <NextUpBar />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-            <TasksPanel />
-            <InboxPanel onReply={handleReply} onCreateTask={handleCreateTask} />
-            <BrainPanel />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-            <SparkCard />
-            <DecisionJournal />
-          </div>
-        </main>
-      )}
-
-      {/* These stay exactly as-is regardless of layout flag */}
+      {/* Modals & overlays — all kept */}
       <SkillLauncher />
       <BillyDrawer />
       <MeetingPrepModal />

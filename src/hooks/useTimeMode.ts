@@ -1,25 +1,26 @@
 /**
- * Time mode hook — returns the current work phase and greeting based on hour of day.
- * Used across components to display time-aware UI text.
+ * Time mode hook — returns the current edition and greeting.
+ *
+ * Three editions match Billy's actual rhythm:
+ *   morning (5 AM – 12 PM) — tactical: what do I do first?
+ *   midday  (12 PM – 5 PM) — triage: what came in, what's coming up?
+ *   evening (5 PM – 5 AM)  — strategic: what happened, what's tomorrow?
  */
 
-export type TimeMode =
-  | 'morning-prep'
-  | 'deep-work'
-  | 'midday-pulse'
-  | 'execution'
-  | 'wrap-up'
-  | 'evening-scan'
+export type Edition = 'morning' | 'midday' | 'evening'
 
-export function getTimeMode(hour?: number): TimeMode {
+/** @deprecated Use Edition instead */
+export type TimeMode = Edition
+
+export function getEdition(hour?: number): Edition {
   const h = hour ?? new Date().getHours()
-  if (h >= 6 && h < 9) return 'morning-prep'
-  if (h >= 9 && h < 12) return 'deep-work'
-  if (h >= 12 && h < 14) return 'midday-pulse'
-  if (h >= 14 && h < 17) return 'execution'
-  if (h >= 17 && h < 19) return 'wrap-up'
-  return 'evening-scan'
+  if (h >= 5 && h < 12) return 'morning'
+  if (h >= 12 && h < 17) return 'midday'
+  return 'evening'
 }
+
+/** @deprecated Use getEdition instead */
+export const getTimeMode = getEdition
 
 export function getGreeting(hour?: number): string {
   const h = hour ?? new Date().getHours()
@@ -28,10 +29,12 @@ export function getGreeting(hour?: number): string {
   return 'Good evening'
 }
 
-export function useTimeMode(): { mode: TimeMode; greeting: string } {
+export function useTimeMode(): { edition: Edition; mode: Edition; greeting: string } {
   const now = new Date().getHours()
+  const edition = getEdition(now)
   return {
-    mode: getTimeMode(now),
+    edition,
+    mode: edition, // backward compat
     greeting: getGreeting(now),
   }
 }
