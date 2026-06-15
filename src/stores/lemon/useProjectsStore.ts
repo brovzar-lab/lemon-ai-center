@@ -11,7 +11,10 @@ import {
   orderBy,
 } from 'firebase/firestore'
 import { lemonDb, isLemonWorkspaceConfigured, opsPath } from '@/lib/firestoreLemon'
+import { apiFetch } from '@/lib/apiClient'
 import type { LemonProject, ProjectCategory } from '@shared/types'
+
+const rerank = () => void apiFetch('/api/engine/run/slip_detect', { method: 'POST' }).catch(() => {})
 
 interface ProjectsState {
   projects: LemonProject[]
@@ -60,6 +63,7 @@ export const useProjectsStore = create<ProjectsState>()((set) => ({
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
     })
+    rerank()
   },
 
   updateCategory: async (id, category) => {
@@ -69,6 +73,7 @@ export const useProjectsStore = create<ProjectsState>()((set) => ({
       category,
       updated_at: serverTimestamp(),
     })
+    rerank()
   },
 
   update: async (id, patch) => {
@@ -78,6 +83,7 @@ export const useProjectsStore = create<ProjectsState>()((set) => ({
       ...patch,
       updated_at: serverTimestamp(),
     })
+    rerank()
   },
 
   remove: async (id) => {

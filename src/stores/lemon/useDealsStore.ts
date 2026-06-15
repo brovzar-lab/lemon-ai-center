@@ -11,7 +11,11 @@ import {
   orderBy,
 } from 'firebase/firestore'
 import { lemonDb, isLemonWorkspaceConfigured, opsPath } from '@/lib/firestoreLemon'
+import { apiFetch } from '@/lib/apiClient'
 import type { LemonDeal, DealStatus } from '@shared/types'
+
+/** Fire-and-forget re-rank so the Five Fronts update immediately after deal mutations */
+const rerank = () => void apiFetch('/api/engine/run/slip_detect', { method: 'POST' }).catch(() => {})
 
 interface DealsState {
   deals: LemonDeal[]
@@ -61,6 +65,7 @@ export const useDealsStore = create<DealsState>()((set) => ({
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
     })
+    rerank()
   },
 
   updateStatus: async (id, status) => {
@@ -70,6 +75,7 @@ export const useDealsStore = create<DealsState>()((set) => ({
       status,
       updated_at: serverTimestamp(),
     })
+    rerank()
   },
 
   update: async (id, patch) => {
@@ -79,6 +85,7 @@ export const useDealsStore = create<DealsState>()((set) => ({
       ...patch,
       updated_at: serverTimestamp(),
     })
+    rerank()
   },
 
   remove: async (id) => {

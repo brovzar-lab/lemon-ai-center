@@ -3,6 +3,7 @@ import { useInboxStore } from '@/stores/useInboxStore'
 import { useCalendarStore } from '@/stores/useCalendarStore'
 import { useBriefStore } from '@/stores/useBriefStore'
 
+const TWO_MINUTES = 2 * 60 * 1000
 const FIVE_MINUTES = 5 * 60 * 1000
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -18,7 +19,7 @@ export function usePollingEngine() {
   useEffect(() => {
     const gmailInterval = setInterval(() => {
       useInboxStore.getState().fetch()
-    }, FIVE_MINUTES)
+    }, TWO_MINUTES)
 
     const calendarInterval = setInterval(() => {
       useCalendarStore.getState().fetch()
