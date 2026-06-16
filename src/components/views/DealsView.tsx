@@ -3,6 +3,7 @@ import { useDealsStore } from '@/stores/lemon/useDealsStore'
 import { BoardKanban, type BoardColumnDef } from '@/components/workspace/BoardKanban'
 import { EmptyState } from '@/components/workspace/EmptyState'
 import { ScanInboxButton } from '@/components/ScanInboxButton'
+import { ContextMenu, useContextMenu, type ContextAction } from '@/components/ContextMenu'
 import type { LemonDeal, DealStatus } from '@shared/types'
 
 const COLUMNS: BoardColumnDef<DealStatus>[] = [
@@ -43,6 +44,44 @@ export function DealsView() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<NewDealForm>(EMPTY_FORM)
   const [activeDeal, setActiveDeal] = useState<LemonDeal | null>(null)
+  const { contextMenu, onContextMenu, closeMenu } = useContextMenu()
+  const [ctxDeal, setCtxDeal] = useState<LemonDeal | null>(null)
+
+  const handleDealContext = (deal: LemonDeal, e: React.MouseEvent) => {
+    setCtxDeal(deal)
+    onContextMenu(e)
+  }
+
+  const ctxActions: ContextAction[] = ctxDeal ? [
+    {
+      label: 'Add quick note',
+      icon: '📝',
+      input: {
+        placeholder: 'e.g. Approved Benvenuto buy',
+        onSubmit: (text) => {
+          const existing = ctxDeal.notes ?? ''
+          const timestamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          const newNote = existing ? `${existing}\n[${timestamp}] ${text}` : `[${timestamp}] ${text}`
+          update(ctxDeal.id, { notes: newNote })
+        },
+      },
+    },
+    {
+      label: 'Update next action',
+      icon: '→',
+      input: {
+        placeholder: 'What needs to happen next?',
+        onSubmit: (text) => update(ctxDeal.id, { next_action: text }),
+      },
+    },
+    ...COLUMNS.filter((c) => c.key !== ctxDeal.status).map((col) => ({
+      label: `Move to ${col.label}`,
+      icon: '◉',
+      onClick: () => updateStatus(ctxDeal.id, col.key),
+    })),
+    { label: 'Open details', icon: '⊙', onClick: () => setActiveDeal(ctxDeal) },
+    { label: 'Delete deal', icon: '🗑', danger: true, onClick: () => remove(ctxDeal.id) },
+  ] : []
 
   useEffect(() => {
     return subscribe()
@@ -222,7 +261,18 @@ export function DealsView() {
           getColumn={(d) => (d.status ?? 'active') as DealStatus}
           onMove={(id, target) => updateStatus(id, target)}
           onCardClick={(d) => setActiveDeal(d)}
+          onCardContextMenu={(d, e) => handleDealContext(d, e)}
           renderCard={(deal) => <DealCard deal={deal} />}
+        />
+      )}
+
+      {/* Right-click context menu */}
+      {contextMenu && ctxDeal && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          actions={ctxActions}
+          onClose={closeMenu}
         />
       )}
 
@@ -315,6 +365,11 @@ function DealCard({ deal }: { deal: LemonDeal }) {
       {deal.next_action && (
         <p className="text-[11px] font-body italic mt-2 truncate text-text-tertiary">
           → {deal.next_action}
+        </p>
+      )}
+      {deal.notes && (
+        <p className="text-[10px] font-body mt-1.5 truncate text-accent-lemon/80" title={deal.notes}>
+          📝 {deal.notes.split('\n').pop()}
         </p>
       )}
     </>

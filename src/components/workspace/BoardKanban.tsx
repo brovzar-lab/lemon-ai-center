@@ -21,6 +21,8 @@ export interface BoardKanbanProps<T extends { id: string }, TKey extends string>
   renderCard: (item: T) => ReactNode
   /** Optional click-through (does not fire while dragging). */
   onCardClick?: (item: T) => void
+  /** Optional right-click handler for context menus. */
+  onCardContextMenu?: (item: T, e: React.MouseEvent) => void
   /** Per-column empty placeholder. */
   emptyHint?: string
   /** Column width minimum, default `min-w-[240px]`. */
@@ -42,6 +44,7 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
   onMove,
   renderCard,
   onCardClick,
+  onCardContextMenu,
   emptyHint = 'Drop here',
   columnMinWidth = 'min-w-[240px]',
 }: BoardKanbanProps<T, TKey>) {
@@ -147,6 +150,12 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
                     onDragEnd={onCardDragEnd}
                     onClick={() => {
                       if (!isDragging) onCardClick?.(item)
+                    }}
+                    onContextMenu={(e) => {
+                      if (onCardContextMenu) {
+                        e.preventDefault()
+                        onCardContextMenu(item, e)
+                      }
                     }}
                     role={onCardClick ? 'button' : undefined}
                     tabIndex={onCardClick ? 0 : undefined}

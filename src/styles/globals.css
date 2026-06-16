@@ -520,4 +520,80 @@ a:focus-visible,
   .correction-error {
     @apply font-body text-xs text-accent-coral;
   }
+
+  /* ── Right-click context menu ── */
+  .ctx-menu {
+    min-width: 200px;
+    max-width: 280px;
+    background: rgba(30, 28, 24, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+    animation: ctx-in 0.12s ease-out;
+  }
+  @keyframes ctx-in {
+    from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 12px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    text-align: left;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 100ms, color 100ms;
+  }
+  .ctx-item:hover {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+  .ctx-danger:hover {
+    background: rgba(228, 80, 66, 0.15);
+    color: var(--color-accent-coral);
+  }
+  .ctx-icon {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .ctx-input-row {
+    display: flex;
+    gap: 4px;
+    padding: 4px 8px;
+  }
+  .ctx-input {
+    flex: 1;
+    background: var(--color-bg-base);
+    border: 1px solid var(--color-border-soft);
+    color: var(--color-text-primary);
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    padding: 6px 8px;
+    border-radius: 6px;
+    outline: none;
+  }
+  .ctx-input:focus {
+    border-color: var(--color-accent-lemon);
+  }
+  .ctx-input-submit {
+    background: var(--color-accent-lemon);
+    color: var(--color-bg-base);
+    border: none;
+    width: 28px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
 }
