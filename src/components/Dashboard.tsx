@@ -74,6 +74,10 @@ import { WritingView } from './views/WritingView'
 import { YouView } from './views/YouView'
 import type { WaitingOnItem } from './WaitingOnPanel'
 import type { DelegationExtracted } from './DelegationQueue'
+// AI Intelligence layer — new components that add power
+import { TheOneMove } from './editions/TheOneMove'
+import { InboxDigest } from './editions/InboxDigest'
+import { UnansweredList } from './editions/UnansweredList'
 
 export function Dashboard() {
   const { user, isAuthenticated } = useAuthStore()
@@ -227,10 +231,10 @@ export function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 lg:gap-8 mt-2">
 
                 {/* ── LEFT SIDEBAR: Briefing ── */}
-                <section aria-label="Morning briefing" className="flex flex-col gap-0 animate-in">
+                <section aria-label="Intelligence briefing" className="flex flex-col gap-0 animate-in">
                   <CollapsibleSection
                     id="morning-overview"
-                    title="Morning Overview"
+                    title="Today's Intelligence"
                     autoCollapseOutside={{ start: 5, end: 12 }}
                   >
                     <MorningOverview />
@@ -248,6 +252,12 @@ export function Dashboard() {
                 <section aria-label="Command center" className="flex flex-col gap-0 animate-in animate-in-delay-1">
                   {/* Engine heartbeats + failure banners — never silent staleness */}
                   <EngineStatus />
+
+                  {/* ▸ AI INTELLIGENCE: The One Move — what needs you RIGHT NOW */}
+                  <TheOneMove onReply={(threadId) => {
+                    const t = useInboxStore.getState().threads.find((t) => t.id === threadId)
+                    if (t) handleReply(t)
+                  }} />
 
                   {/* The Advisor speaks first */}
                   <AdvisorCard />
@@ -283,6 +293,15 @@ export function Dashboard() {
                   </CollapsibleSection>
 
                   <hr className="ed-rule my-2" />
+
+                  {/* ▸ AI INTELLIGENCE: Inbox Digest — peace of mind at a glance */}
+                  <InboxDigest />
+
+                  {/* ▸ AI INTELLIGENCE: Emails awaiting YOUR reply */}
+                  <UnansweredList max={7} onReply={(threadId) => {
+                    const t = useInboxStore.getState().threads.find((t) => t.id === threadId)
+                    if (t) handleReply(t)
+                  }} />
 
                   {/* Inbox — smart grouped */}
                   <InboxSummary onReply={handleReply} onCreateTask={handleCreateTask} />

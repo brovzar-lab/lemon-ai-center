@@ -358,10 +358,11 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
       } as any)
 
       longBriefText = ''
-      for await (const text of longBriefStream.textStream) {
+      longBriefStream.on('text', (text: string) => {
         longBriefText += text
         sendEvent({ type: 'token', voice: 'billy', text })
-      }
+      })
+      await longBriefStream.finalMessage()
       billyText = longBriefText
 
       // ---- PASS 3: Self-fact-check (Haiku) ----
@@ -398,10 +399,11 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
         system: JARVIS_SYSTEM.split('## Task')[0] + 'Generate a concise, analytical morning briefing under 150 words.',
         messages: [{ role: 'user', content: `Today is ${new Date().toDateString()}. ${contextBlock}` }],
       } as any)
-      for await (const text of jarvisStream.textStream) {
+      jarvisStream.on('text', (text: string) => {
         jarvisText += text
         sendEvent({ type: 'token', voice: 'jarvis', text })
-      }
+      })
+      await jarvisStream.finalMessage()
 
       const billyStream: any = anthropic.messages.stream({
         model: MODEL_CHAT,
@@ -409,10 +411,11 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
         system: BILLY_SYSTEM,
         messages: [{ role: 'user', content: jarvisText }],
       } as any)
-      for await (const text of billyStream.textStream) {
+      billyStream.on('text', (text: string) => {
         billyText += text
         sendEvent({ type: 'token', voice: 'billy', text })
-      }
+      })
+      await billyStream.finalMessage()
     }
 
     // ---- Save to Firestore ----

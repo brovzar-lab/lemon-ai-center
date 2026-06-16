@@ -1,0 +1,86 @@
+/* Lemon Studios — resolved utility + editorial classes.
+   The app authors these via Tailwind; designs built with this DS receive only
+   this stylesheet (no Tailwind build), so the utilities are emitted as plain
+   resolved CSS with the SAME names the app uses (bg-bg-base, text-text-primary,
+   font-display, …). Compose designs from these. */
+
+/* ── Type families ── */
+.font-display { font-family: 'Fraunces', Georgia, serif; }
+.font-body { font-family: 'Inter', system-ui, sans-serif; }
+
+/* ── Surface backgrounds ── */
+.bg-bg-base { background-color: var(--color-bg-base); }
+.bg-bg-surface { background-color: var(--color-bg-surface); }
+.bg-bg-elevated { background-color: var(--color-bg-elevated); }
+
+/* ── Accent backgrounds ── */
+.bg-accent-lemon { background-color: var(--color-accent-lemon); }
+.bg-accent-coral { background-color: var(--color-accent-coral); }
+.bg-accent-blue { background-color: var(--color-accent-blue); }
+.bg-accent-sage { background-color: var(--color-accent-sage); }
+.bg-accent-rose { background-color: var(--color-accent-rose); }
+
+/* ── Text colors ── */
+.text-text-primary { color: var(--color-text-primary); }
+.text-text-secondary { color: var(--color-text-secondary); }
+.text-text-tertiary { color: var(--color-text-tertiary); }
+.text-text-muted { color: var(--color-text-muted); }
+.text-accent-lemon { color: var(--color-accent-lemon); }
+.text-accent-coral { color: var(--color-accent-coral); }
+.text-accent-blue { color: var(--color-accent-blue); }
+.text-accent-sage { color: var(--color-accent-sage); }
+.text-accent-rose { color: var(--color-accent-rose); }
+
+/* ── Borders ── */
+.border-border-soft { border: 1px solid var(--color-border-soft); }
+.border-border-medium { border: 1px solid var(--color-border-medium); }
+.border-border-strong { border: 1px solid var(--color-border-strong); }
+
+/* ═══════════════════════════════════════════
+   Editorial elements (resolved from the app's @apply rules)
+   ═══════════════════════════════════════════ */
+
+/* Ruled section wrapper */
+.ed-section {
+  border-top: 1px solid var(--color-border-medium);
+  border-bottom: 1px solid var(--color-border-medium);
+  padding: 1.25rem 0;
+}
+
+/* Small all-caps label flanked by hairlines — the signature section header */
+.ed-section-label {
+  font-size: 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ed-section-label::before,
+.ed-section-label::after {
+  content: '';
+  display: block;
+  height: 1px;
+  flex: 1;
+  background: var(--color-border-soft);
+}
+
+/* Single + double hairline rules */
+.ed-rule {
+  border: none;
+  border-top: 1px solid var(--color-border-medium);
+  margin: 0;
+}
+.ed-rule-double {
+  border: none;
+  border-top: 1px solid var(--color-border-medium);
+  margin-bottom: 2px;
+}
+.ed-rule-double::after {
+  content: '';
+  display: block;
+  border-top: 1px solid var(--color-border-medium);
+}
