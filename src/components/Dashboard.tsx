@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useCalendarStore } from '@/stores/useCalendarStore'
@@ -12,6 +12,7 @@ import { useCaptureStore } from '@/stores/useCaptureStore'
 import { useActionLogStore } from '@/stores/useActionLogStore'
 import { useFeatureFlags } from '@/hooks/useFeatureFlags'
 import { usePollingEngine } from '@/hooks/usePollingEngine'
+import { useCurrentHour } from '@/hooks/useTimeTick'
 import { useViewStore } from '@/stores/useViewStore'
 import { WorkspaceTabs } from './workspace/WorkspaceTabs'
 import { DealsView } from './views/DealsView'
@@ -109,8 +110,8 @@ export function Dashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replyEmail, setReplyEmail] = useState<{ threadId: string; from: string; fromEmail: string; subject: string; snippet: string } | null>(null)
 
-  // Time-based visibility
-  const hour = new Date().getHours()
+  // Time-based visibility — auto-updates every minute
+  const hour = useCurrentHour()
   const showWrapup = hour >= 16 // Show wrapup after 4pm
   const eveningMode = hour >= 18
 

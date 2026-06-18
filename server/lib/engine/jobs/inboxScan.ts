@@ -241,17 +241,19 @@ async function writeToFirestore(
   const basePath = `users/${uid}`
   const stats: ScanStats = { deals: 0, projects: 0, delegations: 0, memories: 0 }
 
-  const batch = db.batch()
+  let batch = db.batch()
   let batchCount = 0
 
   async function flushIfNeeded() {
     if (batchCount >= 450) {
       await batch.commit()
+      batch = db.batch()  // CRITICAL: create fresh batch after commit
       batchCount = 0
     }
   }
 
-  const existingDeals = await db.collection(`${basePath}/deals`).get()
+  // Dedup reads — limit to 10k docs to prevent OOM on large collections
+  const existingDeals = await db.collection(`${basePath}/deals`).limit(10000).get()
   const existingDealNames = new Set(
     existingDeals.docs.map((d) => (d.data().name || '').toLowerCase()),
   )
@@ -277,7 +279,7 @@ async function writeToFirestore(
     await flushIfNeeded()
   }
 
-  const existingProjects = await db.collection(`${basePath}/projects`).get()
+  const existingProjects = await db.collection(`${basePath}/projects`).limit(10000).get()
   const existingProjectTitles = new Set(
     existingProjects.docs.map((d) => (d.data().title || '').toLowerCase()),
   )
@@ -303,7 +305,7 @@ async function writeToFirestore(
     await flushIfNeeded()
   }
 
-  const existingDelegations = await db.collection(`${basePath}/delegations`).get()
+  const existingDelegations = await db.collection(`${basePath}/delegations`).limit(10000).get()
   const existingDelegationKeys = new Set(
     existingDelegations.docs.map(
       (d) => `${(d.data().person || '').toLowerCase()}::${(d.data().task || '').toLowerCase()}`,
@@ -329,7 +331,7 @@ async function writeToFirestore(
     await flushIfNeeded()
   }
 
-  const existingMemories = await db.collection(`${basePath}/memories`).get()
+  const existingMemories = await db.collection(`${basePath}/memories`).limit(10000).get()
   const existingMemoryTexts = new Set(
     existingMemories.docs.map((d) => (d.data().text || '').toLowerCase()),
   )

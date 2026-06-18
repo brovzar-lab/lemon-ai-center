@@ -91,8 +91,8 @@ export async function assembleContext(uid: string): Promise<{ items: ContextItem
         }
       }
     }
-  } catch {
-    // Gmail unavailable — proceed without
+  } catch (err) {
+    console.warn('[brief] Gmail fetch failed:', err)
   }
 
   // Fetch Calendar events
@@ -123,8 +123,8 @@ export async function assembleContext(uid: string): Promise<{ items: ContextItem
       const desc = (ev.description ?? '').slice(0, MAX_EVENT_DESC_LEN)
       items.push({ type: 'calendar', id, label: `${summary} at ${start}`, snippet: desc })
     }
-  } catch {
-    // Calendar unavailable — proceed without
+  } catch (err) {
+    console.warn('[brief] Calendar fetch failed:', err)
   }
 
   // ── Obsidian Brain context ──────────────────────────
@@ -249,6 +249,9 @@ function validateBriefJson(raw: string, contextIds: string[]): { ok: true; data:
 
 claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
   const uid = req.session.uid!
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ error: { code: 'INVALID_BODY', message: 'Request body must be a JSON object' } })
+  }
   const { forceRefresh = false } = req.body
 
   // Assemble context (threads + calendar)
@@ -465,6 +468,18 @@ claudeRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
 claudeRouter.post('/chat', csrfCheck, chatLimit, async (req, res) => {
   const uid = req.session.uid!
   const { message, context } = req.body as { message: string; context?: string }
+
+  // Input length validation
+  if (typeof message !== 'string' || message.length === 0) {
+    return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'message must be a non-empty string' } })
+  }
+  if (message.length > 10_000) {
+    return res.status(400).json({ error: { code: 'INPUT_TOO_LONG', message: 'message must not exceed 10,000 characters' } })
+  }
+  if (context !== undefined && (typeof context !== 'string' || context.length > 30_000)) {
+    return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'context must be a string of at most 30,000 characters' } })
+  }
+
   const contextNote = context ? `\n\nContext:\n${context}` : ''
 
   res.setHeader('Content-Type', 'text/event-stream')
@@ -525,8 +540,7 @@ ${stateBlock}`
     res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
   } catch (err: any) {
     console.error('[chat] Error:', err?.status, err?.message ?? err)
-    const msg = err?.message ?? 'Unknown error'
-    res.write(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`)
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'An internal error occurred' })}\n\n`)
   }
   res.end()
 })

@@ -1,5 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import { FieldValue } from 'firebase-admin/firestore'
+import { z } from 'zod'
 import { db } from '../firebase'
 import { readTrackers, readSlips } from './data'
 import { committedMXN } from './ranker'
@@ -11,6 +12,124 @@ import { daysBetween } from './constants'
  * directly; outward-facing actions (email, calendar) are NOT tools here —
  * they queue as AIActions elsewhere.
  */
+
+/* ------------------------------------------------------------------ */
+/*  Zod schemas — strict whitelist of allowed fields per tool.        */
+/*  `.strict()` rejects any key not listed here, blocking injection   */
+/*  of __proto__, uid overrides, admin flags, etc.                    */
+/* ------------------------------------------------------------------ */
+
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/
+
+const UpdateInvestorSchema = z
+  .object({
+    name: z.string().min(1),
+    stage: z.enum(['contacted', 'interested', 'docs', 'committed', 'passed']).optional(),
+    amountMXN: z.number().optional(),
+    nextAction: z.string().optional(),
+    touchedToday: z.boolean().optional(),
+  })
+  .strict()
+
+const UpdateScriptSchema = z
+  .object({
+    title: z.string().min(1),
+    stage: z.enum(['idea', 'outline', 'draft', 'polish', 'delivered']).optional(),
+    draftNumber: z.number().optional(),
+    targetDate: z.string().regex(isoDateRegex, 'Must be YYYY-MM-DD').optional(),
+    touchedToday: z.boolean().optional(),
+    notes: z.string().optional(),
+  })
+  .strict()
+
+const AddDeadlineSchema = z
+  .object({
+    title: z.string().min(1),
+    date: z.string().regex(isoDateRegex, 'Must be YYYY-MM-DD'),
+    severity: z.enum(['hard', 'soft']),
+    linkedEntity: z.string().optional(),
+  })
+  .strict()
+
+const UpdateDealSchema = z
+  .object({
+    name: z.string().min(1),
+    status: z.enum(['active', 'pending_signature', 'in_review', 'closed']).optional(),
+    next_action: z.string().optional(),
+    value: z.string().optional(),
+  })
+  .strict()
+
+const AddDelegationSchema = z
+  .object({
+    person: z.string().min(1),
+    task: z.string().min(1),
+    expected_by: z.string().regex(isoDateRegex, 'Must be YYYY-MM-DD').optional(),
+    context: z.string().optional(),
+  })
+  .strict()
+
+const CompleteDelegationSchema = z
+  .object({
+    person: z.string().optional(),
+    task: z.string().min(1),
+  })
+  .strict()
+
+const UpdateVentureSchema = z
+  .object({
+    name: z.string().min(1),
+    stage: z.string().optional(),
+    nextAction: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .strict()
+
+const UpdateWatchlistSchema = z
+  .object({
+    ticker: z.string().min(1),
+    action: z.enum(['add', 'remove']),
+    shares: z.number().optional(),
+    costBasisUSD: z.number().optional(),
+  })
+  .strict()
+
+const AddMemorySchema = z
+  .object({
+    text: z.string().min(1),
+  })
+  .strict()
+
+/** Map tool names to their Zod schema for validation dispatch. */
+const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
+  update_investor: UpdateInvestorSchema,
+  update_script: UpdateScriptSchema,
+  add_deadline: AddDeadlineSchema,
+  update_deal: UpdateDealSchema,
+  add_delegation: AddDelegationSchema,
+  complete_delegation: CompleteDelegationSchema,
+  update_venture: UpdateVentureSchema,
+  update_watchlist: UpdateWatchlistSchema,
+  add_memory: AddMemorySchema,
+}
+
+/**
+ * Validate raw tool input against the schema for a given tool name.
+ * Returns the parsed (clean) object or a human-readable error string.
+ */
+function validateToolInput(
+  toolName: string,
+  raw: ToolInput,
+): { ok: true; data: ToolInput } | { ok: false; error: string } {
+  const schema = TOOL_SCHEMAS[toolName]
+  if (!schema) return { ok: true, data: raw } // unknown tools fall through to default case
+  const result = schema.safeParse(raw)
+  if (result.success) return { ok: true, data: result.data as ToolInput }
+  const issues = result.error.issues
+    .map((i) => `${i.path.join('.')}: ${i.message}`)
+    .join('; ')
+  return { ok: false, error: `Validation failed for ${toolName}: ${issues}` }
+}
 
 export const CHAT_TOOLS: Anthropic.Tool[] = [
   {
@@ -165,6 +284,11 @@ export async function executeChatTool(
   name: string,
   input: ToolInput,
 ): Promise<string> {
+  // --- Validate and sanitize input before any Firestore write ---
+  const validation = validateToolInput(name, input)
+  if (!validation.ok) return validation.error
+  input = validation.data
+
   const now = FieldValue.serverTimestamp()
   const today = new Date().toISOString()
 
@@ -220,9 +344,7 @@ export async function executeChatTool(
     }
 
     case 'add_deadline': {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(input.date))) {
-        return `Rejected: date must be YYYY-MM-DD, got "${input.date}"`
-      }
+      // Date format is now enforced by AddDeadlineSchema (Zod)
       await db.collection(`users/${uid}/deadlines`).add({
         title: input.title,
         date: input.date,

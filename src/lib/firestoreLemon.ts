@@ -36,10 +36,35 @@ export function getOpsUid(): string | null {
 }
 
 /**
+ * Allowed Firestore sub-collections under `users/{uid}/`.
+ * Any collection not in this list is rejected to prevent path traversal.
+ */
+const ALLOWED_COLLECTIONS = new Set([
+  'deals',
+  'projects',
+  'delegations',
+  'memories',
+  'tasks',
+  'decisions',
+  'captures',
+  'action_log',
+  'sparks',
+  'trackers',
+  'mission_control',
+  'archive',
+  'calendar_cache',
+])
+
+/**
  * Build a `users/{uid}/{collection}` path. Returns null when the user
- * isn't authenticated yet.
+ * isn't authenticated yet or the collection name is invalid.
  */
 export function opsPath(collectionName: string): string | null {
   const uid = getOpsUid()
-  return uid ? `users/${uid}/${collectionName}` : null
+  if (!uid) return null
+  if (!ALLOWED_COLLECTIONS.has(collectionName)) {
+    console.error(`[opsPath] Rejected invalid collection name: "${collectionName}"`)
+    return null
+  }
+  return `users/${uid}/${collectionName}`
 }
