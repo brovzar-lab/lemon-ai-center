@@ -16,6 +16,10 @@ test('TasksPanel renders three columns', () => {
 
 test('NOW column shows now-bucket tasks', () => {
   render(<TasksPanel />)
+  // The NOW bucket is expanded by default (NEXT/ORBIT collapsed), so its active
+  // tasks render their titles inline. Assert each one is visible.
   const nowTasks = seeds.tasks.filter(t => t.bucket === 'now' && !t.done)
-  expect(screen.getAllByTestId('task-item').length).toBeGreaterThanOrEqual(nowTasks.length)
+  for (const task of nowTasks) {
+    expect(screen.getByText(task.title)).toBeInTheDocument()
+  }
 })

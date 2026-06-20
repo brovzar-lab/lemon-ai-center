@@ -49,6 +49,14 @@ vi.mock('@anthropic-ai/sdk', () => ({
   })),
 }))
 
+// The /train route's rate limiter (2 per 5 min) keys on sessionID||ip. The test
+// harness sets neither, so all train requests collapse onto one key and trip the
+// limit after 2 calls. Stub makeRateLimit to a pass-through — rate limiting is
+// not what these tests cover.
+vi.mock('../middleware/rateLimit', () => ({
+  makeRateLimit: () => (_req: any, _res: any, next: any) => next(),
+}))
+
 beforeAll(() => {
   process.env.ALLOWED_ORIGIN = 'https://app.example.com'
 })
@@ -121,7 +129,9 @@ describe('PUT /api/voice-profile', () => {
       .send(profile)
     expect(res.status).toBe(200)
     expect(res.body.data.ok).toBe(true)
-    expect(mockFirestoreSet).toHaveBeenCalledWith(profile)
+    // S-11: the route sanitizes the body before writing — it defaults the absent
+    // lastUpdated to null. Everything else round-trips unchanged.
+    expect(mockFirestoreSet).toHaveBeenCalledWith({ ...profile, lastUpdated: null })
   })
 
   test('returns 500 when Firestore set fails', async () => {
@@ -129,7 +139,9 @@ describe('PUT /api/voice-profile', () => {
     const res = await request(makeApp())
       .put('/api/voice-profile')
       .set('Origin', 'https://app.example.com')
-      .send({ trained: false })
+      // summary is required by S-11 validation; include it so the request
+      // reaches the (failing) Firestore write instead of bouncing at 400.
+      .send({ trained: false, summary: 'placeholder' })
     expect(res.status).toBe(500)
     expect(res.body.error.message).toMatch(/failed/i)
   })
