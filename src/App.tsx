@@ -2,9 +2,13 @@ import { AuthGate } from '@/components/AuthGate'
 import { Dashboard } from '@/components/Dashboard'
 import { lazy, Suspense } from 'react'
 
-// Agentation component inspector — always on (local + deployed)
+// Agentation component inspector — dev only
 // Click any element → copies React component file path → paste to AI to fix
-const Agentation = lazy(() => import('agentation').then((m) => ({ default: m.Agentation })))
+// import.meta.env.DEV is statically replaced by Vite; Rollup dead-code-eliminates
+// the import in production so the devDependency is never required at build time.
+const Agentation = import.meta.env.DEV
+  ? lazy(() => import('agentation').then((m) => ({ default: m.Agentation })))
+  : null
 
 export function App() {
   return (
