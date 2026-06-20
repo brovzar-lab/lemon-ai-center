@@ -1,50 +1,69 @@
-/* Lemon Studios — design tokens
-   Source of truth: src/styles/globals.css (:root + [data-theme="dark"]).
-   Warm editorial paper palette. Light is default; set [data-theme="dark"] on a
+/* Lemon Studios — design tokens (Instrument design system)
+   Source of truth: DESIGN.md + src/styles/globals.css (:root + [data-theme="dark"]).
+   Neutral Instrument palette. Light is default; set [data-theme="dark"] on a
    container or <html> to flip. Every color below is consumed as var(--color-*). */
 
 :root {
-  /* Surfaces — warm paper, light → progressively raised */
-  --color-bg-base: #f5ede2;
-  --color-bg-surface: #efe6d8;
-  --color-bg-elevated: #e8dece;
+  /* Surfaces */
+  --color-bg-base: #F4F5F7;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #EEF0F3;
+
+  /* Semantic aliases */
+  --bg: #F4F5F7;
+  --surface: #FFFFFF;
+  --sunken: #EEF0F3;
+  --line: #E6E8EC;
 
   /* Accents */
-  --color-accent-lemon: #c9a227;
-  --color-accent-coral: #b85c38;
-  --color-accent-blue: #4a7a9b;
-  --color-accent-sage: #6b8f5e;
-  --color-accent-rose: #a8524a;
+  --accent: #2B54F0;
+  --color-accent-lemon: var(--accent);
+  --color-accent-coral: #E0574F;
+  --color-accent-blue: #2B54F0;
+  --color-accent-sage: #2D8659;
+  --color-accent-rose: #C94A6E;
 
   /* Text — primary → muted */
-  --color-text-primary: #2a2118;
-  --color-text-secondary: #5a4d3f;
-  --color-text-tertiary: #8a7a65;
-  --color-text-muted: #b0a08a;
+  --ink: #0B0D12;
+  --ink-2: #585F6B;
+  --ink-3: #9298A4;
+  --color-text-primary: #0B0D12;
+  --color-text-secondary: #585F6B;
+  --color-text-tertiary: #9298A4;
+  --color-text-muted: #B4B9C3;
 
-  /* Borders — hairlines on warm ink */
-  --color-border-soft: rgba(80, 60, 30, 0.12);
-  --color-border-medium: rgba(80, 60, 30, 0.22);
-  --color-border-strong: rgba(80, 60, 30, 0.35);
+  /* Borders */
+  --color-border-soft: rgba(11, 13, 18, 0.08);
+  --color-border-medium: rgba(11, 13, 18, 0.14);
+  --color-border-strong: rgba(11, 13, 18, 0.22);
 }
 
 [data-theme="dark"] {
-  --color-bg-base: #15110e;
-  --color-bg-surface: #1c1816;
-  --color-bg-elevated: #221d1a;
+  --color-bg-base: #0E1426;
+  --color-bg-surface: #16203A;
+  --color-bg-elevated: #1E2A4E;
 
-  --color-accent-lemon: #f5d547;
-  --color-accent-coral: #d97757;
-  --color-accent-blue: #8ab4d6;
-  --color-accent-sage: #a8b89a;
-  --color-accent-rose: #c97062;
+  --bg: #0E1426;
+  --surface: #16203A;
+  --sunken: #0A0F1E;
+  --line: #243050;
 
-  --color-text-primary: #f5ede2;
-  --color-text-secondary: #c9b9a3;
-  --color-text-tertiary: #8a7a65;
-  --color-text-muted: #5a4d3f;
+  --accent: #5B7CF7;
+  --color-accent-lemon: var(--accent);
+  --color-accent-coral: #F07A73;
+  --color-accent-blue: #5B7CF7;
+  --color-accent-sage: #5BBF89;
+  --color-accent-rose: #E06C8E;
 
-  --color-border-soft: rgba(180, 140, 100, 0.08);
-  --color-border-medium: rgba(180, 140, 100, 0.14);
-  --color-border-strong: rgba(200, 160, 110, 0.22);
+  --ink: #E8EAF0;
+  --ink-2: #A0A7B5;
+  --ink-3: #6B7385;
+  --color-text-primary: #E8EAF0;
+  --color-text-secondary: #A0A7B5;
+  --color-text-tertiary: #6B7385;
+  --color-text-muted: #444D5E;
+
+  --color-border-soft: rgba(232, 234, 240, 0.08);
+  --color-border-medium: rgba(232, 234, 240, 0.14);
+  --color-border-strong: rgba(232, 234, 240, 0.22);
 }

@@ -7,9 +7,9 @@ const BUCKETS: Bucket[] = ['now', 'next', 'orbit']
 const BUCKET_LABELS: Record<Bucket, string> = { now: 'NOW', next: 'NEXT', orbit: 'ORBIT' }
 const BUCKET_SUBLABEL: Record<Bucket, string> = { now: 'today', next: 'this week', orbit: 'watching' }
 const BUCKET_DOT: Record<Bucket, string> = {
-  now: 'bg-accent-coral',
-  next: 'bg-accent-lemon',
-  orbit: 'bg-text-muted',
+  now: 'bg-data-coral',
+  next: 'bg-accent',
+  orbit: 'bg-ink-3',
 }
 
 const PRESETS = [
@@ -126,14 +126,14 @@ export function TasksPanel() {
     <div>
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+        <p className="text-[11px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3">
           Tasks
         </p>
         {stage === 'idle' || stage === 'picking' ? (
           <button
             type="button"
             onClick={() => setStage(stage === 'picking' ? 'idle' : 'picking')}
-            className="text-[11px] font-body text-text-muted hover:text-text-secondary tracking-wide uppercase transition-colors flex items-center gap-1"
+            className="text-[11px] font-sans text-ink-3 hover:text-ink-2 tracking-wide uppercase transition-colors flex items-center gap-1"
           >
             Generate
             <span className={`transition-transform duration-150 ${stage === 'picking' ? 'rotate-180' : ''}`}>↓</span>
@@ -144,19 +144,19 @@ export function TasksPanel() {
       {/* ── Preset picker ── */}
       {stage === 'picking' && (
         <div className="mb-4 space-y-1">
-          {error && <p className="text-xs font-body text-accent-coral mb-2">{error}</p>}
+          {error && <p className="text-xs font-sans text-data-coral mb-2">{error}</p>}
           {PRESETS.map((preset) => (
             <button
               key={preset.label}
               type="button"
               onClick={() => generate(preset)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-border-soft hover:border-accent-lemon/30 hover:bg-bg-elevated transition-colors text-left group"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-line hover:border-accent/30 hover:bg-sunken transition-colors text-left group"
             >
               <div>
-                <span className="text-sm font-body text-text-primary">{preset.label}</span>
-                <span className="ml-2 text-xs font-body text-text-muted">{preset.sub}</span>
+                <span className="text-sm font-sans text-ink">{preset.label}</span>
+                <span className="ml-2 text-xs font-sans text-ink-3">{preset.sub}</span>
               </div>
-              <span className="text-text-muted/40 group-hover:text-accent-lemon transition-colors text-xs">→</span>
+              <span className="text-ink-3/40 group-hover:text-accent transition-colors text-xs">→</span>
             </button>
           ))}
         </div>
@@ -165,18 +165,18 @@ export function TasksPanel() {
       {/* ── Loading ── */}
       {stage === 'loading' && (
         <div className="py-6 space-y-1">
-          <div className="flex items-center gap-2 text-text-muted font-body text-xs">
-            <div className="w-3 h-3 rounded-full border border-text-muted/40 border-t-transparent animate-spin flex-shrink-0" />
+          <div className="flex items-center gap-2 text-ink-3 font-sans text-xs">
+            <div className="w-3 h-3 rounded-full border border-ink-3/40 border-t-transparent animate-spin flex-shrink-0" />
             Scanning {activePreset?.label.toLowerCase()} of email & calendar…
           </div>
-          <p className="text-[11px] font-body text-text-muted/50 pl-5">This takes 10–20 seconds</p>
+          <p className="text-[11px] font-sans text-ink-3/50 pl-5">This takes 10–20 seconds</p>
         </div>
       )}
 
       {/* ── Saving ── */}
       {stage === 'saving' && (
-        <div className="flex items-center gap-2 py-6 text-text-muted font-body text-xs">
-          <div className="w-3 h-3 rounded-full border border-text-muted/40 border-t-transparent animate-spin flex-shrink-0" />
+        <div className="flex items-center gap-2 py-6 text-ink-3 font-sans text-xs">
+          <div className="w-3 h-3 rounded-full border border-ink-3/40 border-t-transparent animate-spin flex-shrink-0" />
           Saving tasks…
         </div>
       )}
@@ -185,13 +185,13 @@ export function TasksPanel() {
       {stage === 'review' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-body text-text-muted">
+            <p className="text-xs font-sans text-ink-3">
               {activePreset?.label} — {scanMeta?.emailCount ?? 0} emails, {scanMeta?.calCount ?? 0} events scanned
             </p>
             <button
               type="button"
               onClick={selectAll}
-              className="text-[11px] font-body text-text-muted hover:text-text-secondary transition-colors"
+              className="text-[11px] font-sans text-ink-3 hover:text-ink-2 transition-colors"
             >
               select all
             </button>
@@ -202,16 +202,16 @@ export function TasksPanel() {
                 key={i}
                 type="button"
                 onClick={() => toggleSuggestion(i)}
-                className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg hover:bg-bg-elevated transition-colors text-left"
+                className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg hover:bg-sunken transition-colors text-left"
               >
-                <div className={`mt-0.5 w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-colors ${s.included ? 'bg-accent-lemon/20 border-accent-lemon' : 'border-border-medium'}`}>
-                  {s.included && <div className="w-1.5 h-1.5 rounded-full bg-accent-lemon" />}
+                <div className={`mt-0.5 w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-colors ${s.included ? 'bg-accent/20 border-accent' : 'border-line'}`}>
+                  {s.included && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className={`text-sm font-body leading-tight ${s.included ? 'text-text-primary' : 'text-text-muted line-through'}`}>
+                  <span className={`text-sm font-sans leading-tight ${s.included ? 'text-ink' : 'text-ink-3 line-through'}`}>
                     {s.title}
                   </span>
-                  <span className="ml-2 text-[11px] font-body uppercase tracking-wide text-text-muted/50">
+                  <span className="ml-2 text-[11px] font-sans uppercase tracking-wide text-ink-3/50">
                     {s.bucket}
                   </span>
                 </div>
@@ -223,21 +223,21 @@ export function TasksPanel() {
               type="button"
               onClick={saveSuggestions}
               disabled={includedCount === 0}
-              className="text-xs font-body px-3 py-1.5 rounded-lg bg-accent-lemon/15 text-accent-lemon hover:bg-accent-lemon/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="text-xs font-sans px-3 py-1.5 rounded-lg bg-accent/15 text-accent hover:bg-accent/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Save {includedCount} task{includedCount !== 1 ? 's' : ''}
             </button>
             <button
               type="button"
               onClick={cancel}
-              className="text-xs font-body px-3 py-1.5 rounded-lg text-text-muted hover:text-text-secondary transition-colors"
+              className="text-xs font-sans px-3 py-1.5 rounded-lg text-ink-3 hover:text-ink-2 transition-colors"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={() => setStage('picking')}
-              className="text-xs font-body px-3 py-1.5 rounded-lg text-text-muted hover:text-text-secondary transition-colors ml-auto"
+              className="text-xs font-sans px-3 py-1.5 rounded-lg text-ink-3 hover:text-ink-2 transition-colors ml-auto"
             >
               ← Different window
             </button>
@@ -264,17 +264,17 @@ export function TasksPanel() {
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full ${BUCKET_DOT[bucket]}`} />
-                    <span className="text-[11px] font-body font-semibold text-text-muted tracking-widest uppercase">
+                    <span className="text-[11px] font-sans font-semibold text-ink-3 tracking-widest uppercase">
                       {BUCKET_LABELS[bucket]}
                     </span>
-                    <span className="text-[11px] font-body text-text-muted/60 lowercase">
+                    <span className="text-[11px] font-sans text-ink-3/60 lowercase">
                       {BUCKET_SUBLABEL[bucket]}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-text-muted font-body">{active.length}</span>
+                    <span className="text-[11px] text-ink-3 font-sans">{active.length}</span>
                     <span
-                      className={`text-text-muted/40 group-hover:text-text-secondary text-xs transition-transform duration-200 ${
+                      className={`text-ink-3/40 group-hover:text-ink-2 text-xs transition-transform duration-200 ${
                         isCollapsed ? '-rotate-90' : 'rotate-0'
                       }`}
                       aria-hidden="true"
@@ -289,15 +289,15 @@ export function TasksPanel() {
                     {active.map((task) => (
                       <div
                         key={task.id}
-                        className="group flex items-start gap-2.5 py-1.5 rounded-lg hover:bg-bg-elevated/50 px-2 -mx-2 transition-colors"
+                        className="group flex items-start gap-2.5 py-1.5 rounded-lg hover:bg-sunken/50 px-2 -mx-2 transition-colors"
                       >
                         <button
                           type="button"
                           onClick={() => user && toggleDone(user.uid, task.id)}
-                          className="mt-0.5 w-4 h-4 rounded-full border border-border-medium hover:border-accent-lemon flex-shrink-0 transition-colors"
+                          className="mt-0.5 w-4 h-4 rounded-full border border-line hover:border-accent flex-shrink-0 transition-colors"
                           aria-label="Mark complete"
                         />
-                        <span className="text-[13px] font-body text-text-primary leading-tight">{task.title}</span>
+                        <span className="text-[13px] font-sans text-ink leading-tight">{task.title}</span>
                       </div>
                     ))}
 
@@ -305,12 +305,12 @@ export function TasksPanel() {
                       <div className="opacity-40 mt-1">
                         {done.slice(0, 2).map((task) => (
                           <div key={task.id} className="flex items-center gap-2.5 py-1 px-2">
-                            <div className="w-4 h-4 rounded-full bg-accent-sage/40 flex-shrink-0" />
-                            <span className="text-[13px] font-body text-text-muted line-through leading-tight">{task.title}</span>
+                            <div className="w-4 h-4 rounded-full bg-data-teal/40 flex-shrink-0" />
+                            <span className="text-[13px] font-sans text-ink-3 line-through leading-tight">{task.title}</span>
                           </div>
                         ))}
                         {done.length > 2 && (
-                          <p className="text-[11px] font-body text-text-muted/50 pl-8">
+                          <p className="text-[11px] font-sans text-ink-3/50 pl-8">
                             +{done.length - 2} more completed
                           </p>
                         )}
@@ -325,7 +325,7 @@ export function TasksPanel() {
                           value={newTitle}
                           onChange={(e) => setNewTitle(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') addTask(bucket); if (e.key === 'Escape') setAddingTo(null) }}
-                          className="w-full text-[13px] font-body bg-bg-elevated border border-border-medium rounded px-2 py-1.5 text-text-primary outline-none focus:border-accent-lemon/40"
+                          className="w-full text-[13px] font-sans bg-sunken border border-line rounded px-2 py-1.5 text-ink outline-none focus:border-accent/40"
                           placeholder="Add task…"
                         />
                       </div>
@@ -333,7 +333,7 @@ export function TasksPanel() {
                       <button
                         type="button"
                         onClick={() => setAddingTo(bucket)}
-                        className="text-[11px] text-text-muted hover:text-text-secondary font-body transition-colors text-left px-2 py-1"
+                        className="text-[11px] text-ink-3 hover:text-ink-2 font-sans transition-colors text-left px-2 py-1"
                       >
                         + add
                       </button>
@@ -345,7 +345,7 @@ export function TasksPanel() {
           })}
 
           {activeTasks.length === 0 && stage === 'idle' && (
-            <p className="text-[12px] font-body text-text-muted py-2">
+            <p className="text-[12px] font-sans text-ink-3 py-2">
               No tasks yet — use Generate to scan your history.
             </p>
           )}

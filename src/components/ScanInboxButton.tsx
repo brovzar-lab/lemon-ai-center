@@ -93,7 +93,7 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
 
   if (phase === 'done' && stats) {
     return (
-      <div className="flex items-center gap-2 text-[11px] font-body text-accent-sage">
+      <div className="flex items-center gap-2 text-[11px] font-sans text-data-teal">
         <CheckCircle2 size={14} />
         <span>
           Found {stats.deals} deals, {stats.projects} projects, {stats.delegations} delegations, {stats.memories} memories
@@ -104,7 +104,7 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
 
   if (phase === 'error') {
     return (
-      <div className="flex items-center gap-2 text-[11px] font-body text-accent-coral">
+      <div className="flex items-center gap-2 text-[11px] font-sans text-data-coral">
         <AlertTriangle size={14} />
         <span>{error}</span>
         <button
@@ -120,7 +120,7 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
 
   if (isRunning) {
     return (
-      <div className="flex items-center gap-2 text-[11px] font-body text-text-secondary">
+      <div className="flex items-center gap-2 text-[11px] font-sans text-ink-2">
         <Loader2 size={14} className="animate-spin" />
         <span>{message}</span>
       </div>
@@ -132,7 +132,7 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
       <button
         type="button"
         onClick={() => startScan(40)}
-        className="text-[11px] font-body font-semibold uppercase tracking-wider text-accent-coral hover:text-accent-coral/80 transition-colors flex items-center gap-1.5 min-h-[36px]"
+        className="text-[11px] font-sans font-semibold uppercase tracking-wider text-data-coral hover:text-data-coral/80 transition-colors flex items-center gap-1.5 min-h-[36px]"
         aria-label="Scan inbox for deals, projects, and delegations"
       >
         <Scan size={14} />
@@ -142,21 +142,21 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
   }
 
   return (
-    <div className="bg-bg-surface border border-border-soft rounded-xl p-6 text-center space-y-3">
+    <div className="bg-surface border border-line rounded-xl p-6 text-center space-y-3">
       <div className="flex justify-center">
-        <Scan size={24} className="text-accent-coral" />
+        <Scan size={24} className="text-data-coral" />
       </div>
-      <h3 className="font-display text-lg font-semibold text-text-primary">
+      <h3 className="font-display text-lg font-semibold text-ink">
         Auto-populate from your inbox
       </h3>
-      <p className="text-[12px] font-body text-text-muted max-w-md mx-auto leading-relaxed">
+      <p className="text-[12px] font-sans text-ink-3 max-w-md mx-auto leading-relaxed">
         AI will scan your last 40 emails and automatically extract deals, projects,
         delegations, and important facts into your dashboard.
       </p>
       <button
         type="button"
         onClick={() => startScan(40)}
-        className="text-[11px] font-body font-bold uppercase tracking-[0.15em] px-5 py-2.5 bg-accent-coral text-white hover:bg-accent-coral/90 transition-colors rounded-md min-h-[40px]"
+        className="text-[11px] font-sans font-bold uppercase tracking-[0.15em] px-5 py-2.5 bg-data-coral text-white hover:bg-data-coral/90 transition-colors rounded-md min-h-[40px]"
       >
         Scan 40 Emails Now
       </button>

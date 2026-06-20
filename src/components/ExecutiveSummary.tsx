@@ -27,19 +27,19 @@ export function ExecutiveSummary() {
       {/* Quick pulse badges */}
       <div className="flex items-center gap-3 mb-4">
         {hotCount > 0 && (
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-body font-bold uppercase tracking-[0.15em] text-accent-coral">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent-coral" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-data-coral">
+            <span className="w-1.5 h-1.5 rounded-full bg-data-coral" aria-hidden="true" />
             {hotCount} urgent
           </span>
         )}
-        <span className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-text-muted">
+        <span className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-ink-3">
           {threads.length} emails
         </span>
-        <span className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-text-muted">
+        <span className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-ink-3">
           {events.length} meetings{requiredMeetings > 0 && ` (${requiredMeetings} required)`}
         </span>
         {openTasks > 0 && (
-          <span className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-text-muted">
+          <span className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-ink-3">
             {openTasks} open tasks
           </span>
         )}
@@ -48,7 +48,7 @@ export function ExecutiveSummary() {
       {/* Executive summary paragraph */}
       {summary ? (
         <div
-          className="font-display text-[16px] sm:text-[17px] leading-[1.75] text-text-primary whitespace-pre-line"
+          className="font-display text-[16px] sm:text-[17px] leading-[1.75] text-ink whitespace-pre-line"
           style={{ opacity: isStreaming ? 0.7 : 1, transition: 'opacity 200ms' }}
         >
           {summary}
@@ -62,7 +62,7 @@ export function ExecutiveSummary() {
           <div className="skeleton skeleton-line w-[85%]" />
         </div>
       ) : (
-        <p className="font-display text-[15px] text-text-muted italic">
+        <p className="font-display text-[15px] text-ink-3 italic">
           Your executive briefing is being prepared…
         </p>
       )}

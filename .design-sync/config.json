@@ -5,5 +5,5 @@
   "shape": "package",
   "scope": "tokens",
   "readmeHeader": ".design-sync/conventions.md",
-  "note": "App, not a component library — no dist/.d.ts exports and 37/46 components are state-coupled. Synced as a hand-authored TOKEN/BRAND design system (off-script layout): the Tailwind token system from src/styles/globals.css + tailwind.config.ts, plus token preview cards. Source of truth for tokens: src/styles/globals.css (:root + [data-theme=dark]). Fonts (Fraunces/Inter) load from Google Fonts at runtime."
+  "note": "App, not a component library — no dist/.d.ts exports and 37/46 components are state-coupled. Synced as a hand-authored TOKEN/BRAND design system (off-script layout): the Tailwind token system from src/styles/globals.css + tailwind.config.ts, plus token preview cards. Source of truth for tokens: DESIGN.md + src/styles/globals.css (:root + [data-theme=dark]). Fonts (Playfair Display/Schibsted Grotesk) load from Google Fonts at runtime."
 }

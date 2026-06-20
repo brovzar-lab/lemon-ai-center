@@ -31,17 +31,17 @@ export function EveningEdition() {
       {advisorNote && (
         <section aria-label="Tomorrow's focus" className="mb-5">
           <div className="ed-section-label mb-2 flex items-center gap-2">
-            <ArrowRight size={12} className="text-text-muted" />
+            <ArrowRight size={12} className="text-ink-3" />
             <span>Tomorrow's Focus</span>
           </div>
-          <div className="px-4 py-3 rounded-lg bg-bg-surface border border-border-soft">
-            <p className="font-display text-[14px] text-text-primary font-semibold leading-snug mb-1">
+          <div className="px-4 py-3 rounded-lg bg-surface border border-line">
+            <p className="font-display text-[14px] text-ink font-semibold leading-snug mb-1">
               {advisorNote.headline}
             </p>
-            <p className="font-body text-[13px] text-text-secondary leading-relaxed italic">
+            <p className="font-sans text-[13px] text-ink-2 leading-relaxed italic">
               "{advisorNote.body}"
             </p>
-            <p className="font-body text-[10px] text-text-muted mt-2 uppercase tracking-[0.12em]">
+            <p className="font-sans text-[10px] text-ink-3 mt-2 uppercase tracking-[0.12em]">
               Your advisor's note will refresh at 5:30 AM
             </p>
           </div>
@@ -53,29 +53,29 @@ export function EveningEdition() {
       {/* Inbox status — just the numbers, no details */}
       <section aria-label="Inbox status" className="mb-5">
         <div className="ed-section-label mb-2 flex items-center gap-2">
-          <Moon size={12} className="text-text-muted" />
+          <Moon size={12} className="text-ink-3" />
           <span>Inbox Status</span>
         </div>
-        <div className="flex items-center gap-6 px-4 py-3 rounded-lg bg-bg-surface border border-border-soft">
+        <div className="flex items-center gap-6 px-4 py-3 rounded-lg bg-surface border border-line">
           <div>
-            <span className="font-display text-2xl font-semibold text-text-primary leading-none">
+            <span className="font-display text-2xl font-semibold text-ink leading-none">
               {unreadCount}
             </span>
-            <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-text-muted mt-1">
+            <p className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-ink-3 mt-1">
               Unread
             </p>
           </div>
           {hotCount > 0 && (
             <div>
-              <span className="font-display text-2xl font-semibold text-accent-coral leading-none">
+              <span className="font-display text-2xl font-semibold text-data-coral leading-none">
                 {hotCount}
               </span>
-              <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-text-muted mt-1">
+              <p className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-ink-3 mt-1">
                 Hot
               </p>
             </div>
           )}
-          <p className="font-body text-[11px] text-text-muted ml-auto">
+          <p className="font-sans text-[11px] text-ink-3 ml-auto">
             {unreadCount === 0
               ? 'Clear — rest well.'
               : hotCount > 0

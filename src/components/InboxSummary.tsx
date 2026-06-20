@@ -58,22 +58,22 @@ export function InboxSummary({ onReply, onCreateTask }: Props) {
       key={thread.id}
       type="button"
       onClick={() => openThread(thread)}
-      className="flex items-start gap-2 text-left group hover:bg-bg-elevated/50 p-1.5 -mx-1.5 transition-colors min-h-[40px] w-full"
+      className="flex items-start gap-2 text-left group hover:bg-sunken/50 p-1.5 -mx-1.5 transition-colors min-h-[40px] w-full"
       role="listitem"
       aria-label={`${thread.priority} priority: ${thread.from} — ${thread.subject}`}
     >
-      <span className={`text-[11px] font-body font-bold uppercase tracking-widest px-1 py-0.5 border flex-shrink-0 mt-0.5 ${
-        thread.priority === 'HOT' ? 'text-accent-coral border-accent-coral/30' :
-        thread.priority === 'MED' ? 'text-accent-lemon border-accent-lemon/30' :
-        'text-text-muted border-border-soft'
+      <span className={`text-[11px] font-sans font-bold uppercase tracking-widest px-1 py-0.5 border flex-shrink-0 mt-0.5 ${
+        thread.priority === 'HOT' ? 'text-data-coral border-data-coral/30' :
+        thread.priority === 'MED' ? 'text-accent border-accent/30' :
+        'text-ink-3 border-line'
       }`}>
         {thread.priority}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-body font-semibold text-text-primary truncate leading-tight" title={thread.from}>
+        <p className="text-[12px] font-sans font-semibold text-ink truncate leading-tight" title={thread.from}>
           {thread.from}
         </p>
-        <p className="text-[12px] font-body text-text-secondary truncate" title={thread.subject}>
+        <p className="text-[12px] font-sans text-ink-2 truncate" title={thread.subject}>
           {thread.subject}
         </p>
       </div>
@@ -81,19 +81,19 @@ export function InboxSummary({ onReply, onCreateTask }: Props) {
   )
 
   const groups: { key: GroupKey; label: string; threads: InboxThread[]; accentClass: string; maxShow: number }[] = [
-    { key: 'needs-reply', label: 'Needs Your Reply', threads: needsReply, accentClass: 'text-accent-coral', maxShow: 5 },
-    { key: 'new', label: 'New Today', threads: newThreads, accentClass: 'text-accent-lemon', maxShow: 4 },
-    { key: 'handled', label: 'Handled', threads: handled, accentClass: 'text-text-muted', maxShow: 3 },
+    { key: 'needs-reply', label: 'Needs Your Reply', threads: needsReply, accentClass: 'text-data-coral', maxShow: 5 },
+    { key: 'new', label: 'New Today', threads: newThreads, accentClass: 'text-accent', maxShow: 4 },
+    { key: 'handled', label: 'Handled', threads: handled, accentClass: 'text-ink-3', maxShow: 3 },
   ]
 
   return (
     <section className="pb-4" aria-label="Inbox summary">
       {/* Header */}
       <div className="flex items-baseline justify-between mb-1">
-        <p className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+        <p className="text-[11px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3">
           Inbox
         </p>
-        <span className="text-[11px] font-body text-text-tertiary">
+        <span className="text-[11px] font-sans text-ink-3">
           {threads.length} threads
         </span>
       </div>
@@ -114,7 +114,7 @@ export function InboxSummary({ onReply, onCreateTask }: Props) {
           ))}
         </div>
       ) : threads.length === 0 ? (
-        <p className="text-[12px] font-body text-text-muted italic">Inbox zero — nice.</p>
+        <p className="text-[12px] font-sans text-ink-3 italic">Inbox zero — nice.</p>
       ) : (
         <div className="space-y-4">
           {groups.map(({ key, label, threads: groupThreads, accentClass, maxShow }) => {
@@ -131,14 +131,14 @@ export function InboxSummary({ onReply, onCreateTask }: Props) {
                   className="flex items-center gap-2 mb-2 w-full text-left group"
                   aria-expanded={isOpen}
                 >
-                  <span className={`text-[11px] font-body font-bold uppercase tracking-[0.15em] ${accentClass}`}>
+                  <span className={`text-[11px] font-sans font-bold uppercase tracking-[0.15em] ${accentClass}`}>
                     {label}
                   </span>
-                  <span className={`text-[11px] font-body font-semibold ${accentClass}`}>
+                  <span className={`text-[11px] font-sans font-semibold ${accentClass}`}>
                     ({groupThreads.length})
                   </span>
                   <span
-                    className={`text-text-muted/40 text-xs transition-transform duration-200 ml-auto ${
+                    className={`text-ink-3/40 text-xs transition-transform duration-200 ml-auto ${
                       isOpen ? 'rotate-0' : '-rotate-90'
                     }`}
                     aria-hidden="true"
@@ -156,7 +156,7 @@ export function InboxSummary({ onReply, onCreateTask }: Props) {
                       <button
                         type="button"
                         onClick={() => openThread(groupThreads[maxShow])}
-                        className="text-[11px] font-body text-text-muted hover:text-accent-coral transition-colors text-left py-1 min-h-[36px] flex items-center"
+                        className="text-[11px] font-sans text-ink-3 hover:text-data-coral transition-colors text-left py-1 min-h-[36px] flex items-center"
                       >
                         +{remaining} more →
                       </button>

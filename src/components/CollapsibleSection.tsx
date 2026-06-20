@@ -77,17 +77,17 @@ export function CollapsibleSection({
         aria-controls={`collapsible-content-${id}`}
       >
         <div className="flex items-baseline gap-2">
-          <p className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+          <p className="text-[11px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3">
             {title}
           </p>
           {subtitle && (
-            <p className="text-[11px] font-body text-text-tertiary">
+            <p className="text-[11px] font-sans text-ink-3">
               {subtitle}
             </p>
           )}
         </div>
         <span
-          className={`text-text-muted/50 group-hover:text-text-secondary transition-transform duration-200 text-xs ${
+          className={`text-ink-3/50 group-hover:text-ink-2 transition-transform duration-200 text-xs ${
             isOpen ? 'rotate-0' : '-rotate-90'
           }`}
           aria-hidden="true"

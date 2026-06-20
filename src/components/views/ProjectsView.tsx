@@ -7,11 +7,11 @@ import { ScanInboxButton } from '@/components/ScanInboxButton'
 import type { LemonProject, ProjectCategory, ProjectFormat } from '@shared/types'
 
 const COLUMNS: BoardColumnDef<ProjectCategory>[] = [
-  { key: 'development', label: 'Development', accent: 'var(--color-accent-blue)', subtitle: 'Story → green-light' },
-  { key: 'pre_production', label: 'Pre-Production', accent: 'var(--color-accent-lemon)', subtitle: 'Crewing & prep' },
-  { key: 'production', label: 'Production', accent: 'var(--color-accent-coral)', subtitle: 'On the floor' },
-  { key: 'post_production', label: 'Post', accent: 'var(--color-accent-sage)', subtitle: 'Cut & finish' },
-  { key: 'deals_business', label: 'Deals & Biz', accent: 'var(--color-accent-rose)', subtitle: 'Comm. side' },
+  { key: 'development', label: 'Development', accent: 'var(--data-blue)', subtitle: 'Story → green-light' },
+  { key: 'pre_production', label: 'Pre-Production', accent: 'var(--accent)', subtitle: 'Crewing & prep' },
+  { key: 'production', label: 'Production', accent: 'var(--data-coral)', subtitle: 'On the floor' },
+  { key: 'post_production', label: 'Post', accent: 'var(--data-teal)', subtitle: 'Cut & finish' },
+  { key: 'deals_business', label: 'Deals & Biz', accent: 'var(--error)', subtitle: 'Comm. side' },
 ]
 
 const FORMAT_LABELS: Record<ProjectFormat, string> = {
@@ -104,17 +104,17 @@ export function ProjectsView() {
     <section className="space-y-4 animate-in">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-text-primary leading-tight">
+          <h2 className="font-display text-2xl font-semibold text-ink leading-tight">
             Projects
           </h2>
-          <p className="text-xs font-body text-text-muted mt-1">
+          <p className="text-xs font-sans text-ink-3 mt-1">
             {projects.length} total · drag between stages · linked tasks pulled from your task list by title match
           </p>
         </div>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="text-[11px] font-body font-medium uppercase tracking-wider px-3 py-1.5 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors"
+          className="text-[11px] font-sans font-medium uppercase tracking-wider px-3 py-1.5 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors"
         >
           {showForm ? 'Cancel' : '+ Add Project'}
         </button>
@@ -123,7 +123,7 @@ export function ProjectsView() {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="bg-bg-surface border border-border-soft rounded-xl p-4 space-y-3"
+          className="bg-surface border border-line rounded-xl p-4 space-y-3"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Field label="Title" required>
@@ -195,13 +195,13 @@ export function ProjectsView() {
             <button
               type="button"
               onClick={reset}
-              className="text-[11px] font-body text-text-muted hover:text-text-primary transition-colors"
+              className="text-[11px] font-sans text-ink-3 hover:text-ink transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="text-[11px] font-body font-semibold uppercase tracking-wider bg-accent-lemon text-bg-base px-4 py-1.5 rounded-md hover:brightness-110 transition-all"
+              className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-4 py-1.5 rounded-md hover:brightness-110 transition-all"
             >
               Save project
             </button>
@@ -210,8 +210,8 @@ export function ProjectsView() {
       )}
 
       {loading && projects.length === 0 ? (
-        <div className="bg-bg-surface border border-border-soft rounded-xl p-10 text-center">
-          <div className="w-4 h-4 mx-auto rounded-full border-2 border-accent-lemon border-t-transparent animate-spin" />
+        <div className="bg-surface border border-line rounded-xl p-10 text-center">
+          <div className="w-4 h-4 mx-auto rounded-full border-2 border-accent border-t-transparent animate-spin" />
         </div>
       ) : projects.length === 0 ? (
         <>
@@ -259,18 +259,18 @@ export function ProjectsView() {
       <style>{`
         .form-input {
           width: 100%;
-          background: var(--color-bg-base);
-          border: 1px solid var(--color-border-soft);
-          color: var(--color-text-primary);
+          background: var(--bg);
+          border: 1px solid var(--line);
+          color: var(--ink);
           font-size: 12px;
-          font-family: 'Inter', sans-serif;
+          font-family: var(--font-body);
           padding: 8px 10px;
           border-radius: 8px;
           outline: none;
           transition: border-color 150ms;
         }
         .form-input:focus {
-          border-color: var(--color-accent-lemon);
+          border-color: var(--accent);
         }
       `}</style>
     </section>
@@ -288,9 +288,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-[10px] font-body font-bold uppercase tracking-wider text-text-muted mb-1">
+      <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
         {label}
-        {required && <span className="ml-1 text-accent-coral">*</span>}
+        {required && <span className="ml-1 text-data-coral">*</span>}
       </span>
       {children}
     </label>
@@ -307,32 +307,32 @@ function ProjectCard({
   return (
     <>
       <div className="flex items-start justify-between gap-2">
-        <h4 className="text-[12px] font-body font-semibold leading-snug text-text-primary flex-1 min-w-0">
+        <h4 className="text-[12px] font-sans font-semibold leading-snug text-ink flex-1 min-w-0">
           {project.title}
         </h4>
         {project.format && (
-          <span className="text-[9px] font-body font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-bg-elevated text-text-muted flex-shrink-0">
+          <span className="text-[9px] font-sans font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-sunken text-ink-3 flex-shrink-0">
             {FORMAT_LABELS[project.format]}
           </span>
         )}
       </div>
       {project.platform && (
-        <p className="text-[10px] font-body italic text-text-tertiary mt-1">
+        <p className="text-[10px] font-sans italic text-ink-3 mt-1">
           {project.platform}
         </p>
       )}
       {project.status_detail && (
-        <p className="text-[11px] font-body text-text-tertiary mt-1 line-clamp-2 leading-snug">
+        <p className="text-[11px] font-sans text-ink-3 mt-1 line-clamp-2 leading-snug">
           {project.status_detail}
         </p>
       )}
       {project.next_action && (
-        <p className="text-[11px] font-body italic mt-1.5 truncate text-text-tertiary">
+        <p className="text-[11px] font-sans italic mt-1.5 truncate text-ink-3">
           → {project.next_action}
         </p>
       )}
       {linkedTaskCount > 0 && (
-        <p className="text-[10px] font-body text-accent-lemon mt-1.5">
+        <p className="text-[10px] font-sans text-accent mt-1.5">
           {linkedTaskCount} task{linkedTaskCount === 1 ? '' : 's'} linked
         </p>
       )}
@@ -371,7 +371,7 @@ function ProjectDetail({
         <div className="modal-header">
           <div className="min-w-0">
             <h3 className="modal-title truncate">{project.title}</h3>
-            <p className="text-[11px] font-body text-text-muted">
+            <p className="text-[11px] font-sans text-ink-3">
               {COLUMNS.find((c) => c.key === project.category)?.label} · {project.format ? FORMAT_LABELS[project.format] : '—'}
             </p>
           </div>
@@ -387,7 +387,7 @@ function ProjectDetail({
             value={linkedTaskCount === 0 ? 'None' : `${linkedTaskCount}`}
           />
           <div>
-            <span className="block text-[10px] font-body font-bold uppercase tracking-wider text-text-muted mb-1">
+            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
               Status detail
             </span>
             <textarea
@@ -404,7 +404,7 @@ function ProjectDetail({
             />
           </div>
           <div>
-            <span className="block text-[10px] font-body font-bold uppercase tracking-wider text-text-muted mb-1">
+            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
               Next action
             </span>
             <textarea
@@ -424,18 +424,18 @@ function ProjectDetail({
         <div className="modal-actions">
           {confirmDelete ? (
             <>
-              <span className="text-[11px] font-body text-accent-coral">Delete this project?</span>
+              <span className="text-[11px] font-sans text-data-coral">Delete this project?</span>
               <div className="modal-actions-right">
                 <button
                   type="button"
-                  className="text-[11px] font-body text-text-muted hover:text-text-primary"
+                  className="text-[11px] font-sans text-ink-3 hover:text-ink"
                   onClick={() => setConfirmDelete(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="text-[11px] font-body font-semibold uppercase tracking-wider bg-accent-rose text-white px-3 py-1.5 rounded-md hover:brightness-110"
+                  className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-error text-white px-3 py-1.5 rounded-md hover:brightness-110"
                   onClick={onDelete}
                 >
                   Delete
@@ -446,7 +446,7 @@ function ProjectDetail({
             <>
               <button
                 type="button"
-                className="text-[11px] font-body text-text-muted hover:text-accent-coral transition-colors"
+                className="text-[11px] font-sans text-ink-3 hover:text-data-coral transition-colors"
                 onClick={() => setConfirmDelete(true)}
               >
                 Delete project
@@ -467,10 +467,10 @@ function ProjectDetail({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[10px] font-body font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+      <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 whitespace-nowrap">
         {label}
       </span>
-      <span className="text-[12px] font-body text-text-primary text-right truncate">
+      <span className="text-[12px] font-sans text-ink text-right truncate">
         {value}
       </span>
     </div>

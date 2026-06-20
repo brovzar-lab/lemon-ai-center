@@ -60,7 +60,7 @@ export function EditorialMasthead() {
   return (
     <header className="pt-6 pb-4">
       {/* Top stat line */}
-      <p className="text-[10px] font-body font-bold uppercase tracking-[0.3em] text-text-muted mb-3">
+      <p className="text-[10px] font-sans font-bold uppercase tracking-[0.3em] text-ink-3 mb-3">
         Vol {dayOfYear} · {DAYS_SHORT[today.getDay()]} {MONTHS_SHORT[today.getMonth()]} {today.getDate()} · {tzCity} {timeStr} · {threads.length} emails read
       </p>
 
@@ -70,10 +70,10 @@ export function EditorialMasthead() {
       {/* Title row */}
       <div className="flex items-end justify-between gap-6 mb-1">
         <div>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold text-text-primary tracking-tight leading-none">
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-none">
             Executive Briefing
           </h1>
-          <p className="font-display text-sm italic text-text-tertiary mt-1">
+          <p className="font-display text-sm italic text-ink-3 mt-1">
             By your chief of staff · for {authUser?.displayName || 'CEO'}
           </p>
         </div>
@@ -81,11 +81,11 @@ export function EditorialMasthead() {
         <div className="flex items-center gap-4 pb-1">
           {/* Stats */}
           <div className="text-right">
-            <span className="font-display text-3xl font-semibold text-text-primary leading-none">{doneCount}</span>
-            <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mt-0.5">Shipped</p>
+            <span className="font-display text-3xl font-semibold text-ink leading-none">{doneCount}</span>
+            <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mt-0.5">Shipped</p>
           </div>
           <div className="text-right">
-            <span className="font-display text-3xl font-semibold text-text-primary leading-none">
+            <span className="font-display text-3xl font-semibold text-ink leading-none">
               {(() => {
                 const mins = useFocusModeStore.getState().totalFocusMinutes()
                 const h = Math.floor(mins / 60)
@@ -93,7 +93,7 @@ export function EditorialMasthead() {
                 return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}` : `${m}m`
               })()}
             </span>
-            <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mt-0.5">Focus</p>
+            <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mt-0.5">Focus</p>
           </div>
 
           {/* Mode pills */}
@@ -102,7 +102,7 @@ export function EditorialMasthead() {
               <button
                 type="button"
                 onClick={() => setView('inbox')}
-                className="text-[10px] font-body font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border bg-accent-coral/15 text-accent-coral border-accent-coral/30 hover:bg-accent-coral/25 transition-colors min-h-[36px]"
+                className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border bg-data-coral/15 text-data-coral border-data-coral/30 hover:bg-data-coral/25 transition-colors min-h-[36px]"
                 aria-label={`${slipCount} items at risk — open Inbox Intel`}
               >
                 ● {slipCount} at risk
@@ -112,10 +112,10 @@ export function EditorialMasthead() {
               type="button"
               onClick={roughToggle}
               className={[
-                'text-[10px] font-body font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
+                'text-[10px] font-sans font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
                 roughActive
-                  ? 'bg-accent-coral/15 text-accent-coral border-accent-coral/30'
-                  : 'text-text-muted border-border-medium hover:border-border-strong hover:text-text-secondary',
+                  ? 'bg-data-coral/15 text-data-coral border-data-coral/30'
+                  : 'text-ink-3 border-line hover:border-accent hover:text-ink-2',
               ].join(' ')}
               aria-label={roughActive ? 'Deactivate rough morning mode' : 'Activate rough morning mode'}
               aria-pressed={roughActive}
@@ -126,10 +126,10 @@ export function EditorialMasthead() {
               type="button"
               onClick={() => focusToggle()}
               className={[
-                'text-[10px] font-body font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
+                'text-[10px] font-sans font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
                 focusActive
-                  ? 'bg-text-primary text-bg-base border-text-primary'
-                  : 'text-text-muted border-border-medium hover:border-border-strong hover:text-text-secondary',
+                  ? 'bg-ink text-bg border-ink'
+                  : 'text-ink-3 border-line hover:border-accent hover:text-ink-2',
               ].join(' ')}
               aria-label={focusActive ? 'Exit single-task focus mode' : 'Enter single-task focus mode'}
               aria-pressed={focusActive}

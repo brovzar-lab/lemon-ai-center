@@ -17,8 +17,7 @@ npm run typecheck # TypeScript check both sides
 ```
 
 ## Key Conventions
-- Design tokens in `tailwind.config.ts` — always use `bg-bg-base`, `text-text-primary`, etc.
-- Fonts: `font-display` (Fraunces) for brief text, `font-body` (Inter) for everything else
+- For all styling, follow DESIGN.md. It is the single source of truth. Never use warm, brown, cream, or amber/gold colors.
 - Stores: one Zustand store per domain in `src/stores/`
 - Server responses: `{ data: T }` on success, `{ error: { code, message, retryable } }` on failure
 - All `/api/*` routes require auth (`requireAuth` middleware)

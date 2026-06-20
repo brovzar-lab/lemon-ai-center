@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Lemon AI Center — AI-powered morning brief, inbox triage, and decision support for executive workflows." />
-    <meta name="theme-color" content="#f5ede2" />
+    <meta name="theme-color" content="#F4F5F7" />
     <meta property="og:title" content="Lemon Studios — The Morning Brief" />
     <meta property="og:description" content="Lemon AI Center — AI-powered editorial dashboard for executive decision-making." />
     <meta property="og:type" content="website" />
@@ -13,9 +13,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Apply dark mode before first paint to prevent flash
+      (function() {
+        var stored = localStorage.getItem('lemon-theme');
+        if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+          document.querySelector('meta[name="theme-color"]').content = '#0E1426';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

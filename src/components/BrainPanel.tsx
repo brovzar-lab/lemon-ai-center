@@ -72,29 +72,29 @@ export function BrainPanel() {
           <button
             type="button"
             onClick={closeNote}
-            className="text-[11px] font-body font-semibold text-accent-coral hover:underline"
+            className="text-[11px] font-sans font-semibold text-data-coral hover:underline"
             aria-label="Back to brain search"
           >
             ← Back
           </button>
-          <span className="text-[9px] font-body text-text-muted">
+          <span className="text-[9px] font-sans text-ink-3">
             {activeNote.folder}
           </span>
         </div>
-        <h3 className="font-display text-lg font-semibold text-text-primary mb-2">
+        <h3 className="font-display text-lg font-semibold text-ink mb-2">
           {activeNote.title}
         </h3>
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-[9px] font-body text-text-muted">
+          <span className="text-[9px] font-sans text-ink-3">
             {timeAgo(activeNote.modifiedAt)}
           </span>
           {activeNote.links.length > 0 && (
-            <span className="text-[9px] font-body text-text-muted">
+            <span className="text-[9px] font-sans text-ink-3">
               · {activeNote.links.length} links
             </span>
           )}
         </div>
-        <div className="prose-brain font-body text-[12px] text-text-secondary leading-relaxed whitespace-pre-line max-h-[400px] overflow-y-auto">
+        <div className="prose-brain font-sans text-[12px] text-ink-2 leading-relaxed whitespace-pre-line max-h-[400px] overflow-y-auto">
           {activeNote.content}
         </div>
       </section>
@@ -123,7 +123,7 @@ export function BrainPanel() {
 
       {/* Stats line */}
       {stats.ready && (
-        <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-3">
+        <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mb-3">
           {stats.docCount} notes · {stats.chunkCount} chunks indexed
         </p>
       )}
@@ -136,12 +136,12 @@ export function BrainPanel() {
           value={query}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search your brain…"
-          className="w-full text-[12px] font-body bg-bg-elevated border border-border-soft px-3 py-2 text-text-primary placeholder:text-text-muted outline-none focus:border-border-medium transition-colors"
+          className="w-full text-[12px] font-sans bg-sunken border border-line px-3 py-2 text-ink placeholder:text-ink-3 outline-none focus:border-line transition-colors"
           aria-label="Search Obsidian vault"
         />
         {searchLoading && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            <div className="w-3 h-3 rounded-full border border-accent-lemon border-t-transparent animate-spin" />
+            <div className="w-3 h-3 rounded-full border border-accent border-t-transparent animate-spin" />
           </div>
         )}
       </div>
@@ -149,7 +149,7 @@ export function BrainPanel() {
       {/* Results or empty prompt */}
       {showResults ? (
         <>
-          <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-2">
+          <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mb-2">
             {results.length} results
           </p>
           {loading && results.length === 0 ? (
@@ -165,7 +165,7 @@ export function BrainPanel() {
               ))}
             </div>
           ) : results.length === 0 ? (
-            <p className="text-[11px] font-body text-text-muted italic">No matching notes found.</p>
+            <p className="text-[11px] font-sans text-ink-3 italic">No matching notes found.</p>
           ) : (
             <div className="flex flex-col gap-1" role="list" aria-label="Search results">
               {results.map((item) => (
@@ -173,7 +173,7 @@ export function BrainPanel() {
                   key={item.path}
                   type="button"
                   onClick={() => openNote(item.path)}
-                  className="flex items-start gap-2 text-left group hover:bg-bg-elevated/50 p-1.5 -mx-1.5 transition-colors min-h-[36px]"
+                  className="flex items-start gap-2 text-left group hover:bg-sunken/50 p-1.5 -mx-1.5 transition-colors min-h-[36px]"
                   role="listitem"
                   aria-label={`${item.title} — ${item.folder}`}
                 >
@@ -181,15 +181,15 @@ export function BrainPanel() {
                     {folderIcon(item.folder)}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-body font-semibold text-text-primary truncate leading-tight">
+                    <p className="text-[12px] font-sans font-semibold text-ink truncate leading-tight">
                       {item.title}
-                      <span className="text-text-muted ml-1 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                      <span className="text-ink-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                     </p>
-                    <p className="text-[10px] font-body text-text-tertiary truncate">
+                    <p className="text-[10px] font-sans text-ink-3 truncate">
                       {item.folder} · {timeAgo(item.modifiedAt)}
                     </p>
                     {item.snippet && (
-                      <p className="text-[10px] font-body text-text-muted mt-0.5 line-clamp-2 leading-relaxed">
+                      <p className="text-[10px] font-sans text-ink-3 mt-0.5 line-clamp-2 leading-relaxed">
                         {item.snippet}
                       </p>
                     )}
@@ -200,7 +200,7 @@ export function BrainPanel() {
           )}
         </>
       ) : (
-        <p className="text-[11px] font-body text-text-muted italic">
+        <p className="text-[11px] font-sans text-ink-3 italic">
           Type to search 321 notes across deals, people, projects, and meetings.
         </p>
       )}

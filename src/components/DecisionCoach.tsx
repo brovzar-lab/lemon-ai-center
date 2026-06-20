@@ -59,27 +59,27 @@ export function DecisionCoach() {
 
   return (
     <section className="py-4" aria-label="Decision coach">
-      <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-2">
+      <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mb-2">
         Decision Coach
       </p>
 
       {headline ? (
-        <p className="text-[13px] font-display font-semibold text-text-primary leading-snug mb-3">
+        <p className="text-[13px] font-sans font-semibold text-ink leading-snug mb-3">
           {headline}
         </p>
       ) : (
-        <p className="text-[11px] font-body text-text-muted italic mb-3">
+        <p className="text-[11px] font-sans text-ink-3 italic mb-3">
           Waiting for AI briefing…
         </p>
       )}
 
       {chosen && options ? (
         /* Confirmation state after choosing */
-        <div className="p-3 border border-accent-sage/30 bg-accent-sage/5 transition-all">
-          <p className="text-[12px] font-body font-semibold text-text-primary mb-1">
+        <div className="p-3 rounded-lg bg-data-teal/8 transition-all">
+          <p className="text-[12px] font-sans font-semibold text-ink mb-1">
             ✓ {chosen.label}: {chosen.text}
           </p>
-          <p className="text-[10px] font-body italic text-text-tertiary">
+          <p className="text-[10px] font-sans italic text-ink-3">
             {saveState === 'saving' && 'Saving to your Obsidian vault…'}
             {saveState === 'saved' && 'Written to decisions log in your vault.'}
             {saveState === 'error' && 'Could not save — check vault connection.'}
@@ -88,7 +88,7 @@ export function DecisionCoach() {
           <button
             type="button"
             onClick={() => { setChosen(null); setSaveState('idle') }}
-            className="text-[10px] font-body font-semibold text-accent-coral hover:underline mt-2 uppercase tracking-[0.15em]"
+            className="text-[10px] font-sans font-semibold text-data-coral hover:underline mt-2 uppercase tracking-[0.15em]"
             aria-label="Change your decision"
           >
             Change <ArrowRight size={12} className="inline" />
@@ -102,19 +102,19 @@ export function DecisionCoach() {
               type="button"
               onClick={() => handleChoose(opt)}
               onKeyDown={(e) => handleKeyDown(e, index, options.length)}
-              className="flex items-start gap-2.5 text-left p-2.5 border border-border-soft hover:border-border-medium transition-colors group min-h-[44px]"
+              className="flex items-start gap-2.5 text-left p-2.5 rounded-lg bg-surface shadow-card hover:shadow-hover transition-shadow group min-h-[44px]"
               role="radio"
               aria-checked={false}
               aria-label={`Option ${opt.label}: ${opt.text}. ${opt.detail}`}
             >
-              <span className="flex-shrink-0 font-display text-lg font-semibold text-accent-coral leading-none mt-0.5">
+              <span className="flex-shrink-0 font-sans text-lg font-bold text-data-coral leading-none mt-0.5 num">
                 {opt.label}
               </span>
               <div>
-                <p className="text-[12px] font-body font-medium text-text-primary leading-snug">
+                <p className="text-[12px] font-sans font-medium text-ink leading-snug">
                   {opt.text}
                 </p>
-                <p className="text-[10px] font-body italic text-text-tertiary mt-0.5">
+                <p className="text-[10px] font-sans italic text-ink-3 mt-0.5">
                   {opt.detail}
                 </p>
               </div>
@@ -124,7 +124,7 @@ export function DecisionCoach() {
       ) : isStreaming ? (
         <div className="flex flex-col gap-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-start gap-2.5 p-2.5 border border-border-soft">
+            <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-surface shadow-card">
               <div className="skeleton w-6 h-6 flex-shrink-0 rounded" />
               <div className="flex-1">
                 <div className="skeleton skeleton-line w-3/4" />

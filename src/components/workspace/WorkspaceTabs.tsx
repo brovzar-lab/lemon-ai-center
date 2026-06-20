@@ -93,10 +93,10 @@ export function WorkspaceTabs() {
             aria-pressed={active}
             title={tab.hint ? `Shortcut: ${tab.hint}` : undefined}
             className={[
-              'group relative flex items-center gap-2 px-3 py-1.5 rounded-md text-[11px] font-body font-medium uppercase tracking-[0.12em] transition-colors whitespace-nowrap',
+              'group relative flex items-center gap-2 px-3 py-1.5 rounded-md text-[11px] font-sans font-medium uppercase tracking-[0.12em] transition-colors whitespace-nowrap',
               active
-                ? 'bg-bg-elevated text-text-primary border border-border-medium'
-                : 'text-text-muted hover:text-text-secondary border border-transparent hover:border-border-soft',
+                ? 'bg-sunken text-ink border border-line'
+                : 'text-ink-3 hover:text-ink-2 border border-transparent hover:border-line',
             ].join(' ')}
           >
             <span>{tab.label}</span>
@@ -105,10 +105,10 @@ export function WorkspaceTabs() {
                 className={[
                   'inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold tabular-nums',
                   active
-                    ? 'bg-accent-lemon/15 text-accent-lemon'
+                    ? 'bg-accent/15 text-accent'
                     : tab.id === 'inbox'
-                      ? 'bg-accent-coral/15 text-accent-coral'
-                      : 'bg-bg-elevated text-text-tertiary',
+                      ? 'bg-data-coral/15 text-data-coral'
+                      : 'bg-sunken text-ink-3',
                 ].join(' ')}
                 aria-label={`${tab.count} items`}
               >
@@ -118,7 +118,7 @@ export function WorkspaceTabs() {
             {active && (
               <span
                 aria-hidden
-                className="absolute left-3 right-3 -bottom-px h-px bg-accent-lemon"
+                className="absolute left-3 right-3 -bottom-px h-px bg-accent"
               />
             )}
           </button>
@@ -126,12 +126,12 @@ export function WorkspaceTabs() {
       })}
       <span
         aria-hidden
-        className="hidden md:inline text-[9px] font-body uppercase tracking-[0.18em] text-text-muted whitespace-nowrap ml-auto pl-3"
+        className="hidden md:inline text-[9px] font-sans uppercase tracking-[0.18em] text-ink-3 whitespace-nowrap ml-auto pl-3"
         title="Press g then 1–9 to switch views"
       >
-        <kbd className="px-1 rounded bg-bg-elevated text-text-tertiary font-mono">g</kbd>
+        <kbd className="px-1 rounded bg-sunken text-ink-3 font-mono">g</kbd>
         <span className="mx-1">+</span>
-        <kbd className="px-1 rounded bg-bg-elevated text-text-tertiary font-mono">1–9</kbd>
+        <kbd className="px-1 rounded bg-sunken text-ink-3 font-mono">1–9</kbd>
         <span className="ml-2 italic">to switch</span>
       </span>
     </nav>

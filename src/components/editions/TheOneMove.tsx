@@ -125,11 +125,11 @@ export function TheOneMove({ onReply }: { onReply?: (threadId: string) => void }
   if (!action) {
     return (
       <section aria-label="The one move" className="mb-6">
-        <div className="border-l-2 border-accent-sage bg-bg-surface rounded-r-lg px-5 py-4">
-          <p className="font-display text-lg text-text-primary">
+        <div className="bg-data-teal/10 rounded-lg px-5 py-4">
+          <p className="font-sans text-lg font-semibold text-ink">
             You're clear.
           </p>
-          <p className="font-body text-[12px] text-text-muted mt-1">
+          <p className="font-sans text-[12px] text-ink-3 mt-1">
             Nothing urgent is waiting on you right now. Use this time for deep work.
           </p>
         </div>
@@ -139,26 +139,26 @@ export function TheOneMove({ onReply }: { onReply?: (threadId: string) => void }
 
   return (
     <section aria-label="The one move" className="mb-6">
-      <div className="border-l-2 border-accent-lemon bg-bg-surface rounded-r-lg px-5 py-4">
+      <div className="bg-accent-soft rounded-lg px-5 py-4 shadow-card hover:shadow-hover transition-shadow">
         <div className="flex items-start gap-3">
-          <Zap size={16} className="text-accent-lemon mt-0.5 flex-shrink-0" />
+          <Zap size={16} className="text-accent mt-0.5 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="ed-section-label mb-1">The One Move</p>
-            <h2 className="font-display text-xl font-semibold text-text-primary leading-snug">
+            <h2 className="font-display text-xl font-semibold text-ink leading-snug">
               {action.headline}
             </h2>
-            <p className="font-body text-[13px] text-text-secondary mt-1 truncate">
+            <p className="font-sans text-[13px] text-ink-2 mt-1 truncate">
               {action.detail}
             </p>
             <div className="flex items-center gap-3 mt-3">
-              <span className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-accent-coral">
+              <span className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-data-coral">
                 {action.urgency}
               </span>
               {action.type === 'email' && action.threadId && onReply && (
                 <button
                   type="button"
                   onClick={() => onReply(action.threadId!)}
-                  className="text-[11px] font-body font-semibold uppercase tracking-[0.12em] text-accent-lemon hover:underline"
+                  className="text-[11px] font-sans font-semibold uppercase tracking-[0.12em] text-accent hover:underline"
                 >
                   Draft reply →
                 </button>

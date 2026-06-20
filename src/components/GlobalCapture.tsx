@@ -5,9 +5,9 @@ import { detectCaptureKind } from '@shared/constants'
 import type { Capture } from '@shared/types'
 
 const KIND_BADGE: Record<Capture['kind'], { label: string; class: string }> = {
-  todo: { label: 'TODO', class: 'bg-accent-coral/15 text-accent-coral' },
-  idea: { label: 'IDEA', class: 'bg-accent-lemon/15 text-accent-lemon' },
-  delegate: { label: 'DELEGATE', class: 'bg-accent-sage/15 text-accent-sage' },
+  todo: { label: 'TODO', class: 'bg-data-coral/15 text-data-coral' },
+  idea: { label: 'IDEA', class: 'bg-accent/15 text-accent' },
+  delegate: { label: 'DELEGATE', class: 'bg-data-teal/15 text-data-teal' },
 }
 
 export function GlobalCapture() {
@@ -68,16 +68,16 @@ export function GlobalCapture() {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-bg-base/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-bg/60 backdrop-blur-sm"
         onClick={() => { setOpen(false); setText('') }}
       />
       {/* Capture modal */}
-      <div className="relative w-full max-w-lg mx-4 bg-bg-surface border border-border-soft rounded-xl shadow-2xl p-4">
+      <div className="relative w-full max-w-lg mx-4 bg-surface border border-line rounded-xl shadow-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
-          <span className={`text-[9px] font-body font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full ${KIND_BADGE[kind].class}`}>
+          <span className={`text-[9px] font-sans font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full ${KIND_BADGE[kind].class}`}>
             {KIND_BADGE[kind].label}
           </span>
-          <span className="text-[10px] font-body text-text-muted">
+          <span className="text-[10px] font-sans text-ink-3">
             auto-detected
           </span>
         </div>
@@ -90,7 +90,7 @@ export function GlobalCapture() {
             if (e.key === 'Enter') handleSubmit()
           }}
           placeholder="Capture a thought…"
-          className="w-full bg-transparent font-body text-lg text-text-primary placeholder-text-muted focus:outline-none"
+          className="w-full bg-transparent font-sans text-lg text-ink placeholder-ink-3 focus:outline-none"
         />
         <div className="flex items-center justify-between mt-4">
           {/* Kind override pills */}
@@ -101,10 +101,10 @@ export function GlobalCapture() {
                 type="button"
                 onClick={() => setKind(k)}
                 className={[
-                  'text-[9px] font-body font-semibold uppercase tracking-wider px-2 py-1 rounded-full border transition-colors',
+                  'text-[9px] font-sans font-semibold uppercase tracking-wider px-2 py-1 rounded-full border transition-colors',
                   kind === k
                     ? KIND_BADGE[k].class + ' border-transparent'
-                    : 'text-text-muted border-border-soft hover:border-border-medium',
+                    : 'text-ink-3 border-line hover:border-line',
                 ].join(' ')}
               >
                 {k}
@@ -115,7 +115,7 @@ export function GlobalCapture() {
             type="button"
             onClick={handleSubmit}
             disabled={!text.trim()}
-            className="text-[11px] font-body font-semibold uppercase tracking-wider px-4 py-2 rounded-lg bg-accent-coral text-white hover:bg-accent-coral/90 transition-colors disabled:opacity-40"
+            className="text-[11px] font-sans font-semibold uppercase tracking-wider px-4 py-2 rounded-lg bg-data-coral text-white hover:bg-data-coral/90 transition-colors disabled:opacity-40"
           >
             Capture ↵
           </button>

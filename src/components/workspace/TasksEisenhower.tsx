@@ -15,25 +15,25 @@ const QUADRANTS: Array<{
     key: 'urgent_important',
     label: 'Urgent + Important',
     hint: 'Do now — before anything else',
-    accent: 'var(--color-accent-coral)',
+    accent: 'var(--data-coral)',
   },
   {
     key: 'important',
     label: 'Important · Not Urgent',
     hint: 'Schedule deep work',
-    accent: 'var(--color-accent-lemon)',
+    accent: 'var(--accent)',
   },
   {
     key: 'urgent',
     label: 'Urgent · Not Important',
     hint: 'Delegate or batch',
-    accent: 'var(--color-accent-blue)',
+    accent: 'var(--data-blue)',
   },
   {
     key: 'neither',
     label: 'Neither',
     hint: 'Drop it',
-    accent: 'var(--color-text-muted)',
+    accent: 'var(--ink-3)',
   },
 ]
 
@@ -99,12 +99,12 @@ export function TasksEisenhower({ hideDone = true }: TasksEisenhowerProps) {
   const total = grouped.urgent_important.length + grouped.important.length + grouped.urgent.length + grouped.neither.length
 
   return (
-    <div className="bg-bg-surface border border-border-soft rounded-xl p-4">
+    <div className="bg-surface border border-line rounded-xl p-4">
       <header className="flex items-center justify-between mb-3">
-        <h2 className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase">
+        <h2 className="text-[10px] font-sans font-semibold text-ink-3 tracking-widest uppercase">
           Eisenhower
         </h2>
-        <span className="text-[10px] font-body tabular-nums text-text-muted">
+        <span className="text-[10px] font-sans tabular-nums text-ink-3">
           {total} open
         </span>
       </header>
@@ -115,7 +115,7 @@ export function TasksEisenhower({ hideDone = true }: TasksEisenhowerProps) {
             <section
               key={q.key}
               aria-label={q.label}
-              className="bg-bg-base border border-border-soft rounded-lg p-2.5 min-h-[120px] flex flex-col"
+              className="bg-bg border border-line rounded-lg p-2.5 min-h-[120px] flex flex-col"
             >
               <div className="flex items-center gap-2 mb-1.5">
                 <span
@@ -123,15 +123,15 @@ export function TasksEisenhower({ hideDone = true }: TasksEisenhowerProps) {
                   className="inline-block w-1.5 h-1.5 rounded-full"
                   style={{ background: q.accent }}
                 />
-                <span className="text-[10px] font-body font-bold uppercase tracking-wider text-text-secondary">
+                <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-ink-2">
                   {q.label}
                 </span>
-                <span className="text-[10px] font-body tabular-nums text-text-muted ml-auto">
+                <span className="text-[10px] font-sans tabular-nums text-ink-3 ml-auto">
                   {items.length}
                 </span>
               </div>
               {items.length === 0 ? (
-                <p className="text-[10px] font-body italic text-text-muted leading-snug">
+                <p className="text-[10px] font-sans italic text-ink-3 leading-snug">
                   {q.hint}
                 </p>
               ) : (
@@ -141,20 +141,20 @@ export function TasksEisenhower({ hideDone = true }: TasksEisenhowerProps) {
                       key={t.id}
                       onMouseEnter={() => setHovered(t.id)}
                       onMouseLeave={() => setHovered(null)}
-                      className="group flex items-start gap-2 text-[11px] font-body leading-snug text-text-primary"
+                      className="group flex items-start gap-2 text-[11px] font-sans leading-snug text-ink"
                     >
                       <button
                         type="button"
                         onClick={() => user && toggleDone(user.uid, t.id)}
                         aria-label={`Mark "${t.title}" done`}
-                        className="mt-0.5 w-3 h-3 rounded-sm border border-border-medium flex-shrink-0 hover:border-accent-sage transition-colors"
+                        className="mt-0.5 w-3 h-3 rounded-sm border border-line flex-shrink-0 hover:border-data-teal transition-colors"
                       />
                       <span className="flex-1 min-w-0 line-clamp-2">{t.title}</span>
                       {hovered === t.id && q.key !== 'urgent_important' && user && (
                         <button
                           type="button"
                           onClick={() => moveBucket(user.uid, t.id, 'now')}
-                          className="text-[9px] font-body font-bold uppercase tracking-wider text-accent-coral hover:opacity-80 flex-shrink-0"
+                          className="text-[9px] font-sans font-bold uppercase tracking-wider text-data-coral hover:opacity-80 flex-shrink-0"
                           title="Move to NOW bucket"
                         >
                           Promote
@@ -163,7 +163,7 @@ export function TasksEisenhower({ hideDone = true }: TasksEisenhowerProps) {
                     </li>
                   ))}
                   {items.length > 6 && (
-                    <li className="text-[10px] font-body italic text-text-muted">
+                    <li className="text-[10px] font-sans italic text-ink-3">
                       +{items.length - 6} more
                     </li>
                   )}

@@ -90,10 +90,10 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
     <section className="space-y-5 animate-in">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-text-primary leading-tight">
+          <h2 className="font-display text-2xl font-semibold text-ink leading-tight">
             Inbox Intelligence
           </h2>
-          <p className="text-xs font-body text-text-muted mt-1 max-w-2xl leading-relaxed">
+          <p className="text-xs font-sans text-ink-3 mt-1 max-w-2xl leading-relaxed">
             What you're missing right now. Heuristic-driven slip detection across
             inbox, delegations, and deals. AI summaries land in P2 — for now, ask
             Billy directly using the chat drawer.
@@ -101,8 +101,8 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
         </div>
         <div className="flex items-center gap-2">
           {totalAtRisk > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-body font-medium px-2.5 py-1 rounded-full bg-accent-coral/15 text-accent-coral">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-coral" aria-hidden />
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-medium px-2.5 py-1 rounded-full bg-data-coral/15 text-data-coral">
+              <span className="w-1.5 h-1.5 rounded-full bg-data-coral" aria-hidden />
               {totalAtRisk} at risk
             </span>
           )}
@@ -112,7 +112,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
               setActiveContext({ kind: null, id: null })
               openDrawer()
             }}
-            className="text-[11px] font-body font-semibold uppercase tracking-wider bg-accent-lemon text-bg-base px-3.5 py-1.5 rounded-md hover:brightness-110 transition-all"
+            className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-3.5 py-1.5 rounded-md hover:brightness-110 transition-all"
           >
             Ask AI: what am I missing?
           </button>
@@ -124,19 +124,19 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
         <PulseStat
           label="Deals closed"
           value={dealsClosedThisWeek}
-          accent="var(--color-accent-sage)"
+          accent="var(--data-teal)"
           hint="Last 7 days"
         />
         <PulseStat
           label="Projects moved"
           value={projectsAdvancedThisWeek}
-          accent="var(--color-accent-blue)"
+          accent="var(--data-blue)"
           hint="Stage changes"
         />
         <PulseStat
           label="Delegations done"
           value={delegationsCompletedThisWeek}
-          accent="var(--color-accent-lemon)"
+          accent="var(--accent)"
           hint="By your team"
         />
       </div>
@@ -147,7 +147,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
       {/* Lane: Awaiting your reply */}
       <Lane
         title="Slipping — awaiting your reply"
-        accent="var(--color-accent-coral)"
+        accent="var(--data-coral)"
         count={awaiting.length}
         emptyTitle="Nothing slipping right now"
         emptyBody="HOT older than 24h or MED older than 72h would surface here."
@@ -174,7 +174,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
       {/* Lane: Tied to deals/projects */}
       <Lane
         title="Tied to active deals & projects"
-        accent="var(--color-accent-lemon)"
+        accent="var(--accent)"
         count={linked.length}
         emptyTitle="No threads matched to active ops"
         emptyBody="Threads whose subject mentions an active deal counterparty or project title appear here."
@@ -198,7 +198,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
                   <button
                     type="button"
                     onClick={() => setView('deals')}
-                    className="text-[11px] font-body font-medium uppercase tracking-wider text-accent-lemon hover:opacity-80"
+                    className="text-[11px] font-sans font-medium uppercase tracking-wider text-accent hover:opacity-80"
                   >
                     Open deal · {deal.name}
                   </button>
@@ -206,7 +206,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
                   <button
                     type="button"
                     onClick={() => setView('projects')}
-                    className="text-[11px] font-body font-medium uppercase tracking-wider text-accent-lemon hover:opacity-80"
+                    className="text-[11px] font-sans font-medium uppercase tracking-wider text-accent hover:opacity-80"
                   >
                     Open project · {project.title}
                   </button>
@@ -226,7 +226,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
       {/* Lane: Blocked on others */}
       <Lane
         title="Blocked on others — overdue follow-ups"
-        accent="var(--color-accent-blue)"
+        accent="var(--data-blue)"
         count={overdue.length}
         emptyTitle="Nobody is owing you anything overdue"
         emptyBody="Pending delegations whose `expected_by` has passed land here."
@@ -243,7 +243,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
       {/* Lane: Stalling deals */}
       <Lane
         title="Stalling deals — no next action or stale > 7d"
-        accent="var(--color-accent-rose)"
+        accent="var(--error)"
         count={stallingDeals.length}
         emptyTitle="Pipeline is moving"
         emptyBody="Deals with no `next_action` or untouched for over a week appear here."
@@ -280,17 +280,17 @@ function Lane({
           className="inline-block w-2 h-2 rounded-full"
           style={{ background: accent }}
         />
-        <h3 className="text-[11px] font-body font-bold uppercase tracking-[0.18em] text-text-secondary">
+        <h3 className="text-[11px] font-sans font-bold uppercase tracking-[0.18em] text-ink-2">
           {title}
         </h3>
-        <span className="text-[11px] font-body tabular-nums text-text-muted ml-auto">
+        <span className="text-[11px] font-sans tabular-nums text-ink-3 ml-auto">
           {count}
         </span>
       </header>
       {isEmpty ? (
-        <div className="bg-bg-surface border border-border-soft rounded-xl px-4 py-5 text-center">
-          <p className="text-[12px] font-body italic text-text-secondary">{emptyTitle}</p>
-          <p className="text-[11px] font-body text-text-muted mt-1 leading-snug max-w-md mx-auto">
+        <div className="bg-surface border border-line rounded-xl px-4 py-5 text-center">
+          <p className="text-[12px] font-sans italic text-ink-2">{emptyTitle}</p>
+          <p className="text-[11px] font-sans text-ink-3 mt-1 leading-snug max-w-md mx-auto">
             {emptyBody}
           </p>
         </div>
@@ -315,27 +315,27 @@ function SlipCard({
   const ageLabel = formatAge(slip.ageHours)
   const priorityClass =
     slip.priority === 'HOT'
-      ? 'bg-accent-coral/15 text-accent-coral'
+      ? 'bg-data-coral/15 text-data-coral'
       : slip.priority === 'MED'
-        ? 'bg-accent-lemon/15 text-accent-lemon'
-        : 'bg-bg-elevated text-text-muted'
+        ? 'bg-accent/15 text-accent'
+        : 'bg-sunken text-ink-3'
 
   return (
-    <li className="bg-bg-surface border border-border-soft rounded-xl px-4 py-3 group hover:border-border-medium transition-colors">
+    <li className="bg-surface border border-line rounded-xl px-4 py-3 group hover:border-line transition-colors">
       <div className="flex items-start gap-3">
         <span
-          className={`inline-flex items-center text-[11px] font-body font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${priorityClass} flex-shrink-0`}
+          className={`inline-flex items-center text-[11px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${priorityClass} flex-shrink-0`}
         >
           {slip.priority}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-body font-semibold text-text-primary truncate">
+          <p className="text-[13px] font-sans font-semibold text-ink truncate">
             {thread.subject}
           </p>
-          <p className="text-[11px] font-body text-text-tertiary line-clamp-2 mt-0.5 leading-snug">
+          <p className="text-[11px] font-sans text-ink-3 line-clamp-2 mt-0.5 leading-snug">
             {thread.snippet}
           </p>
-          <div className="flex items-center gap-2 mt-1.5 text-[11px] font-body text-text-muted flex-wrap">
+          <div className="flex items-center gap-2 mt-1.5 text-[11px] font-sans text-ink-3 flex-wrap">
             <span>{thread.from}</span>
             <span>·</span>
             <span className="font-mono">{ageLabel}</span>
@@ -365,13 +365,13 @@ function DelegationRow({
     : null
 
   return (
-    <li className="bg-bg-surface border border-border-soft rounded-xl px-4 py-3 flex items-start gap-3">
+    <li className="bg-surface border border-line rounded-xl px-4 py-3 flex items-start gap-3">
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-body font-semibold text-text-primary leading-snug">
+        <p className="text-[13px] font-sans font-semibold text-ink leading-snug">
           {delegation.task}
         </p>
-        <div className="flex items-center gap-2 mt-1 text-[11px] font-body text-text-muted flex-wrap">
-          <span className="text-accent-blue font-medium">{delegation.person}</span>
+        <div className="flex items-center gap-2 mt-1 text-[11px] font-sans text-ink-3 flex-wrap">
+          <span className="text-data-blue font-medium">{delegation.person}</span>
           {expected && (
             <>
               <span>·</span>
@@ -381,11 +381,11 @@ function DelegationRow({
             </>
           )}
           {overdueDays !== null && overdueDays > 0 && (
-            <span className="text-accent-coral font-medium">{overdueDays}d overdue</span>
+            <span className="text-data-coral font-medium">{overdueDays}d overdue</span>
           )}
         </div>
         {delegation.context && (
-          <p className="text-[11px] font-body text-text-tertiary mt-1 line-clamp-2 leading-snug">
+          <p className="text-[11px] font-sans text-ink-3 mt-1 line-clamp-2 leading-snug">
             {delegation.context}
           </p>
         )}
@@ -393,7 +393,7 @@ function DelegationRow({
       <button
         type="button"
         onClick={onComplete}
-        className="text-[11px] font-body font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-border-soft hover:border-accent-sage/40 hover:text-accent-sage text-text-secondary transition-colors flex-shrink-0"
+        className="text-[11px] font-sans font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-line hover:border-data-teal/40 hover:text-data-teal text-ink-2 transition-colors flex-shrink-0"
       >
         Mark done
       </button>
@@ -403,22 +403,22 @@ function DelegationRow({
 
 function DealStalling({ deal, onOpen }: { deal: LemonDeal; onOpen: () => void }) {
   return (
-    <li className="bg-bg-surface border border-border-soft rounded-xl px-4 py-3 flex items-start gap-3">
+    <li className="bg-surface border border-line rounded-xl px-4 py-3 flex items-start gap-3">
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-body font-semibold text-text-primary leading-snug">
+        <p className="text-[13px] font-sans font-semibold text-ink leading-snug">
           {deal.name}
         </p>
-        <div className="flex items-center gap-2 mt-1 text-[11px] font-body text-text-muted">
+        <div className="flex items-center gap-2 mt-1 text-[11px] font-sans text-ink-3">
           {deal.counterparty && <span>{deal.counterparty}</span>}
           {!deal.next_action && (
-            <span className="text-accent-coral font-medium">No next action set</span>
+            <span className="text-data-coral font-medium">No next action set</span>
           )}
         </div>
       </div>
       <button
         type="button"
         onClick={onOpen}
-        className="text-[11px] font-body font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
+        className="text-[11px] font-sans font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors flex-shrink-0"
       >
         Open
       </button>
@@ -437,7 +437,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="text-[11px] font-body font-medium uppercase tracking-wider px-2 py-1 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors"
+      className="text-[11px] font-sans font-medium uppercase tracking-wider px-2 py-1 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors"
     >
       {children}
     </button>
@@ -456,18 +456,18 @@ function PulseStat({
   hint: string
 }) {
   return (
-    <div className="bg-bg-surface border border-border-soft rounded-xl px-4 py-3">
+    <div className="bg-surface border border-line rounded-xl px-4 py-3">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[11px] font-body font-bold uppercase tracking-wider text-text-muted">
+        <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-ink-3">
           {label}
         </span>
         <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
       </div>
       <div className="mt-1 flex items-baseline gap-2">
-        <span className="font-display text-3xl font-semibold text-text-primary leading-none tabular-nums">
+        <span className="font-display text-3xl font-semibold text-ink leading-none tabular-nums">
           {value}
         </span>
-        <span className="text-[11px] font-body italic text-text-muted">{hint}</span>
+        <span className="text-[11px] font-sans italic text-ink-3">{hint}</span>
       </div>
     </div>
   )

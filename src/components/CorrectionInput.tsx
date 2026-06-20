@@ -89,7 +89,7 @@ export function CorrectionInput() {
       <div className="correction-header">
         <div>
           <span className="correction-title">Teach the AI</span>
-          <p className="text-[10px] font-body text-text-muted mt-0.5">
+          <p className="text-[10px] font-sans text-ink-3 mt-0.5">
             Your note becomes a rule in <code>briefing-rules.md</code> — applied to every future briefing.
           </p>
         </div>

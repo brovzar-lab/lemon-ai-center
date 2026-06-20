@@ -212,7 +212,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-base text-text-primary font-body">
+    <div className="min-h-screen bg-bg text-ink font-sans">
       <DemoBanner />
       <Header onOpenSettings={() => setSettingsOpen(true)} />
 

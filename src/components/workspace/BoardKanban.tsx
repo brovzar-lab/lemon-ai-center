@@ -114,16 +114,16 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
                   className="inline-block w-2 h-2 rounded-full flex-shrink-0"
                   style={{ background: col.accent }}
                 />
-                <span className="text-[10px] font-body font-bold uppercase tracking-[0.18em] text-text-secondary">
+                <span className="text-[10px] font-sans font-bold uppercase tracking-[0.18em] text-ink-2">
                   {col.label}
                 </span>
               </div>
-              <span className="text-[10px] font-body tabular-nums text-text-muted">
+              <span className="text-[10px] font-sans tabular-nums text-ink-3">
                 {colItems.length}
               </span>
             </header>
             {col.subtitle && (
-              <p className="text-[10px] italic font-body text-text-muted px-1 mb-2 leading-snug">
+              <p className="text-[10px] italic font-sans text-ink-3 px-1 mb-2 leading-snug">
                 {col.subtitle}
               </p>
             )}
@@ -136,8 +136,8 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
               className={[
                 'flex-1 min-h-[120px] rounded-xl p-2 space-y-2 border transition-colors',
                 isOver
-                  ? 'bg-bg-elevated border-accent-lemon/40'
-                  : 'bg-bg-surface border-border-soft',
+                  ? 'bg-sunken border-accent/40'
+                  : 'bg-surface border-line',
               ].join(' ')}
             >
               {colItems.map((item) => {
@@ -167,8 +167,8 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
                       }
                     }}
                     className={[
-                      'group relative cursor-grab active:cursor-grabbing rounded-lg border bg-bg-base px-3 py-2.5 transition-all',
-                      'border-border-soft hover:border-border-medium hover:bg-bg-elevated',
+                      'group relative cursor-grab active:cursor-grabbing rounded-lg border bg-bg px-3 py-2.5 transition-all',
+                      'border-line hover:border-line hover:bg-sunken',
                       isDragging ? 'opacity-30 scale-[0.98]' : 'opacity-100',
                     ].join(' ')}
                     style={
@@ -182,7 +182,7 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
                 )
               })}
               {colItems.length === 0 && (
-                <p className="text-[11px] italic font-body text-text-muted text-center py-6">
+                <p className="text-[11px] italic font-sans text-ink-3 text-center py-6">
                   {emptyHint}
                 </p>
               )}

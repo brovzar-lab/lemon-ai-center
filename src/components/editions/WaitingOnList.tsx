@@ -39,9 +39,9 @@ export function WaitingOnList({ max = 5 }: { max?: number }) {
   return (
     <section aria-label="Waiting on others" className="mb-5">
       <div className="ed-section-label mb-2 flex items-center gap-2">
-        <Users size={12} className="text-text-muted" />
+        <Users size={12} className="text-ink-3" />
         <span>Waiting On</span>
-        <span className="ml-auto text-[10px] font-body text-text-muted normal-case tracking-normal">
+        <span className="ml-auto text-[10px] font-sans text-ink-3 normal-case tracking-normal">
           {items.length} item{items.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -53,29 +53,29 @@ export function WaitingOnList({ max = 5 }: { max?: number }) {
           return (
             <li
               key={item.id}
-              className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-bg-elevated/50 transition-colors"
+              className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sunken/50 transition-colors"
             >
               {/* Status dot */}
               <span
                 className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                  isOverdue ? 'bg-accent-coral' : 'bg-text-muted/40'
+                  isOverdue ? 'bg-data-coral' : 'bg-ink-3/40'
                 }`}
               />
 
               {/* Person */}
-              <span className="font-body text-[12px] text-text-muted group-hover:text-text-primary transition-colors w-28 truncate flex-shrink-0">
+              <span className="font-sans text-[12px] text-ink-3 group-hover:text-ink transition-colors w-28 truncate flex-shrink-0">
                 {item.person}
               </span>
 
               {/* Task */}
-              <span className="font-body text-[11px] text-text-muted group-hover:text-text-secondary transition-colors truncate flex-1 min-w-0">
+              <span className="font-sans text-[11px] text-ink-3 group-hover:text-ink-2 transition-colors truncate flex-1 min-w-0">
                 {item.task}
               </span>
 
               {/* Status */}
               <span
-                className={`text-[10px] font-body font-bold uppercase tracking-[0.1em] flex-shrink-0 ${
-                  isOverdue ? 'text-accent-coral' : 'text-text-muted'
+                className={`text-[10px] font-sans font-bold uppercase tracking-[0.1em] flex-shrink-0 ${
+                  isOverdue ? 'text-data-coral' : 'text-ink-3'
                 }`}
               >
                 {isOverdue

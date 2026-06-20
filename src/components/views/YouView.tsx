@@ -19,9 +19,9 @@ const FRONT_LABELS: Record<FrontKey, string> = {
 }
 
 function burnoutColor(score: number): string {
-  if (score < 45) return 'var(--color-accent-sage)'
-  if (score < 65) return 'var(--color-accent-lemon)'
-  return 'var(--color-accent-coral)'
+  if (score < 45) return 'var(--data-teal)'
+  if (score < 65) return 'var(--accent)'
+  return 'var(--data-coral)'
 }
 
 function formatUSD(n: number): string {
@@ -48,10 +48,10 @@ export function YouView() {
   return (
     <section className="space-y-6 animate-in">
       <header>
-        <h2 className="font-display text-2xl font-semibold text-text-primary leading-tight">
+        <h2 className="font-display text-2xl font-semibold text-ink leading-tight">
           You
         </h2>
-        <p className="text-xs font-body text-text-muted mt-1">
+        <p className="text-xs font-sans text-ink-3 mt-1">
           The operator behind the operation — energy, side bets, and the portfolio
         </p>
       </header>
@@ -78,18 +78,18 @@ export function YouView() {
       <style>{`
         .form-input {
           width: 100%;
-          background: var(--color-bg-base);
-          border: 1px solid var(--color-border-soft);
-          color: var(--color-text-primary);
+          background: var(--bg);
+          border: 1px solid var(--line);
+          color: var(--ink);
           font-size: 12px;
-          font-family: 'Inter', sans-serif;
+          font-family: var(--font-body);
           padding: 8px 10px;
           border-radius: 8px;
           outline: none;
           transition: border-color 150ms;
         }
         .form-input:focus {
-          border-color: var(--color-accent-lemon);
+          border-color: var(--accent);
         }
       `}</style>
     </section>
@@ -106,24 +106,24 @@ function WeeklyReviewCard({ review }: { review: WeeklyReview }) {
   )
 
   return (
-    <article className="bg-bg-surface border border-border-soft rounded-xl overflow-hidden">
+    <article className="bg-surface border border-line rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-bg-elevated transition-colors"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-sunken transition-colors"
       >
-        <span className="font-display text-base font-semibold text-text-primary">
+        <span className="font-display text-base font-semibold text-ink">
           Weekly Review
-          <span className="text-text-tertiary font-normal"> — week of {review.weekOf}</span>
+          <span className="text-ink-3 font-normal"> — week of {review.weekOf}</span>
         </span>
-        <span className="text-[11px] font-body uppercase tracking-wider text-text-muted">
+        <span className="text-[11px] font-sans uppercase tracking-wider text-ink-3">
           {open ? 'Collapse' : 'Expand'}
         </span>
       </button>
       {open && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border-soft pt-4">
-          <p className="text-[13px] font-body text-text-secondary leading-relaxed">
+        <div className="px-4 pb-4 space-y-4 border-t border-line pt-4">
+          <p className="text-[13px] font-sans text-ink-2 leading-relaxed">
             {review.summary}
           </p>
 
@@ -135,16 +135,16 @@ function WeeklyReviewCard({ review }: { review: WeeklyReview }) {
                 .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
                 .map(([front, hours]) => (
                   <div key={front} className="flex items-center gap-2">
-                    <span className="w-16 text-[10px] font-body font-bold uppercase tracking-wider text-text-muted">
+                    <span className="w-16 text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3">
                       {FRONT_LABELS[front] ?? front}
                     </span>
-                    <div className="flex-1 h-1.5 rounded-full bg-border-soft overflow-hidden">
+                    <div className="flex-1 h-1.5 rounded-full bg-line overflow-hidden">
                       <div
-                        className="h-full bg-accent-lemon rounded-full"
+                        className="h-full bg-accent rounded-full"
                         style={{ width: `${((hours ?? 0) / maxHours) * 100}%` }}
                       />
                     </div>
-                    <span className="w-10 text-right text-[10px] font-body tabular-nums text-text-tertiary">
+                    <span className="w-10 text-right text-[10px] font-sans tabular-nums text-ink-3">
                       {(hours ?? 0).toFixed(1)}h
                     </span>
                   </div>
@@ -157,7 +157,7 @@ function WeeklyReviewCard({ review }: { review: WeeklyReview }) {
               <p className="ed-section-label mb-2">Stalls</p>
               <ul className="space-y-1">
                 {review.stalls.map((s, i) => (
-                  <li key={i} className="text-[12px] font-body text-text-secondary leading-snug">
+                  <li key={i} className="text-[12px] font-sans text-ink-2 leading-snug">
                     · {s}
                   </li>
                 ))}
@@ -170,7 +170,7 @@ function WeeklyReviewCard({ review }: { review: WeeklyReview }) {
               <p className="ed-section-label mb-2">Risks</p>
               <ul className="space-y-1">
                 {review.risks.map((r, i) => (
-                  <li key={i} className="text-[12px] font-body text-accent-coral leading-snug">
+                  <li key={i} className="text-[12px] font-sans text-data-coral leading-snug">
                     · {r}
                   </li>
                 ))}
@@ -178,11 +178,11 @@ function WeeklyReviewCard({ review }: { review: WeeklyReview }) {
             </div>
           )}
 
-          <div className="border-l-2 border-accent-lemon bg-bg-elevated rounded-r-lg px-3 py-2.5">
-            <p className="text-[10px] font-body font-bold uppercase tracking-wider text-accent-lemon mb-1">
+          <div className="bg-accent-soft rounded-lg px-3 py-2.5">
+            <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-on-soft mb-1">
               The one recommendation
             </p>
-            <p className="text-[13px] font-display italic text-text-primary leading-relaxed">
+            <p className="text-[13px] font-sans text-ink leading-relaxed">
               {review.recommendation}
             </p>
           </div>
@@ -199,17 +199,17 @@ function GaugeSection({ burnout }: { burnout: BurnoutDoc | null }) {
     <div className="space-y-3">
       <p className="ed-section-label">The Gauge</p>
       {!burnout ? (
-        <div className="bg-bg-surface border border-border-soft rounded-xl px-6 py-8 text-center">
-          <p className="font-display text-lg italic text-text-secondary leading-tight">
+        <div className="bg-surface border border-line rounded-xl px-6 py-8 text-center">
+          <p className="font-display text-lg italic text-ink-2 leading-tight">
             No reading yet
           </p>
-          <p className="mt-2 text-xs font-body text-text-muted max-w-md mx-auto leading-relaxed">
+          <p className="mt-2 text-xs font-sans text-ink-3 max-w-md mx-auto leading-relaxed">
             The engine computes this nightly at 23:00 — meeting load, late-night email, days
             since a break, and writing time roll into one number.
           </p>
         </div>
       ) : (
-        <div className="bg-bg-surface border border-border-soft rounded-xl p-5 flex flex-wrap items-center gap-6">
+        <div className="bg-surface border border-line rounded-xl p-5 flex flex-wrap items-center gap-6">
           <div className="flex items-baseline gap-1.5">
             <span
               className="font-display text-5xl font-semibold tabular-nums leading-none"
@@ -217,7 +217,7 @@ function GaugeSection({ burnout }: { burnout: BurnoutDoc | null }) {
             >
               {Math.round(burnout.score)}
             </span>
-            <span className="text-sm font-body text-text-muted">/100</span>
+            <span className="text-sm font-sans text-ink-3">/100</span>
           </div>
 
           {/* 7-day trend */}
@@ -242,7 +242,7 @@ function GaugeSection({ burnout }: { burnout: BurnoutDoc | null }) {
             </div>
           )}
 
-          <p className="text-[11px] font-body text-text-tertiary leading-relaxed flex-1 min-w-[200px]">
+          <p className="text-[11px] font-sans text-ink-3 leading-relaxed flex-1 min-w-[200px]">
             {burnout.meetingHours.toFixed(1)}h in meetings · {burnout.lateNightEmails} late-night
             email{burnout.lateNightEmails === 1 ? '' : 's'} · {burnout.daysSinceBreak} day
             {burnout.daysSinceBreak === 1 ? '' : 's'} since a break
@@ -288,7 +288,7 @@ function VenturesSection({
         <button
           type="button"
           onClick={() => setAdding((v) => !v)}
-          className="text-[11px] font-body font-medium uppercase tracking-wider text-text-muted hover:text-text-primary transition-colors whitespace-nowrap"
+          className="text-[11px] font-sans font-medium uppercase tracking-wider text-ink-3 hover:text-ink transition-colors whitespace-nowrap"
         >
           {adding ? 'Cancel' : '+ Add'}
         </button>
@@ -312,7 +312,7 @@ function VenturesSection({
           />
           <button
             type="submit"
-            className="text-[11px] font-body font-semibold uppercase tracking-wider bg-accent-lemon text-bg-base px-3 py-1.5 rounded-md hover:brightness-110 transition-all"
+            className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-3 py-1.5 rounded-md hover:brightness-110 transition-all"
           >
             Add
           </button>
@@ -320,11 +320,11 @@ function VenturesSection({
       )}
 
       {ventures.length === 0 && !adding ? (
-        <div className="bg-bg-surface border border-border-soft rounded-xl px-6 py-8 text-center">
-          <p className="font-display text-lg italic text-text-secondary leading-tight">
+        <div className="bg-surface border border-line rounded-xl px-6 py-8 text-center">
+          <p className="font-display text-lg italic text-ink-2 leading-tight">
             No side bets on the board
           </p>
-          <p className="mt-2 text-xs font-body text-text-muted max-w-md mx-auto leading-relaxed">
+          <p className="mt-2 text-xs font-sans text-ink-3 max-w-md mx-auto leading-relaxed">
             Track AI ventures here — the engine watches for stalls and folds them into your
             fronts once they exist.
           </p>
@@ -367,7 +367,7 @@ function VentureCard({
 
   if (editing) {
     return (
-      <article className="bg-bg-surface border border-border-medium rounded-xl p-4 space-y-2">
+      <article className="bg-surface border border-line rounded-xl p-4 space-y-2">
         <input
           autoFocus
           value={name}
@@ -391,14 +391,14 @@ function VentureCard({
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-[11px] font-body text-text-muted hover:text-text-primary transition-colors"
+            className="text-[11px] font-sans text-ink-3 hover:text-ink transition-colors"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={save}
-            className="text-[11px] font-body font-semibold uppercase tracking-wider bg-accent-lemon text-bg-base px-3 py-1.5 rounded-md hover:brightness-110 transition-all"
+            className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-3 py-1.5 rounded-md hover:brightness-110 transition-all"
           >
             Save
           </button>
@@ -408,16 +408,16 @@ function VentureCard({
   }
 
   return (
-    <article className="group bg-bg-surface border border-border-soft hover:border-border-medium rounded-xl p-4 transition-colors">
+    <article className="group bg-surface border border-line hover:border-line rounded-xl p-4 transition-colors">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-[13px] font-body font-semibold text-text-primary leading-tight">
+        <h3 className="text-[13px] font-sans font-semibold text-ink leading-tight">
           {venture.name}
         </h3>
         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-[10px] font-body uppercase tracking-wider text-text-muted hover:text-text-primary"
+            className="text-[10px] font-sans uppercase tracking-wider text-ink-3 hover:text-ink"
           >
             Edit
           </button>
@@ -425,7 +425,7 @@ function VentureCard({
             <button
               type="button"
               onClick={() => onRemove(venture.id)}
-              className="text-[10px] font-body uppercase tracking-wider text-accent-rose"
+              className="text-[10px] font-sans uppercase tracking-wider text-error"
             >
               Sure?
             </button>
@@ -434,7 +434,7 @@ function VentureCard({
               type="button"
               onClick={() => setConfirmDelete(true)}
               aria-label={`Remove ${venture.name}`}
-              className="text-text-muted hover:text-accent-rose leading-none"
+              className="text-ink-3 hover:text-error leading-none"
             >
               ×
             </button>
@@ -442,12 +442,12 @@ function VentureCard({
         </div>
       </div>
       {venture.stage && (
-        <span className="inline-block text-[10px] font-body px-1.5 py-0.5 rounded bg-bg-elevated text-text-muted mt-1.5">
+        <span className="inline-block text-[10px] font-sans px-1.5 py-0.5 rounded bg-sunken text-ink-3 mt-1.5">
           {venture.stage}
         </span>
       )}
       {venture.nextAction && (
-        <p className="text-[11px] font-body italic mt-2 text-text-tertiary">
+        <p className="text-[11px] font-sans italic mt-2 text-ink-3">
           → {venture.nextAction}
         </p>
       )}
@@ -500,7 +500,7 @@ function WatchlistSection({
           />
           <button
             type="submit"
-            className="text-[11px] font-body font-medium uppercase tracking-wider px-3 py-1.5 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors"
+            className="text-[11px] font-sans font-medium uppercase tracking-wider px-3 py-1.5 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors"
           >
             Add
           </button>
@@ -508,20 +508,20 @@ function WatchlistSection({
       </div>
 
       {watchlist.length === 0 ? (
-        <div className="bg-bg-surface border border-border-soft rounded-xl px-6 py-8 text-center">
-          <p className="font-display text-lg italic text-text-secondary leading-tight">
+        <div className="bg-surface border border-line rounded-xl px-6 py-8 text-center">
+          <p className="font-display text-lg italic text-ink-2 leading-tight">
             Nothing on watch
           </p>
-          <p className="mt-2 text-xs font-body text-text-muted max-w-md mx-auto leading-relaxed">
+          <p className="mt-2 text-xs font-sans text-ink-3 max-w-md mx-auto leading-relaxed">
             Add tickers above — set FINNHUB_API_KEY on the server and the engine pulls live
             quotes each morning. The list works manually without it.
           </p>
         </div>
       ) : (
-        <div className="bg-bg-surface border border-border-soft rounded-xl overflow-hidden">
+        <div className="bg-surface border border-line rounded-xl overflow-hidden">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-soft">
+              <tr className="border-b border-line">
                 <Th>Ticker</Th>
                 <Th align="right">Price</Th>
                 <Th align="right">Change</Th>
@@ -533,36 +533,36 @@ function WatchlistSection({
               {watchlist.map((item) => {
                 const q = quoteByTicker.get(item.ticker.toUpperCase())
                 const up = q != null && q.change >= 0
-                const changeColor = up ? 'text-accent-sage' : 'text-accent-coral'
+                const changeColor = up ? 'text-data-teal' : 'text-data-coral'
                 const positionValue =
                   q != null && item.shares != null ? item.shares * q.price : null
                 return (
                   <tr
                     key={item.id}
-                    className="group border-b border-border-soft last:border-b-0 hover:bg-bg-elevated transition-colors"
+                    className="group border-b border-line last:border-b-0 hover:bg-sunken transition-colors"
                   >
                     <td className="px-4 py-2.5">
-                      <span className="text-[12px] font-mono font-semibold text-text-primary">
+                      <span className="text-[12px] font-mono font-semibold text-ink">
                         {item.ticker.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-right text-[12px] font-mono tabular-nums text-text-primary">
-                      {q ? formatUSD(q.price) : <span className="text-text-muted">—</span>}
+                    <td className="px-4 py-2.5 text-right text-[12px] font-mono tabular-nums text-ink">
+                      {q ? formatUSD(q.price) : <span className="text-ink-3">—</span>}
                     </td>
                     <td
-                      className={`px-4 py-2.5 text-right text-[12px] font-mono tabular-nums ${q ? changeColor : 'text-text-muted'}`}
+                      className={`px-4 py-2.5 text-right text-[12px] font-mono tabular-nums ${q ? changeColor : 'text-ink-3'}`}
                     >
                       {q
                         ? `${up ? '+' : '−'}${formatUSD(Math.abs(q.change))} (${up ? '+' : '−'}${Math.abs(q.changePct).toFixed(2)}%)`
                         : '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-[11px] font-body tabular-nums text-text-tertiary">
+                    <td className="px-4 py-2.5 text-right text-[11px] font-sans tabular-nums text-ink-3">
                       {item.shares != null ? (
                         <>
                           {item.shares} sh
                           {item.costBasisUSD != null && ` @ ${formatUSD(item.costBasisUSD)}`}
                           {positionValue != null && (
-                            <span className="text-text-secondary font-medium">
+                            <span className="text-ink-2 font-medium">
                               {' '}
                               · {formatUSD(positionValue)}
                             </span>
@@ -577,7 +577,7 @@ function WatchlistSection({
                         type="button"
                         onClick={() => onRemove(item.id)}
                         aria-label={`Remove ${item.ticker}`}
-                        className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-accent-rose transition-opacity leading-none px-1"
+                        className="opacity-0 group-hover:opacity-100 text-ink-3 hover:text-error transition-opacity leading-none px-1"
                       >
                         ×
                       </button>
@@ -590,7 +590,7 @@ function WatchlistSection({
         </div>
       )}
 
-      <p className="text-[10px] font-body italic text-text-muted">
+      <p className="text-[10px] font-sans italic text-ink-3">
         {computedAt
           ? `Quotes as of ${new Date(computedAt).toLocaleString('en-US', {
               month: 'short',
@@ -613,7 +613,7 @@ function Th({
 }) {
   return (
     <th
-      className={`px-4 py-2 text-[10px] font-body font-bold uppercase tracking-wider text-text-muted ${align === 'right' ? 'text-right' : 'text-left'}`}
+      className={`px-4 py-2 text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 ${align === 'right' ? 'text-right' : 'text-left'}`}
     >
       {children}
     </th>

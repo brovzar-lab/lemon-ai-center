@@ -109,25 +109,25 @@ export function SkillModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="skill-modal-title"
-        className="relative w-full max-w-lg bg-bg-elevated border border-border-medium rounded-2xl p-5 shadow-2xl flex flex-col gap-4 max-h-[80vh]"
+        className="relative w-full max-w-lg bg-sunken border border-line rounded-2xl p-5 shadow-2xl flex flex-col gap-4 max-h-[80vh]"
       >
         <div className="flex items-center justify-between">
           <div>
-            <h2 id="skill-modal-title" className="text-sm font-body font-semibold text-text-primary">
+            <h2 id="skill-modal-title" className="text-sm font-sans font-semibold text-ink">
               {skill?.title || 'Skill'}
             </h2>
             {skill && (
-              <p className="text-[11px] font-body text-text-muted mt-0.5">{skill.description}</p>
+              <p className="text-[11px] font-sans text-ink-3 mt-0.5">{skill.description}</p>
             )}
           </div>
-          <button type="button" aria-label="Close" onClick={closeModal} className="text-text-muted hover:text-text-secondary leading-none p-1"><X size={18} /></button>
+          <button type="button" aria-label="Close" onClick={closeModal} className="text-ink-3 hover:text-ink-2 leading-none p-1"><X size={18} /></button>
         </div>
 
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           rows={4}
-          className="w-full text-sm font-body bg-bg-surface border border-border-soft rounded-lg px-3 py-2.5 text-text-primary outline-none focus:border-border-medium resize-none"
+          className="w-full text-sm font-sans bg-surface border border-line rounded-lg px-3 py-2.5 text-ink outline-none focus:border-line resize-none"
           placeholder={skill ? `Provide context for ${skill.title}…` : 'Paste context or describe what you need…'}
         />
 
@@ -136,7 +136,7 @@ export function SkillModal() {
             type="button"
             onClick={run}
             disabled={loading || !input.trim()}
-            className="px-4 py-2 bg-accent-lemon text-bg-base text-sm font-body font-medium rounded-lg hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="px-4 py-2 bg-accent text-bg text-sm font-sans font-medium rounded-lg hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
             {loading ? 'Running…' : `Run ${skill?.title || 'Skill'}`}
           </button>
@@ -144,7 +144,7 @@ export function SkillModal() {
             <button
               type="button"
               onClick={copyOutput}
-              className="px-3 py-2 text-xs font-body text-text-muted hover:text-text-secondary border border-border-soft rounded-lg transition-colors"
+              className="px-3 py-2 text-xs font-sans text-ink-3 hover:text-ink-2 border border-line rounded-lg transition-colors"
             >
               Copy
             </button>
@@ -152,8 +152,8 @@ export function SkillModal() {
         </div>
 
         {output && (
-          <div ref={outputRef} className="flex-1 overflow-y-auto p-3 bg-bg-surface rounded-lg border border-border-soft">
-            <p className="text-sm font-body text-text-secondary leading-relaxed whitespace-pre-wrap">{output}</p>
+          <div ref={outputRef} className="flex-1 overflow-y-auto p-3 bg-surface rounded-lg border border-line">
+            <p className="text-sm font-sans text-ink-2 leading-relaxed whitespace-pre-wrap">{output}</p>
           </div>
         )}
       </div>

@@ -28,7 +28,7 @@ export function SkillLauncher() {
         type="button"
         data-testid="skill-launcher-fab"
         onClick={() => (skillLauncherOpen ? closeSkillLauncher() : openSkillLauncher())}
-        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-accent-lemon text-bg-base rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity font-body font-bold text-lg"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-accent text-bg rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity font-sans font-bold text-lg"
         aria-label="Open skill launcher"
       >
         ✦
@@ -42,10 +42,10 @@ export function SkillLauncher() {
             className="absolute inset-0 bg-black/40 cursor-default"
             onClick={closeSkillLauncher}
           />
-          <div className="relative w-full max-w-sm bg-bg-elevated border border-border-medium rounded-2xl p-4 shadow-2xl max-h-[80vh] flex flex-col">
+          <div className="relative w-full max-w-sm bg-sunken border border-line rounded-2xl p-4 shadow-2xl max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-body font-semibold text-text-primary">Skills</h2>
-              <button type="button" onClick={closeSkillLauncher} className="text-text-muted hover:text-text-secondary leading-none p-1" aria-label="Close"><X size={18} /></button>
+              <h2 className="text-sm font-sans font-semibold text-ink">Skills</h2>
+              <button type="button" onClick={closeSkillLauncher} className="text-ink-3 hover:text-ink-2 leading-none p-1" aria-label="Close"><X size={18} /></button>
             </div>
 
             <input
@@ -53,7 +53,7 @@ export function SkillLauncher() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search skills…"
-              className="w-full text-sm font-body bg-bg-surface border border-border-soft rounded-lg px-3 py-2 text-text-primary placeholder:text-text-muted outline-none focus:border-border-medium mb-3"
+              className="w-full text-sm font-sans bg-surface border border-line rounded-lg px-3 py-2 text-ink placeholder:text-ink-3 outline-none focus:border-line mb-3"
             />
 
             <div className="overflow-y-auto flex-1 grid grid-cols-2 gap-1.5">
@@ -63,10 +63,10 @@ export function SkillLauncher() {
                   type="button"
                   data-testid="skill-item"
                   onClick={() => launchSkill(skill)}
-                  className="text-left p-3 rounded-xl bg-bg-surface hover:bg-bg-base border border-border-soft hover:border-border-medium transition-colors"
+                  className="text-left p-3 rounded-xl bg-surface hover:bg-bg border border-line hover:border-line transition-colors"
                 >
-                  <p className="text-xs font-body font-medium text-text-primary">{skill.title}</p>
-                  <p className="text-[11px] font-body text-text-muted mt-0.5 leading-tight">{skill.description}</p>
+                  <p className="text-xs font-sans font-medium text-ink">{skill.title}</p>
+                  <p className="text-[11px] font-sans text-ink-3 mt-0.5 leading-tight">{skill.description}</p>
                 </button>
               ))}
             </div>

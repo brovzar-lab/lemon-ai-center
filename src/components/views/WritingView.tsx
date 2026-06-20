@@ -28,11 +28,11 @@ function formatDate(iso: string): string {
 
 /** Touch heat — gold when warm, amber when cooling, red when cold. */
 function touchTone(days: number | null): { className: string; label: string } {
-  if (days === null) return { className: 'text-text-muted', label: 'never touched' }
+  if (days === null) return { className: 'text-ink-3', label: 'never touched' }
   const base = days === 0 ? 'touched today' : `last touched ${days}d ago`
-  if (days < 7) return { className: 'text-accent-lemon', label: base }
-  if (days <= 14) return { className: 'text-accent-coral', label: base }
-  return { className: 'text-accent-rose font-semibold', label: `${base} — going cold` }
+  if (days < 7) return { className: 'text-accent', label: base }
+  if (days <= 14) return { className: 'text-data-coral', label: base }
+  return { className: 'text-error font-semibold', label: `${base} — going cold` }
 }
 
 interface NewScriptForm {
@@ -94,23 +94,23 @@ export function WritingView() {
     <section className="space-y-4 animate-in">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-text-primary leading-tight">
+          <h2 className="font-display text-2xl font-semibold text-ink leading-tight">
             The Slate
           </h2>
-          <p className="text-xs font-body text-text-muted mt-1">
+          <p className="text-xs font-sans text-ink-3 mt-1">
             {scripts.length === 0 ? (
               'Sacred work — protect the writing hours'
             ) : (
               <>
-                <span className="text-accent-lemon font-medium">{summary.inMotion} in motion</span>
+                <span className="text-accent font-medium">{summary.inMotion} in motion</span>
                 {' · '}
-                <span className={summary.cold > 0 ? 'text-accent-rose' : ''}>
+                <span className={summary.cold > 0 ? 'text-error' : ''}>
                   {summary.cold} gone cold
                 </span>
                 {summary.next?.targetDate && (
                   <>
                     {' · next target: '}
-                    <span className="text-text-secondary">
+                    <span className="text-ink-2">
                       {summary.next.title} — {formatDate(summary.next.targetDate)}
                     </span>
                   </>
@@ -122,7 +122,7 @@ export function WritingView() {
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="text-[11px] font-body font-medium uppercase tracking-wider px-3 py-1.5 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors"
+          className="text-[11px] font-sans font-medium uppercase tracking-wider px-3 py-1.5 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors"
         >
           {showForm ? 'Cancel' : '+ Add Script'}
         </button>
@@ -131,7 +131,7 @@ export function WritingView() {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="bg-bg-surface border border-border-soft rounded-xl p-4 space-y-3"
+          className="bg-surface border border-line rounded-xl p-4 space-y-3"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Field label="Title" required>
@@ -162,13 +162,13 @@ export function WritingView() {
             <button
               type="button"
               onClick={reset}
-              className="text-[11px] font-body text-text-muted hover:text-text-primary transition-colors"
+              className="text-[11px] font-sans text-ink-3 hover:text-ink transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="text-[11px] font-body font-semibold uppercase tracking-wider bg-accent-lemon text-bg-base px-4 py-1.5 rounded-md hover:brightness-110 transition-all"
+              className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-4 py-1.5 rounded-md hover:brightness-110 transition-all"
             >
               Save script
             </button>
@@ -211,18 +211,18 @@ export function WritingView() {
       <style>{`
         .form-input {
           width: 100%;
-          background: var(--color-bg-base);
-          border: 1px solid var(--color-border-soft);
-          color: var(--color-text-primary);
+          background: var(--bg);
+          border: 1px solid var(--line);
+          color: var(--ink);
           font-size: 12px;
-          font-family: 'Inter', sans-serif;
+          font-family: var(--font-body);
           padding: 8px 10px;
           border-radius: 8px;
           outline: none;
           transition: border-color 150ms;
         }
         .form-input:focus {
-          border-color: var(--color-accent-lemon);
+          border-color: var(--accent);
         }
       `}</style>
     </section>
@@ -247,11 +247,11 @@ function ScriptCard({
   const stageIdx = STAGES.indexOf(script.stage)
 
   return (
-    <article className="group bg-bg-surface border border-border-soft hover:border-border-medium rounded-xl p-4 flex flex-col gap-3 transition-colors">
+    <article className="group bg-surface border border-line hover:border-line rounded-xl p-4 flex flex-col gap-3 transition-colors">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-display text-lg font-semibold text-text-primary leading-tight">
+        <h3 className="font-display text-lg font-semibold text-ink leading-tight">
           {script.slatePosition != null && (
-            <span className="text-text-muted font-normal mr-1.5 tabular-nums">
+            <span className="text-ink-3 font-normal mr-1.5 tabular-nums">
               {script.slatePosition}.
             </span>
           )}
@@ -260,7 +260,7 @@ function ScriptCard({
         <button
           type="button"
           onClick={onEdit}
-          className="opacity-0 group-hover:opacity-100 text-[10px] font-body uppercase tracking-wider text-text-muted hover:text-text-primary transition-opacity flex-shrink-0"
+          className="opacity-0 group-hover:opacity-100 text-[10px] font-sans uppercase tracking-wider text-ink-3 hover:text-ink transition-opacity flex-shrink-0"
         >
           Edit
         </button>
@@ -280,20 +280,20 @@ function ScriptCard({
               aria-pressed={current}
               className={[
                 'flex-1 flex flex-col items-center gap-1 py-1 rounded transition-colors',
-                'hover:bg-bg-elevated',
+                'hover:bg-sunken',
               ].join(' ')}
             >
               <span
                 aria-hidden
                 className={[
                   'block w-full h-1 rounded-full transition-colors',
-                  reached ? 'bg-accent-lemon' : 'bg-border-soft',
+                  reached ? 'bg-accent' : 'bg-line',
                 ].join(' ')}
               />
               <span
                 className={[
-                  'text-[8px] font-body uppercase tracking-wider',
-                  current ? 'text-accent-lemon font-bold' : 'text-text-muted',
+                  'text-[8px] font-sans uppercase tracking-wider',
+                  current ? 'text-accent font-bold' : 'text-ink-3',
                 ].join(' ')}
               >
                 {STAGE_LABELS[stage]}
@@ -304,19 +304,19 @@ function ScriptCard({
       </div>
 
       <div className="space-y-1">
-        <p className={`text-[11px] font-body ${tone.className}`}>
+        <p className={`text-[11px] font-sans ${tone.className}`}>
           {tone.label}
           {script.stage === 'draft' && !!script.draftNumber && (
-            <span className="text-text-tertiary"> · draft {script.draftNumber}</span>
+            <span className="text-ink-3"> · draft {script.draftNumber}</span>
           )}
         </p>
         {script.targetDate && (
-          <p className="text-[11px] font-body text-text-tertiary">
+          <p className="text-[11px] font-sans text-ink-3">
             target {formatDate(script.targetDate)}
           </p>
         )}
         {script.notes && (
-          <p className="text-[11px] font-body italic text-text-tertiary line-clamp-2 leading-snug">
+          <p className="text-[11px] font-sans italic text-ink-3 line-clamp-2 leading-snug">
             {script.notes}
           </p>
         )}
@@ -325,7 +325,7 @@ function ScriptCard({
       <button
         type="button"
         onClick={onWrote}
-        className="mt-auto self-start text-[11px] font-body font-semibold uppercase tracking-wider px-3 py-1.5 rounded-md border border-accent-lemon/40 text-accent-lemon hover:bg-accent-lemon/10 transition-colors"
+        className="mt-auto self-start text-[11px] font-sans font-semibold uppercase tracking-wider px-3 py-1.5 rounded-md border border-accent/40 text-accent hover:bg-accent/10 transition-colors"
       >
         I wrote today
       </button>
@@ -366,7 +366,7 @@ function ScriptDetail({
         <div className="modal-header">
           <div className="min-w-0">
             <h3 className="modal-title truncate">{script.title}</h3>
-            <p className="text-[11px] font-body text-text-muted">
+            <p className="text-[11px] font-sans text-ink-3">
               {STAGE_LABELS[script.stage]}
             </p>
           </div>
@@ -434,18 +434,18 @@ function ScriptDetail({
         <div className="modal-actions">
           {confirmDelete ? (
             <>
-              <span className="text-[11px] font-body text-accent-coral">Delete this script?</span>
+              <span className="text-[11px] font-sans text-data-coral">Delete this script?</span>
               <div className="modal-actions-right">
                 <button
                   type="button"
-                  className="text-[11px] font-body text-text-muted hover:text-text-primary"
+                  className="text-[11px] font-sans text-ink-3 hover:text-ink"
                   onClick={() => setConfirmDelete(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="text-[11px] font-body font-semibold uppercase tracking-wider bg-accent-rose text-white px-3 py-1.5 rounded-md hover:brightness-110"
+                  className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-error text-white px-3 py-1.5 rounded-md hover:brightness-110"
                   onClick={onDelete}
                 >
                   Delete
@@ -456,7 +456,7 @@ function ScriptDetail({
             <>
               <button
                 type="button"
-                className="text-[11px] font-body text-text-muted hover:text-accent-coral transition-colors"
+                className="text-[11px] font-sans text-ink-3 hover:text-data-coral transition-colors"
                 onClick={() => setConfirmDelete(true)}
               >
                 Delete script
@@ -485,9 +485,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-[10px] font-body font-bold uppercase tracking-wider text-text-muted mb-1">
+      <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
         {label}
-        {required && <span className="ml-1 text-accent-coral">*</span>}
+        {required && <span className="ml-1 text-data-coral">*</span>}
       </span>
       {children}
     </label>
