@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { db } from '../lib/firebase'
 import { requireAuth } from '../middleware/requireAuth'
-import { requireCronSecret } from '../middleware/cronAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { makeRateLimit } from '../middleware/rateLimit'
 import { runJob, JOBS } from '../lib/engine'
@@ -11,39 +10,10 @@ export const engineRouter = Router()
 
 const VALID_JOBS = new Set<string>([...JOBS.map((j) => j.id), 'seed_from_vault'])
 
-/**
- * C-2: POST /api/engine/cron/:jobId — Railway Cron HTTP trigger.
- *
- * Secured by ENGINE_CRON_SECRET (not a user session).
- * Runs the job synchronously so the cron service can report success/failure.
- * Registered BEFORE requireAuth so it doesn't need a session cookie.
- */
-engineRouter.post('/cron/:jobId', requireCronSecret, async (req, res) => {
-  const uid = process.env.CEO_UID
-  if (!uid) {
-    res.status(503).json({
-      error: { code: 'NO_UID', message: 'CEO_UID not configured', retryable: false },
-    })
-    return
-  }
-  const jobId = req.params.jobId
-  if (!VALID_JOBS.has(jobId)) {
-    res.status(400).json({
-      error: { code: 'UNKNOWN_JOB', message: `Unknown job: ${jobId}`, retryable: false },
-    })
-    return
-  }
-
-  const startedAt = Date.now()
-  try {
-    await runJob(uid, jobId as EngineJobId)
-    res.json({ data: { ok: true, jobId, durationMs: Date.now() - startedAt } })
-  } catch (err) {
-    res.status(500).json({
-      error: { code: 'JOB_FAILED', message: (err as Error).message, retryable: true },
-    })
-  }
-})
+// NOTE: The Railway Cron HTTP trigger (POST /api/engine/cron/:jobId, secured by
+// ENGINE_CRON_SECRET) is mounted directly on the app in server/index.ts, BEFORE
+// the CORS middleware — server-to-server cron requests carry no Origin header.
+// It is intentionally not defined on this router, which sits behind CORS.
 
 // All routes below require an authenticated user session
 engineRouter.use(requireAuth)
