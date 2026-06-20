@@ -84,6 +84,8 @@ app.use(helmet({
           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           imgSrc: ["'self'", 'data:', 'https:'],
           fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
+          // TTS audio is fetched from /api/tts and played as a blob: URL
+          mediaSrc: ["'self'", 'blob:', 'data:'],
           connectSrc: [
             "'self'",
             // Firebase / Firestore client SDK
