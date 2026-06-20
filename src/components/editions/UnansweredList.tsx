@@ -8,7 +8,7 @@ import { Clock } from 'lucide-react'
 /**
  * UnansweredList — emails awaiting YOUR reply, ranked by wait time.
  *
- * Receded styling: text-text-muted until hovered, then text-text-primary.
+ * Receded styling: text-ink-3 until hovered, then text-ink.
  * The "Editor's Page" principle: color is scarce. This list is slate
  * until you focus on it.
  */
@@ -32,9 +32,9 @@ export function UnansweredList({
   return (
     <section aria-label="Unanswered emails" className="mb-5">
       <div className="ed-section-label mb-2 flex items-center gap-2">
-        <Clock size={12} className="text-text-muted" />
+        <Clock size={12} className="text-ink-3" />
         <span>Awaiting Your Reply</span>
-        <span className="ml-auto text-[10px] font-body text-text-muted normal-case tracking-normal">
+        <span className="ml-auto text-[10px] font-sans text-ink-3 normal-case tracking-normal">
           {unanswered.length} thread{unanswered.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -48,29 +48,29 @@ export function UnansweredList({
           return (
             <li
               key={slip.threadId}
-              className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-bg-elevated/50 transition-colors"
+              className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sunken/50 transition-colors"
             >
               {/* Urgency dot */}
               <span
                 className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                  isHot ? 'bg-accent-coral' : 'bg-text-muted/40'
+                  isHot ? 'bg-data-coral' : 'bg-ink-3/40'
                 }`}
               />
 
               {/* From */}
-              <span className="font-body text-[12px] text-text-muted group-hover:text-text-primary transition-colors w-28 truncate flex-shrink-0">
+              <span className="font-sans text-[12px] text-ink-3 group-hover:text-ink transition-colors w-28 truncate flex-shrink-0">
                 {slip.from}
               </span>
 
               {/* Subject */}
-              <span className="font-body text-[11px] text-text-muted group-hover:text-text-secondary transition-colors truncate flex-1 min-w-0">
+              <span className="font-sans text-[11px] text-ink-3 group-hover:text-ink-2 transition-colors truncate flex-1 min-w-0">
                 {slip.subject}
               </span>
 
               {/* Wait time */}
               <span
-                className={`text-[10px] font-body font-bold uppercase tracking-[0.1em] flex-shrink-0 ${
-                  isHot ? 'text-accent-coral' : 'text-text-muted'
+                className={`text-[10px] font-sans font-bold uppercase tracking-[0.1em] flex-shrink-0 ${
+                  isHot ? 'text-data-coral' : 'text-ink-3'
                 }`}
               >
                 {urgencyLabel}
@@ -81,7 +81,7 @@ export function UnansweredList({
                 <button
                   type="button"
                   onClick={() => onReply(slip.threadId)}
-                  className="opacity-0 group-hover:opacity-100 text-[10px] font-body font-semibold uppercase tracking-[0.1em] text-accent-lemon hover:underline transition-opacity flex-shrink-0"
+                  className="opacity-0 group-hover:opacity-100 text-[10px] font-sans font-semibold uppercase tracking-[0.1em] text-accent hover:underline transition-opacity flex-shrink-0"
                 >
                   Reply
                 </button>

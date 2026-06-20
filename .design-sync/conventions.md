@@ -2,15 +2,17 @@
 
 This is a **token / brand** design system, not a component library. There are no
 importable React components — you compose designs from the token classes below,
-which are shipped as plain resolved CSS in `styles.css`. The look is warm,
-editorial, print-like: paper backgrounds, Fraunces headlines, Inter body, hairline
-rules, restrained accent color.
+which are shipped as plain resolved CSS in `styles.css`. The look follows the
+Instrument design system: clean neutral surfaces, Playfair Display headlines,
+Schibsted Grotesk body, hairline rules, restrained accent color.
+
+For the full token specification, see **DESIGN.md** at the project root.
 
 ## Setup
 
 No provider or wrapper is required — just load `styles.css`. It pulls in the brand
-fonts (Fraunces + Inter from Google Fonts), the color tokens, and all utility +
-editorial classes.
+fonts (Playfair Display + Schibsted Grotesk from Google Fonts), the color tokens,
+and all utility + editorial classes.
 
 **Theming:** light is the default. For dark mode, set `data-theme="dark"` on any
 container (or `<html>`) — every `--color-*` token flips underneath that subtree.
@@ -27,21 +29,21 @@ onto shippable code). Every color is a `var(--color-*)` token; never hard-code h
 | Accent (text) | `text-accent-lemon` · `text-accent-coral` · `text-accent-blue` · `text-accent-sage` · `text-accent-rose` |
 | Accent (bg) | `bg-accent-lemon` · `bg-accent-coral` · `bg-accent-blue` · `bg-accent-sage` · `bg-accent-rose` |
 | Borders | `border-border-soft` · `border-border-medium` · `border-border-strong` (each = `1px solid var(...)`) |
-| Type family | `font-display` (Fraunces — headlines, briefs) · `font-body` (Inter — everything else) |
+| Type family | `font-display` (Playfair Display — headlines, briefs) · `font-body` (Schibsted Grotesk — everything else) |
 | Editorial | `ed-section-label` (small all-caps label flanked by hairlines) · `ed-rule` / `ed-rule-double` (dividers) · `ed-section` (top+bottom ruled block) |
 
-**Idiom rules.** Headlines and any "editorial voice" text use `font-display` (often
-italic, weight 300–400). Labels are tiny: 10px, `font-body`, weight 700, uppercase,
-wide tracking (`letter-spacing: 0.3em`), `text-text-muted`. Accent color is used
-sparingly — coral for the primary action and critical/at-risk states, sage for
-"on track", lemon for emphasis. Keep accents as small tinted chips/dots, not large
-fills. Borders are hairlines, never heavy.
+**Idiom rules.** Headlines and any "editorial voice" text use `font-display` (weight
+500–700). Labels are tiny: 10px, `font-body`, weight 700, uppercase, wide tracking
+(`letter-spacing: 0.3em`), `text-text-muted`. Accent color is used sparingly — the
+primary accent (`--accent`) for key actions and emphasis. Keep accents as small
+tinted chips/dots, not large fills. Borders are hairlines, never heavy.
 
 Sizing/spacing follow ordinary Tailwind-style scales (`p-4`, `gap-2`, `rounded-lg`);
 this DS only fixes the color, type, and editorial vocabulary.
 
 ## Where the truth lives
 
+- **DESIGN.md** — the canonical token specification.
 - `styles.css` — the single entry; read it and its `@import`s.
 - `tokens/tokens.css` — every color token, light + dark.
 - `_ds_bundle.css` — the resolved utility + editorial classes (their exact CSS).
@@ -53,13 +55,13 @@ this DS only fixes the color, type, and editorial vocabulary.
 ```html
 <div class="bg-bg-surface border-border-soft" style="border-radius:10px; padding:18px 20px;">
   <div class="ed-section-label" style="margin-bottom:8px">Priority Stack</div>
-  <h3 class="font-display text-text-primary" style="font-size:17px; font-weight:400; margin:0 0 4px;">
+  <h3 class="font-display text-text-primary" style="font-size:17px; font-weight:500; margin:0 0 4px;">
     Send the trust docs to Mauricio
   </h3>
   <p class="font-body text-text-secondary" style="font-size:13px; margin:0;">
     The fund docs are the bottleneck on $118M of the raise.
   </p>
-  <button class="bg-accent-coral" style="margin-top:12px; color:#fff; font:600 11px/1 Inter;
+  <button class="bg-accent-coral" style="margin-top:12px; color:#fff; font:600 11px/1 'Schibsted Grotesk';
     text-transform:uppercase; letter-spacing:.08em; padding:8px 16px; border:none; border-radius:6px;">
     Send now
   </button>

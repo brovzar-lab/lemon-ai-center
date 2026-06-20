@@ -170,25 +170,25 @@ export function BillyDrawer() {
       data-testid="billy-drawer"
       role="complementary"
       aria-label="Billy AI assistant"
-      className={`fixed top-0 right-0 h-full z-50 flex flex-col bg-bg-elevated border-l border-border-medium shadow-2xl w-full md:w-[420px] ${
+      className={`fixed top-0 right-0 h-full z-50 flex flex-col bg-sunken border-l border-line shadow-2xl w-full md:w-[420px] ${
         isClosing ? 'animate-[fadeOut_200ms_ease-out_forwards]' : 'animate-in'
       }`}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-line">
         <div className="flex-1 min-w-0">
-          <span className="font-body font-semibold text-sm text-text-primary">Billy</span>
+          <span className="font-sans font-semibold text-sm text-ink">Billy</span>
           {activeThread && (
-            <p className="text-[11px] text-text-muted font-body mt-0.5 truncate max-w-[280px]">{activeThread.subject}</p>
+            <p className="text-[11px] text-ink-3 font-sans mt-0.5 truncate max-w-[280px]">{activeThread.subject}</p>
           )}
           {activeClaim && (
-            <p className="text-[11px] text-text-muted font-body mt-0.5 truncate max-w-[280px]">{activeClaim.text.replace(/\*\*/g, '')}</p>
+            <p className="text-[11px] text-ink-3 font-sans mt-0.5 truncate max-w-[280px]">{activeClaim.text.replace(/\*\*/g, '')}</p>
           )}
         </div>
         <button
           type="button"
           onClick={handleClose}
           aria-label="Close"
-          className="text-text-muted hover:text-text-secondary leading-none p-1"
+          className="text-ink-3 hover:text-ink-2 leading-none p-1"
         >
           <X size={18} />
         </button>
@@ -197,7 +197,7 @@ export function BillyDrawer() {
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
         {messages.length === 0 && (
           <div className="mt-6">
-            <p className="text-sm font-body text-text-muted text-center mb-4">
+            <p className="text-sm font-sans text-ink-3 text-center mb-4">
               {activeThread ? `Discussing: ${activeThread.subject}` : activeClaim ? 'What do you want to know?' : 'What do you need?'}
             </p>
             {/* Quick action prompts */}
@@ -208,7 +208,7 @@ export function BillyDrawer() {
                     key={prompt}
                     type="button"
                     onClick={() => { send(prompt); }}
-                    className="text-left text-[12px] font-body text-text-secondary px-3 py-2.5 border border-border-soft rounded-lg hover:border-accent-coral/40 hover:text-text-primary transition-colors flex items-center gap-1.5"
+                    className="text-left text-[12px] font-sans text-ink-2 px-3 py-2.5 border border-line rounded-lg hover:border-data-coral/40 hover:text-ink transition-colors flex items-center gap-1.5"
                   >
                     {prompt} <ArrowRight size={12} />
                   </button>
@@ -219,10 +219,10 @@ export function BillyDrawer() {
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm font-body leading-relaxed ${
+            <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm font-sans leading-relaxed ${
               msg.role === 'user'
-                ? 'bg-accent-lemon text-bg-base rounded-br-sm'
-                : 'bg-bg-surface text-text-secondary rounded-bl-sm border border-border-soft'
+                ? 'bg-accent text-bg rounded-br-sm'
+                : 'bg-surface text-ink-2 rounded-bl-sm border border-line'
             }`}>
               {msg.text || (streaming && msg.role === 'assistant' ? '▊' : '')}
             </div>
@@ -231,19 +231,19 @@ export function BillyDrawer() {
         <div ref={endRef} />
       </div>
 
-      <div className="border-t border-border-soft p-3 flex gap-2">
+      <div className="border-t border-line p-3 flex gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
           placeholder="Message Billy…"
-          className="flex-1 text-sm font-body bg-bg-surface border border-border-soft rounded-xl px-3.5 py-2.5 text-text-primary placeholder:text-text-muted outline-none focus:border-border-medium"
+          className="flex-1 text-sm font-sans bg-surface border border-line rounded-xl px-3.5 py-2.5 text-ink placeholder:text-ink-3 outline-none focus:border-line"
         />
         <button
           type="button"
           onClick={() => send()}
           disabled={streaming || !input.trim()}
-          className="px-4 py-2.5 bg-accent-lemon text-bg-base text-sm font-body font-medium rounded-xl hover:opacity-90 disabled:opacity-40 transition-opacity flex items-center"
+          className="px-4 py-2.5 bg-accent text-bg text-sm font-sans font-medium rounded-xl hover:opacity-90 disabled:opacity-40 transition-opacity flex items-center"
           aria-label="Send message"
         >
           <ArrowRight size={16} />

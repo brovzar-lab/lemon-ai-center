@@ -27,15 +27,15 @@ const FRONT_VIEWS: Record<FrontKey, ViewId> = {
 }
 
 function statusDot(status: Front['status']): string {
-  if (status === 'critical') return 'bg-accent-coral'
-  if (status === 'attention') return 'bg-accent-lemon'
-  return 'bg-border-medium'
+  if (status === 'critical') return 'bg-data-coral'
+  if (status === 'attention') return 'bg-accent'
+  return 'bg-line'
 }
 
 function itemDot(severity?: FrontItem['severity']): string {
-  if (severity === 'critical') return 'bg-accent-coral'
-  if (severity === 'warn') return 'bg-accent-lemon'
-  return 'bg-border-medium'
+  if (severity === 'critical') return 'bg-data-coral'
+  if (severity === 'warn') return 'bg-accent'
+  return 'bg-line'
 }
 
 function Band({ front }: { front: Front }) {
@@ -44,27 +44,27 @@ function Band({ front }: { front: Front }) {
   const [open, setOpen] = useState(startOpen)
 
   return (
-    <div className="border border-border-soft rounded-lg bg-bg-surface overflow-hidden">
+    <div className="bg-surface rounded-lg shadow-card hover:shadow-hover transition-shadow overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-bg-elevated/50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-sunken/50 transition-colors"
         aria-expanded={open}
       >
-        <span className="font-display text-[13px] text-text-muted tabular-nums w-4">
+        <span className="font-sans text-[13px] text-ink-3 tabular-nums w-4 num">
           {front.rank}
         </span>
         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot(front.status)}`} />
-        <span className="font-body text-[11px] font-semibold uppercase tracking-[0.14em] text-text-primary">
+        <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-ink">
           {FRONT_LABELS[front.key]}
         </span>
-        <span className="font-body text-[12px] text-text-secondary truncate flex-1">
+        <span className="font-sans text-[12px] text-ink-2 truncate flex-1">
           {front.headline}
         </span>
         {open ? (
-          <ChevronDown size={14} className="text-text-muted flex-shrink-0" />
+          <ChevronDown size={14} className="text-ink-3 flex-shrink-0" />
         ) : (
-          <ChevronRight size={14} className="text-text-muted flex-shrink-0" />
+          <ChevronRight size={14} className="text-ink-3 flex-shrink-0" />
         )}
       </button>
 
@@ -77,9 +77,9 @@ function Band({ front }: { front: Front }) {
                   className={`mt-[6px] w-1.5 h-1.5 rounded-full flex-shrink-0 ${itemDot(item.severity)}`}
                 />
                 <div className="min-w-0">
-                  <span className="font-body text-[12px] text-text-primary">{item.text}</span>
+                  <span className="font-sans text-[12px] text-ink">{item.text}</span>
                   {item.detail && (
-                    <span className="font-body text-[11px] text-text-muted ml-2">
+                    <span className="font-sans text-[11px] text-ink-3 ml-2">
                       {item.detail}
                     </span>
                   )}
@@ -90,7 +90,7 @@ function Band({ front }: { front: Front }) {
           <button
             type="button"
             onClick={() => setView(FRONT_VIEWS[front.key])}
-            className="mt-2 ml-7 text-[10px] font-body uppercase tracking-[0.14em] text-accent-lemon hover:underline"
+            className="mt-2 ml-7 text-[10px] font-sans uppercase tracking-[0.14em] text-accent hover:underline"
           >
             Open {FRONT_LABELS[front.key].split(' — ')[0]}
           </button>
@@ -108,15 +108,15 @@ export function FrontBands() {
     return (
       <section aria-label="Fronts" className="mb-5">
         <div className="ed-section-label mb-2">The Five Fronts</div>
-        <div className="border border-border-soft rounded-lg bg-bg-surface px-4 py-4">
-          <p className="font-body text-[12px] text-text-secondary">
+        <div className="bg-surface rounded-lg shadow-card px-4 py-4">
+          <p className="font-sans text-[12px] text-ink-2">
             The engine ranks your five fronts — Fund, Writing, Shows, Deals, You — every
             hour by what needs you most.
           </p>
           <button
             type="button"
             onClick={() => void runJob('slip_detect')}
-            className="mt-2 text-[11px] font-body uppercase tracking-[0.12em] text-accent-lemon hover:underline"
+            className="mt-2 text-[11px] font-sans uppercase tracking-[0.12em] text-accent hover:underline"
           >
             Rank now
           </button>
@@ -133,7 +133,7 @@ export function FrontBands() {
     <section aria-label="Fronts ranked by attention needed" className="mb-5">
       <div className="ed-section-label mb-2 flex items-baseline">
         <span>The Five Fronts</span>
-        <span className="ml-auto text-[10px] font-body text-text-muted normal-case tracking-normal">
+        <span className="ml-auto text-[10px] font-sans text-ink-3 normal-case tracking-normal">
           ranked {computedAgo < 60 ? `${computedAgo}m` : `${Math.round(computedAgo / 60)}h`} ago
         </span>
       </div>

@@ -131,9 +131,9 @@ export function AudioPlayer() {
   }
 
   return (
-    <section className="py-4 border-t border-border-soft" aria-label="Audio briefing player">
+    <section className="py-4 border-t border-line" aria-label="Audio briefing player">
       {/* Label */}
-      <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-3">
+      <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mb-3">
         Listen, Don’t Read · {Math.ceil(estimatedDuration / 60)}:{(estimatedDuration % 60).toString().padStart(2, '0')}
       </p>
 
@@ -143,11 +143,11 @@ export function AudioPlayer() {
           type="button"
           onClick={togglePlay}
           disabled={loading || !briefText}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-text-primary text-bg-base flex-shrink-0 hover:opacity-90 transition disabled:opacity-40"
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-ink text-bg flex-shrink-0 hover:opacity-90 transition disabled:opacity-40"
           aria-label={playing ? 'Pause' : 'Play'}
         >
           {loading ? (
-            <div className="spinner w-3 h-3 border-bg-base border-t-transparent" />
+            <div className="spinner w-3 h-3 border-bg border-t-transparent" />
           ) : playing ? (
             <span className="text-sm">⏸</span>
           ) : (
@@ -172,7 +172,7 @@ export function AudioPlayer() {
             return (
               <div
                 key={i}
-                className={`w-[2px] rounded-full transition-colors ${isActive ? 'bg-text-primary' : 'bg-border-medium'}`}
+                className={`w-[2px] rounded-full transition-colors ${isActive ? 'bg-ink' : 'bg-line'}`}
                 style={{ height: `${height}px` }}
               />
             )
@@ -180,17 +180,17 @@ export function AudioPlayer() {
         </div>
 
         {/* Time */}
-        <span className="text-[11px] font-body tabular-nums text-text-muted flex-shrink-0">
+        <span className="text-[11px] font-sans tabular-nums text-ink-3 flex-shrink-0">
           {formatTime(currentTime)} / {formatTime(duration || estimatedDuration)}
         </span>
       </div>
 
       {/* Transcript preview */}
-      <div className="mt-3 border-t border-border-soft pt-2">
-        <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted mb-1">
+      <div className="mt-3 border-t border-line pt-2">
+        <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mb-1">
           Line {lineIndex + 1} of {lines.length || 1}
         </p>
-        <p className="font-display text-[13px] italic text-text-secondary leading-relaxed">
+        <p className="font-sans text-[13px] italic text-ink-2 leading-relaxed">
           "{transcript || (lines[0] ? `${new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}. ${lines[0]}` : 'Loading brief...')}"
         </p>
       </div>

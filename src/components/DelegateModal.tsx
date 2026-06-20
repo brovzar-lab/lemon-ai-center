@@ -84,31 +84,31 @@ Billy`
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-bg-base/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-bg/60 backdrop-blur-sm"
         onClick={onClose}
       />
       {/* Modal */}
-      <div className="relative w-full max-w-lg mx-4 bg-bg-surface border border-border-soft rounded-xl shadow-2xl p-6">
-        <h2 className="text-[11px] font-body font-semibold text-text-muted tracking-widest uppercase mb-4">
+      <div className="relative w-full max-w-lg mx-4 bg-surface border border-line rounded-xl shadow-2xl p-6">
+        <h2 className="text-[11px] font-sans font-semibold text-ink-3 tracking-widest uppercase mb-4">
           Delegate Task
         </h2>
 
         {sent ? (
           <div className="text-center py-8">
-            <p className="font-display text-xl text-text-primary mb-1">Sent ✓</p>
-            <p className="font-body text-sm text-text-tertiary">Delegation email sent to {to.name}.</p>
+            <p className="font-display text-xl text-ink mb-1">Sent ✓</p>
+            <p className="font-sans text-sm text-ink-3">Delegation email sent to {to.name}.</p>
           </div>
         ) : previewing ? (
           <>
             {/* Preview mode */}
-            <pre className="font-body text-sm text-text-secondary whitespace-pre-wrap bg-bg-base border border-border-soft rounded-lg p-4 mb-4 max-h-[300px] overflow-y-auto">
+            <pre className="font-sans text-sm text-ink-2 whitespace-pre-wrap bg-bg border border-line rounded-lg p-4 mb-4 max-h-[300px] overflow-y-auto">
               {previewEmail}
             </pre>
             <div className="flex items-center gap-3 justify-end">
               <button
                 type="button"
                 onClick={() => setPreviewing(false)}
-                className="text-[11px] font-body font-semibold uppercase tracking-wider px-4 py-2 text-text-muted hover:text-text-secondary transition-colors"
+                className="text-[11px] font-sans font-semibold uppercase tracking-wider px-4 py-2 text-ink-3 hover:text-ink-2 transition-colors"
               >
                 ← Edit
               </button>
@@ -116,7 +116,7 @@ Billy`
                 type="button"
                 onClick={handleSend}
                 disabled={sending}
-                className="text-[11px] font-body font-semibold uppercase tracking-wider px-5 py-2 rounded-lg bg-accent-coral text-white hover:bg-accent-coral/90 transition-colors disabled:opacity-40"
+                className="text-[11px] font-sans font-semibold uppercase tracking-wider px-5 py-2 rounded-lg bg-data-coral text-white hover:bg-data-coral/90 transition-colors disabled:opacity-40"
               >
                 {sending ? 'Sending…' : 'Send Email'}
               </button>
@@ -127,11 +127,11 @@ Billy`
             {/* Edit mode */}
             <div className="space-y-3 mb-5">
               <div>
-                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">To</label>
+                <label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-ink-3 block mb-1">To</label>
                 <select
                   value={to.id}
                   onChange={(e) => setTo(TEAM.find((m) => m.id === e.target.value) ?? TEAM[0])}
-                  className="w-full bg-bg-base border border-border-soft rounded-lg px-3 py-2 font-body text-sm text-text-primary focus:outline-none focus:border-border-medium"
+                  className="w-full bg-bg border border-line rounded-lg px-3 py-2 font-sans text-sm text-ink focus:outline-none focus:border-line"
                 >
                   {TEAM.map((member) => (
                     <option key={member.id} value={member.id}>
@@ -141,32 +141,32 @@ Billy`
                 </select>
               </div>
               <div>
-                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Task</label>
+                <label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-ink-3 block mb-1">Task</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-bg-base border border-border-soft rounded-lg px-3 py-2 font-body text-sm text-text-primary focus:outline-none focus:border-border-medium"
+                  className="w-full bg-bg border border-line rounded-lg px-3 py-2 font-sans text-sm text-ink focus:outline-none focus:border-line"
                   placeholder="What needs to be done"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Context</label>
+                <label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-ink-3 block mb-1">Context</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   rows={3}
-                  className="w-full bg-bg-base border border-border-soft rounded-lg px-3 py-2 font-body text-sm text-text-primary focus:outline-none focus:border-border-medium resize-none"
+                  className="w-full bg-bg border border-line rounded-lg px-3 py-2 font-sans text-sm text-ink focus:outline-none focus:border-line resize-none"
                   placeholder="Any additional context"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-body font-semibold uppercase tracking-wider text-text-muted block mb-1">Deadline (optional)</label>
+                <label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-ink-3 block mb-1">Deadline (optional)</label>
                 <input
                   type="date"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full bg-bg-base border border-border-soft rounded-lg px-3 py-2 font-body text-sm text-text-primary focus:outline-none focus:border-border-medium"
+                  className="w-full bg-bg border border-line rounded-lg px-3 py-2 font-sans text-sm text-ink focus:outline-none focus:border-line"
                 />
               </div>
             </div>
@@ -174,7 +174,7 @@ Billy`
               <button
                 type="button"
                 onClick={onClose}
-                className="text-[11px] font-body font-semibold uppercase tracking-wider px-4 py-2 text-text-muted hover:text-text-secondary transition-colors"
+                className="text-[11px] font-sans font-semibold uppercase tracking-wider px-4 py-2 text-ink-3 hover:text-ink-2 transition-colors"
               >
                 Cancel
               </button>
@@ -182,7 +182,7 @@ Billy`
                 type="button"
                 onClick={() => setPreviewing(true)}
                 disabled={!title.trim()}
-                className="text-[11px] font-body font-semibold uppercase tracking-wider px-5 py-2 rounded-lg border border-border-soft text-text-secondary hover:border-border-medium transition-colors disabled:opacity-40"
+                className="text-[11px] font-sans font-semibold uppercase tracking-wider px-5 py-2 rounded-lg border border-line text-ink-2 hover:border-line transition-colors disabled:opacity-40"
               >
                 Preview Email <ArrowRight size={12} />
               </button>

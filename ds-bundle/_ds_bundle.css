@@ -5,8 +5,8 @@
    font-display, …). Compose designs from these. */
 
 /* ── Type families ── */
-.font-display { font-family: 'Fraunces', Georgia, serif; }
-.font-body { font-family: 'Inter', system-ui, sans-serif; }
+.font-display { font-family: 'Playfair Display', Georgia, serif; }
+.font-body { font-family: 'Schibsted Grotesk', system-ui, sans-serif; }
 
 /* ── Surface backgrounds ── */
 .bg-bg-base { background-color: var(--color-bg-base); }
@@ -50,7 +50,7 @@
 /* Small all-caps label flanked by hairlines — the signature section header */
 .ed-section-label {
   font-size: 10px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Schibsted Grotesk', system-ui, sans-serif;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3em;

@@ -10,15 +10,16 @@
 - Project: "Lemon Studios Design System" (`ff63b558-2fe3-4a61-9267-777afaf6dfac`).
 
 ## Source of truth (where to re-derive tokens on re-sync)
+- **DESIGN.md** — the canonical Instrument design system specification.
 - Color tokens: `src/styles/globals.css` — `:root` (light) + `[data-theme="dark"]`.
 - Tailwind name → var mapping: `tailwind.config.ts` (`theme.extend.colors`, `fontFamily`).
 - Editorial classes (`.ed-section`, `.ed-section-label`, `.ed-rule`, `.ed-rule-double`):
   `src/styles/globals.css` `@layer components` (~line 178). They use `@apply` in the
   app; the synced `_ds_bundle.css` ships them as **resolved plain CSS** (designs don't
   get Tailwind). If the app's `@apply` rules change, re-resolve them by hand.
-- Fonts: Fraunces + Inter, loaded from Google Fonts at runtime via `@import` in
-  `styles.css` (mirrors the `<link>` in `index.html`). `[FONT_REMOTE]` — no local
-  font files shipped, by design.
+- Fonts: Playfair Display + Schibsted Grotesk, loaded from Google Fonts at runtime via
+  `@import` in `styles.css` (mirrors the `<link>` in `index.html`). `[FONT_REMOTE]` —
+  no local font files shipped, by design.
 
 ## Bundle shape (off-script — no converter)
 - `styles.css` → `@import` Google Fonts + `tokens/tokens.css` + `_ds_bundle.css`.
@@ -28,9 +29,9 @@
 - No `_ds_sync.json` anchor written — off-script honest choice; next sync re-verifies all.
 
 ## Known render warns
-- None. All 5 cards verified in headless Chromium at 900×760: correct paper bg
-  (#f5ede2), Fraunces loaded, tokens resolved. (Controls card has no h1/h2/h3, so a
-  font-probe selector on those tags returns "none" — not a failure.)
+- None. All 5 cards verified in headless Chromium at 900×760: correct neutral bg
+  (`--color-bg-base`), Playfair Display loaded, tokens resolved. (Controls card has
+  no h1/h2/h3, so a font-probe selector on those tags returns "none" — not a failure.)
 
 ## Re-sync risks (watch list)
 - **Hand-authored, no converter.** A re-sync does NOT run `package-build.mjs`/`resync.mjs`

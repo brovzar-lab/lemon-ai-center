@@ -33,8 +33,8 @@ export function EngineStatus() {
 
   return (
     <div className="mb-4">
-      <div className="flex items-center gap-3 flex-wrap text-[10px] font-body text-text-muted uppercase tracking-[0.12em]">
-        <span className="text-text-tertiary">Engine</span>
+      <div className="flex items-center gap-3 flex-wrap text-[10px] font-sans text-ink-3 uppercase tracking-[0.12em]">
+        <span className="text-ink-3">Engine</span>
         {SHOWN.map(({ id, label }) => {
           const job = byId.get(id)
           const ok = job?.status === 'ok'
@@ -44,12 +44,12 @@ export function EngineStatus() {
               <span
                 className={
                   running
-                    ? 'text-accent-lemon'
+                    ? 'text-accent'
                     : ok
-                      ? 'text-accent-sage'
+                      ? 'text-data-teal'
                       : job?.status === 'error'
-                        ? 'text-accent-coral'
-                        : 'text-text-muted'
+                        ? 'text-data-coral'
+                        : 'text-ink-3'
                 }
               >
                 {running ? '◌' : ok ? '✓' : job?.status === 'error' ? '✗' : '·'}
@@ -65,16 +65,16 @@ export function EngineStatus() {
       {failed.map((job) => (
         <div
           key={job.jobId}
-          className="mt-2 flex items-center gap-2 border border-accent-coral/30 bg-accent-coral/5 rounded-lg px-3 py-2"
+          className="mt-2 flex items-center gap-2 border border-data-coral/30 bg-data-coral/5 rounded-lg px-3 py-2"
         >
-          <AlertTriangle size={13} className="text-accent-coral flex-shrink-0" />
-          <span className="font-body text-[11px] text-text-secondary flex-1 truncate">
+          <AlertTriangle size={13} className="text-data-coral flex-shrink-0" />
+          <span className="font-sans text-[11px] text-ink-2 flex-1 truncate">
             {job.jobId} failed{job.error ? `: ${job.error}` : ''}
           </span>
           <button
             type="button"
             onClick={() => void runJob(job.jobId)}
-            className="flex items-center gap-1 text-[10px] font-body uppercase tracking-[0.1em] text-accent-coral hover:underline"
+            className="flex items-center gap-1 text-[10px] font-sans uppercase tracking-[0.1em] text-data-coral hover:underline"
           >
             <RefreshCw size={11} /> Retry
           </button>

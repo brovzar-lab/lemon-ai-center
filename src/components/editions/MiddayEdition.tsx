@@ -71,9 +71,9 @@ export function MiddayEdition({
       {recentEmails.length > 0 && (
         <section aria-label="Recent emails" className="mb-5">
           <div className="ed-section-label mb-2 flex items-center gap-2">
-            <Inbox size={12} className="text-text-muted" />
+            <Inbox size={12} className="text-ink-3" />
             <span>Since This Morning</span>
-            <span className="ml-auto text-[10px] font-body text-text-muted normal-case tracking-normal">
+            <span className="ml-auto text-[10px] font-sans text-ink-3 normal-case tracking-normal">
               {recentEmails.length} new
             </span>
           </div>
@@ -82,24 +82,24 @@ export function MiddayEdition({
             {recentEmails.map((thread) => (
               <li
                 key={thread.id}
-                className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-bg-elevated/50 transition-colors"
+                className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sunken/50 transition-colors"
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                     thread.priority === 'HOT'
-                      ? 'bg-accent-coral'
+                      ? 'bg-data-coral'
                       : thread.priority === 'MED'
-                        ? 'bg-accent-lemon'
-                        : 'bg-text-muted/40'
+                        ? 'bg-accent'
+                        : 'bg-ink-3/40'
                   }`}
                 />
-                <span className="font-body text-[12px] text-text-muted group-hover:text-text-primary transition-colors w-28 truncate flex-shrink-0">
+                <span className="font-sans text-[12px] text-ink-3 group-hover:text-ink transition-colors w-28 truncate flex-shrink-0">
                   {thread.from}
                 </span>
-                <span className="font-body text-[11px] text-text-muted group-hover:text-text-secondary transition-colors truncate flex-1 min-w-0">
+                <span className="font-sans text-[11px] text-ink-3 group-hover:text-ink-2 transition-colors truncate flex-1 min-w-0">
                   {thread.subject}
                 </span>
-                <span className="text-[10px] font-body font-bold uppercase tracking-[0.1em] text-text-muted flex-shrink-0">
+                <span className="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-ink-3 flex-shrink-0">
                   {thread.tag === 'DEAL' ? 'deal' : thread.tag === 'INT' ? 'internal' : ''}
                 </span>
               </li>
@@ -125,7 +125,7 @@ export function MiddayEdition({
       {activeDeals.length > 0 && (
         <section aria-label="Deal status" className="mb-5">
           <div className="ed-section-label mb-2 flex items-center gap-2">
-            <TrendingUp size={12} className="text-text-muted" />
+            <TrendingUp size={12} className="text-ink-3" />
             <span>Deal Pulse</span>
           </div>
 
@@ -139,26 +139,26 @@ export function MiddayEdition({
               return (
                 <li
                   key={deal.id}
-                  className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-bg-elevated/50 transition-colors"
+                  className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sunken/50 transition-colors"
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                      isStale ? 'bg-accent-coral' : 'bg-text-muted/40'
+                      isStale ? 'bg-data-coral' : 'bg-ink-3/40'
                     }`}
                   />
-                  <span className="font-body text-[12px] text-text-muted group-hover:text-text-primary transition-colors truncate flex-1">
+                  <span className="font-sans text-[12px] text-ink-3 group-hover:text-ink transition-colors truncate flex-1">
                     {deal.name}
                     {deal.counterparty && (
-                      <span className="text-text-muted"> · {deal.counterparty}</span>
+                      <span className="text-ink-3"> · {deal.counterparty}</span>
                     )}
                   </span>
-                  <span className="text-[10px] font-body font-bold uppercase tracking-[0.1em] text-text-muted flex-shrink-0">
+                  <span className="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-ink-3 flex-shrink-0">
                     {deal.status}
                   </span>
                   {daysSinceUpdate !== null && (
                     <span
-                      className={`text-[10px] font-body flex-shrink-0 ${
-                        isStale ? 'text-accent-coral font-bold' : 'text-text-muted'
+                      className={`text-[10px] font-sans flex-shrink-0 ${
+                        isStale ? 'text-data-coral font-bold' : 'text-ink-3'
                       }`}
                     >
                       {daysSinceUpdate}d

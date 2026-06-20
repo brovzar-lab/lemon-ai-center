@@ -33,16 +33,16 @@ export function AILogDrawer() {
         className={[
           'fixed bottom-20 right-6 z-40 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all',
           count > 0
-            ? 'bg-bg-surface border-accent-coral/30 text-text-primary'
-            : 'bg-bg-surface border-border-soft text-text-muted',
+            ? 'bg-surface border-data-coral/30 text-ink'
+            : 'bg-surface border-line text-ink-3',
         ].join(' ')}
         title="AI action log"
       >
-        <span className="text-[11px] font-body font-semibold uppercase tracking-wider">
+        <span className="text-[11px] font-sans font-semibold uppercase tracking-wider">
           AI Log
         </span>
         {count > 0 && (
-          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent-coral text-white text-[10px] font-body font-bold">
+          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-data-coral text-white text-[10px] font-sans font-bold">
             {count}
           </span>
         )}
@@ -53,26 +53,26 @@ export function AILogDrawer() {
         <div className="fixed inset-y-0 right-0 z-50 flex">
           {/* Backdrop */}
           <div
-            className="flex-1 bg-bg-base/40 backdrop-blur-sm"
+            className="flex-1 bg-bg/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
           {/* Panel */}
-          <div className="w-[380px] bg-bg-surface border-l border-border-soft p-5 overflow-y-auto">
+          <div className="w-[380px] bg-surface border-l border-line p-5 overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase">
+              <h2 className="text-[10px] font-sans font-semibold text-ink-3 tracking-widest uppercase">
                 AI Actions (24h)
               </h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-text-muted hover:text-text-primary text-sm"
+                className="text-ink-3 hover:text-ink text-sm"
               >
                 ✕
               </button>
             </div>
 
             {aiActions.length === 0 ? (
-              <p className="font-body text-sm text-text-tertiary text-center py-8">
+              <p className="font-sans text-sm text-ink-3 text-center py-8">
                 No AI actions yet.
               </p>
             ) : (
@@ -83,24 +83,24 @@ export function AILogDrawer() {
                     className={[
                       'p-3 rounded-lg border transition-opacity',
                       action.undone
-                        ? 'border-border-soft opacity-40'
-                        : 'border-border-soft',
+                        ? 'border-line opacity-40'
+                        : 'border-line',
                     ].join(' ')}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="text-[10px] font-body font-semibold uppercase tracking-wider text-accent-coral">
+                        <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-data-coral">
                           {TYPE_LABELS[action.type]}
                         </span>
-                        <p className="font-body text-sm text-text-primary mt-1">
+                        <p className="font-sans text-sm text-ink mt-1">
                           {action.target.label}
                         </p>
                         {action.type === 'delegate_recalled' && (
-                          <p className="font-body text-[11px] text-accent-lemon mt-1">
+                          <p className="font-sans text-[11px] text-accent mt-1">
                             Marked recalled — email already sent. Send a follow-up?
                           </p>
                         )}
-                        <p className="font-body text-[10px] text-text-muted mt-1">
+                        <p className="font-sans text-[10px] text-ink-3 mt-1">
                           {new Date(action.createdAt).toLocaleTimeString()}
                           {' · '}
                           {action.confidence} confidence
@@ -110,14 +110,14 @@ export function AILogDrawer() {
                         <button
                           type="button"
                           onClick={() => user && undo(user.uid, action.id)}
-                          className="text-[10px] font-body font-semibold uppercase tracking-wider text-text-muted hover:text-accent-coral transition-colors px-2 py-1 rounded border border-border-soft hover:border-accent-coral/30"
+                          className="text-[10px] font-sans font-semibold uppercase tracking-wider text-ink-3 hover:text-data-coral transition-colors px-2 py-1 rounded border border-line hover:border-data-coral/30"
                         >
                           Undo
                         </button>
                       )}
                     </div>
                     {action.undone && (
-                      <span className="inline-block mt-2 text-[9px] font-body font-semibold uppercase tracking-widest text-text-muted">
+                      <span className="inline-block mt-2 text-[9px] font-sans font-semibold uppercase tracking-widest text-ink-3">
                         Undone
                       </span>
                     )}

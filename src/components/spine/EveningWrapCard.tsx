@@ -12,23 +12,23 @@ export function EveningWrapCard() {
   return (
     <section
       aria-label="Evening wrap"
-      className="border border-border-soft rounded-lg bg-bg-surface px-5 py-4 mb-5"
+      className="border border-line rounded-lg bg-surface px-5 py-4 mb-5"
     >
       <div className="ed-section-label mb-2 flex items-center gap-2">
-        <Moon size={13} className="text-accent-lemon" />
+        <Moon size={13} className="text-accent" />
         <span>Evening Wrap</span>
       </div>
-      <p className="font-body text-[13px] leading-relaxed text-text-secondary mb-3">
+      <p className="font-sans text-[13px] leading-relaxed text-ink-2 mb-3">
         {wrap.summary}
       </p>
       {wrap.tomorrow.length > 0 && (
         <>
-          <div className="text-[10px] font-body uppercase tracking-[0.14em] text-text-muted mb-1.5">
+          <div className="text-[10px] font-sans uppercase tracking-[0.14em] text-ink-3 mb-1.5">
             Tomorrow
           </div>
           <ul className="space-y-1">
             {wrap.tomorrow.map((line, i) => (
-              <li key={i} className="font-body text-[12px] text-text-primary">
+              <li key={i} className="font-sans text-[12px] text-ink">
                 {line}
               </li>
             ))}

@@ -24,17 +24,17 @@ export function ArchiveView() {
   return (
     <section className="space-y-4 animate-in">
       <header>
-        <h2 className="font-display text-2xl font-semibold text-text-primary leading-tight">
+        <h2 className="font-display text-2xl font-semibold text-ink leading-tight">
           Archive
         </h2>
-        <p className="text-xs font-body text-text-muted mt-1">
+        <p className="text-xs font-sans text-ink-3 mt-1">
           Items snoozed or dismissed from prior briefings. Restore to bring them back.
         </p>
       </header>
 
       {loading && items.length === 0 ? (
-        <div className="bg-bg-surface border border-border-soft rounded-xl p-10 text-center">
-          <div className="w-4 h-4 mx-auto rounded-full border-2 border-accent-lemon border-t-transparent animate-spin" />
+        <div className="bg-surface border border-line rounded-xl p-10 text-center">
+          <div className="w-4 h-4 mx-auto rounded-full border-2 border-accent border-t-transparent animate-spin" />
         </div>
       ) : items.length === 0 ? (
         <EmptyState
@@ -61,25 +61,25 @@ function ArchiveRow({
 }) {
   const archivedAt = parseTimestamp(item.archived_at)
   return (
-    <li className="bg-bg-surface border border-border-soft rounded-xl px-4 py-3 flex items-start gap-3">
+    <li className="bg-surface border border-line rounded-xl px-4 py-3 flex items-start gap-3">
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-body text-text-primary leading-snug">
+        <p className="text-[13px] font-sans text-ink leading-snug">
           {item.title ?? '(no title)'}
         </p>
         {item.description && (
-          <p className="text-[11px] font-body text-text-tertiary mt-1 line-clamp-2 leading-snug">
+          <p className="text-[11px] font-sans text-ink-3 mt-1 line-clamp-2 leading-snug">
             {item.description}
           </p>
         )}
-        <div className="mt-1.5 flex items-center gap-2 text-[10px] font-body text-text-muted flex-wrap">
+        <div className="mt-1.5 flex items-center gap-2 text-[10px] font-sans text-ink-3 flex-wrap">
           {item.tag && (
-            <span className="inline-block px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-bg-elevated text-text-secondary">
+            <span className="inline-block px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-sunken text-ink-2">
               {item.tag}
             </span>
           )}
           {item.from && <span>{item.from}</span>}
           {item.briefing_date && (
-            <span className="font-mono text-text-tertiary">{item.briefing_date}</span>
+            <span className="font-mono text-ink-3">{item.briefing_date}</span>
           )}
           {archivedAt && (
             <span className="font-mono">
@@ -91,7 +91,7 @@ function ArchiveRow({
       <button
         type="button"
         onClick={onRestore}
-        className="text-[10px] font-body font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-border-soft hover:border-border-medium text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
+        className="text-[10px] font-sans font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors flex-shrink-0"
       >
         Restore
       </button>

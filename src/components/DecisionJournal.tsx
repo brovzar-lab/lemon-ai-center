@@ -25,10 +25,10 @@ export function DecisionJournal() {
   }
 
   return (
-    <div className="bg-bg-surface border border-border-soft rounded-xl p-4 flex flex-col gap-3">
+    <div className="bg-surface border border-line rounded-xl p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-[10px] font-body font-semibold text-text-muted tracking-widest uppercase">Decisions</h2>
-        <button type="button" onClick={handleExport} className="text-[11px] font-body text-text-muted hover:text-text-secondary transition-colors">
+        <h2 className="text-[10px] font-sans font-semibold text-ink-3 tracking-widest uppercase">Decisions</h2>
+        <button type="button" onClick={handleExport} className="text-[11px] font-sans text-ink-3 hover:text-ink-2 transition-colors">
           Export
         </button>
       </div>
@@ -38,21 +38,21 @@ export function DecisionJournal() {
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
         placeholder="Log a decision…"
-        className="w-full text-sm font-body bg-bg-elevated border border-border-soft rounded-lg px-3 py-2 text-text-primary placeholder:text-text-muted outline-none focus:border-border-medium transition-colors"
+        className="w-full text-sm font-sans bg-sunken border border-line rounded-lg px-3 py-2 text-ink placeholder:text-ink-3 outline-none focus:border-line transition-colors"
       />
 
       <input
         value={searchQuery}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search decisions…"
-        className="w-full text-xs font-body bg-transparent border border-border-soft rounded-lg px-3 py-1.5 text-text-secondary placeholder:text-text-muted outline-none focus:border-border-medium transition-colors"
+        className="w-full text-xs font-sans bg-transparent border border-line rounded-lg px-3 py-1.5 text-ink-2 placeholder:text-ink-3 outline-none focus:border-line transition-colors"
       />
 
       <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
         {filteredDecisions.map((d) => (
-          <div key={d.id} className="p-2.5 rounded-lg hover:bg-bg-elevated transition-colors">
-            <p className="text-sm font-body text-text-secondary leading-relaxed">{d.text}</p>
-            <p className="text-[10px] text-text-muted font-body mt-1">{d.ts.slice(0, 10)}</p>
+          <div key={d.id} className="p-2.5 rounded-lg hover:bg-sunken transition-colors">
+            <p className="text-sm font-sans text-ink-2 leading-relaxed">{d.text}</p>
+            <p className="text-[10px] text-ink-3 font-sans mt-1">{d.ts.slice(0, 10)}</p>
           </div>
         ))}
       </div>

@@ -35,12 +35,12 @@ export function CalendarDayView() {
     <section className="mt-6" aria-label="Today's calendar">
       {/* Section label */}
       <div className="flex items-center justify-between mb-1">
-        <p className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+        <p className="text-[11px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3">
           Today's Calendar
         </p>
         {required.length > 0 && (
-          <span className="text-[11px] font-body font-bold uppercase tracking-[0.2em] text-accent-coral flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent-coral inline-block" aria-hidden="true" />
+          <span className="text-[11px] font-sans font-bold uppercase tracking-[0.2em] text-data-coral flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-data-coral inline-block" aria-hidden="true" />
             {required.length} required
           </span>
         )}
@@ -60,7 +60,7 @@ export function CalendarDayView() {
           ))}
         </div>
       ) : events.length === 0 ? (
-        <p className="text-[12px] font-body text-text-muted italic mt-3">No meetings scheduled today.</p>
+        <p className="text-[12px] font-sans text-ink-3 italic mt-3">No meetings scheduled today.</p>
       ) : (
         <div className="mt-4" role="list" aria-label="Today's meetings">
           {events.map((event, idx) => {
@@ -77,18 +77,18 @@ export function CalendarDayView() {
                 }}
                 className={`w-full text-left flex gap-3 py-3 group transition-colors relative ${
                   past ? 'opacity-40' : ''
-                } ${next ? 'bg-bg-elevated/50 -mx-3 px-3 rounded-lg border border-accent-lemon/20' : ''}`}
+                } ${next ? 'bg-sunken/50 -mx-3 px-3 rounded-lg border border-accent/20' : ''}`}
                 role="listitem"
                 aria-label={`${formatTime(event.start)} — ${event.title}${event.isRequired ? ' (required)' : ''}${next ? ' (next)' : ''}`}
               >
                 {/* Timeline spine */}
                 <div className="flex flex-col items-center flex-shrink-0 w-14">
-                  <span className={`text-[13px] font-body font-semibold tabular-nums ${
-                    next ? 'text-accent-lemon' : 'text-text-primary'
+                  <span className={`text-[13px] font-sans font-semibold tabular-nums ${
+                    next ? 'text-accent' : 'text-ink'
                   }`}>
                     {formatTime(event.start)}
                   </span>
-                  <span className="text-[11px] font-body text-text-tertiary">
+                  <span className="text-[11px] font-sans text-ink-3">
                     {getDuration(event.start, event.end)}
                   </span>
                 </div>
@@ -96,28 +96,28 @@ export function CalendarDayView() {
                 {/* Dot + line */}
                 <div className="flex flex-col items-center flex-shrink-0 pt-1.5">
                   <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                    next ? 'bg-accent-lemon ring-2 ring-accent-lemon/20' :
-                    event.isRequired ? 'bg-accent-coral' :
-                    past ? 'bg-text-muted/30' : 'bg-text-muted/60'
+                    next ? 'bg-accent ring-2 ring-accent/20' :
+                    event.isRequired ? 'bg-data-coral' :
+                    past ? 'bg-ink-3/30' : 'bg-ink-3/60'
                   }`} aria-hidden="true" />
                   {idx < events.length - 1 && (
-                    <div className="w-px flex-1 min-h-[16px] bg-border-soft mt-1" aria-hidden="true" />
+                    <div className="w-px flex-1 min-h-[16px] bg-line mt-1" aria-hidden="true" />
                   )}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 pb-1">
-                  <p className={`text-[14px] font-body font-medium leading-snug ${
-                    next ? 'text-text-primary' : 'text-text-primary'
+                  <p className={`text-[14px] font-sans font-medium leading-snug ${
+                    next ? 'text-ink' : 'text-ink'
                   }`}>
                     {event.title}
                     {next && (
-                      <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-accent-lemon">
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-accent">
                         Next
                       </span>
                     )}
                   </p>
-                  <p className="text-[11px] font-body text-text-muted mt-0.5">
+                  <p className="text-[11px] font-sans text-ink-3 mt-0.5">
                     {event.isRequired ? 'Required' : 'Optional'}
                     {event.meetLink && ' · Video'}
                     {event.attendees && event.attendees.length > 0 && (
@@ -127,14 +127,14 @@ export function CalendarDayView() {
                     )}
                   </p>
                   {event.prepNotes && (
-                    <p className="text-[11px] font-body text-text-tertiary mt-0.5 italic">
+                    <p className="text-[11px] font-sans text-ink-3 mt-0.5 italic">
                       {event.prepNotes}
                     </p>
                   )}
                 </div>
 
                 {/* Hover arrow */}
-                <span className="text-text-muted ml-1 group-hover:text-accent-coral transition-colors inline-flex items-center" aria-hidden="true"><ArrowRight size={12} /></span>
+                <span className="text-ink-3 ml-1 group-hover:text-data-coral transition-colors inline-flex items-center" aria-hidden="true"><ArrowRight size={12} /></span>
               </button>
             )
           })}

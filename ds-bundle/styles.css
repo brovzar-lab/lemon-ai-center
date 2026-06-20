@@ -3,8 +3,8 @@
    brand needs is reachable from here: the brand fonts, the token variables, and
    the resolved utility + editorial classes. */
 
-/* Brand fonts — Fraunces (display) + Inter (body), loaded from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&display=swap');
+/* Brand fonts — Playfair Display (display) + Schibsted Grotesk (body), loaded from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap');
 
 /* Design tokens (colors) — light default + [data-theme="dark"] */
 @import "./tokens/tokens.css";

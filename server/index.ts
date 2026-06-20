@@ -48,7 +48,7 @@ app.use(helmet({
           defaultSrc: ["'self'"],
           // Cloudflare Tunnel injects its analytics beacon
           scriptSrc: ["'self'", 'https://static.cloudflareinsights.com'],
-          // Google Fonts stylesheet (Fraunces/Inter)
+          // Google Fonts stylesheet (Playfair Display / Schibsted Grotesk)
           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           imgSrc: ["'self'", 'data:', 'https:'],
           fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],

@@ -51,38 +51,38 @@ export function TriageMode() {
   if (!active) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-bg-base flex flex-col" data-testid="triage-mode">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft">
-        <span className="text-xs font-body font-medium text-text-muted uppercase tracking-widest">Triage Mode</span>
+    <div className="fixed inset-0 z-50 bg-bg flex flex-col" data-testid="triage-mode">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+        <span className="text-xs font-sans font-medium text-ink-3 uppercase tracking-widest">Triage Mode</span>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => setShowHelp((v) => !v)} className="text-xs text-text-muted hover:text-text-secondary font-body">?</button>
-          <button type="button" onClick={exitTriage} className="text-xs font-body text-text-muted hover:text-text-secondary">ESC to exit</button>
+          <button type="button" onClick={() => setShowHelp((v) => !v)} className="text-xs text-ink-3 hover:text-ink-2 font-sans">?</button>
+          <button type="button" onClick={exitTriage} className="text-xs font-sans text-ink-3 hover:text-ink-2">ESC to exit</button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full">
         <div className="mb-2 flex items-center gap-2">
-          <span className={`text-xs font-body font-medium px-2 py-0.5 rounded-full ${
-            active.priority === 'HOT' ? 'bg-accent-coral/20 text-accent-coral' :
-            active.priority === 'MED' ? 'bg-accent-sage/20 text-accent-sage' :
-            'bg-bg-elevated text-text-muted'
+          <span className={`text-xs font-sans font-medium px-2 py-0.5 rounded-full ${
+            active.priority === 'HOT' ? 'bg-data-coral/20 text-data-coral' :
+            active.priority === 'MED' ? 'bg-data-teal/20 text-data-teal' :
+            'bg-sunken text-ink-3'
           }`}>
             {active.priority}
           </span>
-          <span className="text-xs text-text-muted font-body">{active.tag}</span>
+          <span className="text-xs text-ink-3 font-sans">{active.tag}</span>
         </div>
-        <h2 className="font-body text-xl font-medium text-text-primary mb-1">{active.subject}</h2>
-        <p className="text-sm text-text-secondary font-body mb-4">From: {active.from}</p>
-        <p className="font-body text-sm text-text-secondary leading-relaxed">{active.snippet}</p>
+        <h2 className="font-sans text-xl font-medium text-ink mb-1">{active.subject}</h2>
+        <p className="text-sm text-ink-2 font-sans mb-4">From: {active.from}</p>
+        <p className="font-sans text-sm text-ink-2 leading-relaxed">{active.snippet}</p>
       </div>
 
       {showHelp && (
-        <div data-testid="keyboard-help" className="absolute bottom-16 right-4 bg-bg-elevated border border-border-medium rounded-xl p-4 shadow-xl w-64">
-          <p className="text-xs font-body font-semibold text-text-secondary mb-3 uppercase tracking-widest">Keyboard Shortcuts</p>
+        <div data-testid="keyboard-help" className="absolute bottom-16 right-4 bg-sunken border border-line rounded-xl p-4 shadow-xl w-64">
+          <p className="text-xs font-sans font-semibold text-ink-2 mb-3 uppercase tracking-widest">Keyboard Shortcuts</p>
           {KEYBOARD_HELP.map(({ key, action }) => (
             <div key={key} className="flex items-center justify-between py-1">
-              <kbd className="text-[11px] font-body bg-bg-surface px-1.5 py-0.5 rounded text-text-muted">{key}</kbd>
-              <span className="text-[11px] font-body text-text-tertiary">{action}</span>
+              <kbd className="text-[11px] font-sans bg-surface px-1.5 py-0.5 rounded text-ink-3">{key}</kbd>
+              <span className="text-[11px] font-sans text-ink-3">{action}</span>
             </div>
           ))}
         </div>

@@ -5,9 +5,9 @@ import type { Capture } from '@shared/types'
 type CaptureKind = Capture['kind']
 
 const KIND_LABEL: Record<CaptureKind, { text: string; class: string }> = {
-  todo: { text: 'TODO', class: 'text-accent-coral border-accent-coral/30' },
-  idea: { text: 'IDEA', class: 'text-accent-blue border-accent-blue/30' },
-  delegate: { text: 'DELEGATE', class: 'text-accent-lemon border-accent-lemon/30' },
+  todo: { text: 'TODO', class: 'text-data-coral border-data-coral/30' },
+  idea: { text: 'IDEA', class: 'text-data-blue border-data-blue/30' },
+  delegate: { text: 'DELEGATE', class: 'text-accent border-accent/30' },
 }
 
 export function CaptureReview() {
@@ -21,16 +21,16 @@ export function CaptureReview() {
   return (
     <section className="py-4" aria-label="Capture review">
       <div className="flex items-baseline justify-between mb-1">
-        <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+        <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3">
           Capture Review
         </p>
       </div>
       <div className="flex items-baseline justify-between mb-3">
-        <p className="text-[10px] font-body font-bold uppercase tracking-[0.2em] text-text-muted">
+        <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3">
           Captured Today
         </p>
         {/* C3: Changed misleading "press space" hint to contextual instruction */}
-        <span className="text-[10px] font-body text-text-muted italic">
+        <span className="text-[10px] font-sans text-ink-3 italic">
           use ⌘K to quick-capture
         </span>
       </div>
@@ -42,10 +42,10 @@ export function CaptureReview() {
               const kind = KIND_LABEL[cap.kind]
               return (
                 <div key={cap.id} className="flex items-start gap-2" role="listitem">
-                  <span className={`text-[10px] font-body font-bold uppercase tracking-widest px-1 py-0.5 border flex-shrink-0 mt-0.5 ${kind.class}`}>
+                  <span className={`text-[10px] font-sans font-bold uppercase tracking-widest px-1 py-0.5 border flex-shrink-0 mt-0.5 ${kind.class}`}>
                     {kind.text}
                   </span>
-                  <p className="text-[12px] font-body text-text-primary leading-snug">
+                  <p className="text-[12px] font-sans text-ink leading-snug">
                     {cap.text}
                   </p>
                 </div>
@@ -54,14 +54,14 @@ export function CaptureReview() {
           </div>
           <button
             type="button"
-            className="mt-3 text-[11px] font-body font-semibold text-accent-coral hover:underline uppercase tracking-[0.15em] min-h-[36px]"
+            className="mt-3 text-[11px] font-sans font-semibold text-data-coral hover:underline uppercase tracking-[0.15em] min-h-[36px]"
             aria-label={`Triage all ${todayCaptures.length} captures`}
           >
             Triage All {todayCaptures.length} <ArrowRight size={12} className="inline" />
           </button>
         </>
       ) : (
-        <p className="text-[11px] font-body text-text-muted italic">
+        <p className="text-[11px] font-sans text-ink-3 italic">
           No captures today. Use ⌘K to quick-capture.
         </p>
       )}

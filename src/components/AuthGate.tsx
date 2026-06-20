@@ -10,8 +10,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-base flex items-center justify-center">
-        <div className="w-6 h-6 rounded-full border-2 border-accent-lemon border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     )
   }

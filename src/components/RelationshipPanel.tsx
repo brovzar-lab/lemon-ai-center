@@ -6,31 +6,31 @@ function FlagCard({ flag, onLog }: { flag: EnrichedFlag; onLog: () => void }) {
 
   return (
     <div
-      className={`flex items-start gap-3 group -mx-2 px-2 py-2 rounded transition-colors hover:bg-bg-elevated/50 ${isReappearing ? 'border-l-2 border-accent-coral' : ''}`}
+      className={`flex items-start gap-3 group -mx-2 px-2 py-2 rounded transition-colors hover:bg-sunken/50 ${isReappearing ? 'bg-data-coral/8' : ''}`}
     >
       {/* Avatar placeholder */}
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-bg-elevated border border-border-soft flex items-center justify-center text-[12px] font-body font-semibold text-text-secondary mt-0.5">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sunken border border-line flex items-center justify-center text-[12px] font-sans font-semibold text-ink-2 mt-0.5">
         {flag.personName.charAt(0).toUpperCase()}
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-body text-[13px] font-semibold text-text-primary truncate">
+          <span className="font-sans text-[13px] font-semibold text-ink truncate">
             {flag.personName}
           </span>
           {isReappearing && (
-            <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] font-body font-bold uppercase tracking-wider text-accent-coral bg-accent-coral/10 border border-accent-coral/20 rounded">
+            <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] font-sans font-bold uppercase tracking-wider text-data-coral bg-data-coral/10 border border-data-coral/20 rounded">
               Reappeared
             </span>
           )}
           {flag.daysSince > 0 && (
             <span
-              className={`text-[10px] font-body ${
+              className={`text-[10px] font-sans ${
                 flag.daysSince > 60
-                  ? 'text-accent-coral'
+                  ? 'text-data-coral'
                   : flag.daysSince > 30
-                    ? 'text-accent-lemon'
-                    : 'text-text-muted'
+                    ? 'text-accent'
+                    : 'text-ink-3'
               }`}
             >
               {flag.daysSince}d
@@ -38,12 +38,12 @@ function FlagCard({ flag, onLog }: { flag: EnrichedFlag; onLog: () => void }) {
           )}
         </div>
 
-        <p className="font-body text-[12px] text-text-secondary mt-0.5 leading-relaxed">
+        <p className="font-sans text-[12px] text-ink-2 mt-0.5 leading-relaxed">
           {flag.contextLine}
         </p>
 
         {flag.reappearSubject && (
-          <p className="font-body text-[10px] text-accent-coral/70 mt-0.5 italic truncate">
+          <p className="font-sans text-[10px] text-data-coral/70 mt-0.5 italic truncate">
             Re: {flag.reappearSubject}
           </p>
         )}
@@ -51,7 +51,7 @@ function FlagCard({ flag, onLog }: { flag: EnrichedFlag; onLog: () => void }) {
         {/* Log interaction button — appears on hover */}
         <button
           onClick={onLog}
-          className="mt-1 text-[10px] font-body text-text-muted hover:text-accent-lemon transition-colors opacity-0 group-hover:opacity-100"
+          className="mt-1 text-[10px] font-sans text-ink-3 hover:text-accent transition-colors opacity-0 group-hover:opacity-100"
         >
           ✓ Log interaction
         </button>
@@ -68,9 +68,9 @@ export function RelationshipPanel() {
   return (
     <section aria-label="Relationship flags" className="pb-4">
       <div className="ed-section-label mb-3 flex items-center gap-2">
-        <span className="text-text-muted">👤</span>
+        <span className="text-ink-3">👤</span>
         <span>Relationships</span>
-        <span className="text-[10px] font-body text-text-muted ml-auto">
+        <span className="text-[10px] font-sans text-ink-3 ml-auto">
           {enrichedFlags.length} flag{enrichedFlags.length !== 1 ? 's' : ''}
         </span>
       </div>
