@@ -46,7 +46,9 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
   onCardClick,
   onCardContextMenu,
   emptyHint = 'Drop here',
-  columnMinWidth = 'min-w-[240px]',
+  // Mobile: each column fills the screen and snaps one-at-a-time when swiped.
+  // Desktop (sm+): normal 240px columns side by side.
+  columnMinWidth = 'min-w-[86vw] sm:min-w-[240px]',
 }: BoardKanbanProps<T, TKey>) {
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [overColumn, setOverColumn] = useState<TKey | null>(null)
@@ -96,7 +98,7 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
   }
 
   return (
-    <div className="grid gap-3 grid-flow-col auto-cols-fr overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
+    <div className="grid gap-3 grid-flow-col auto-cols-fr overflow-x-auto pb-2 snap-x snap-mandatory scroll-pl-1 [-webkit-overflow-scrolling:touch]">
       {columns.map((col) => {
         const colItems = grouped.get(col.key) ?? []
         const isOver = overColumn === col.key
@@ -104,7 +106,7 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
           <section
             key={col.key}
             aria-label={col.label}
-            className={`flex flex-col ${columnMinWidth}`}
+            className={`flex flex-col snap-start ${columnMinWidth}`}
           >
             {/* Header */}
             <header className="flex items-center justify-between mb-2 px-1">

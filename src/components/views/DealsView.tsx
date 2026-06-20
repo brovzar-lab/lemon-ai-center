@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDealsStore } from '@/stores/lemon/useDealsStore'
+import { useTaskStore } from '@/stores/useTaskStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { BoardKanban, type BoardColumnDef } from '@/components/workspace/BoardKanban'
 import { EmptyState } from '@/components/workspace/EmptyState'
 import { ScanInboxButton } from '@/components/ScanInboxButton'
@@ -31,6 +33,13 @@ const EMPTY_FORM: NewDealForm = {
   status: 'active',
 }
 
+/** Append a timestamped note line to a deal's notes (newest last). */
+function appendDealNote(existing: string | undefined, text: string): string {
+  const stamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const line = `[${stamp}] ${text.trim()}`
+  return existing ? `${existing}\n${line}` : line
+}
+
 export function DealsView() {
   const deals = useDealsStore((s) => s.deals)
   const subscribe = useDealsStore((s) => s.subscribe)
@@ -58,12 +67,7 @@ export function DealsView() {
       icon: '📝',
       input: {
         placeholder: 'e.g. Approved Benvenuto buy',
-        onSubmit: (text) => {
-          const existing = ctxDeal.notes ?? ''
-          const timestamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          const newNote = existing ? `${existing}\n[${timestamp}] ${text}` : `[${timestamp}] ${text}`
-          update(ctxDeal.id, { notes: newNote })
-        },
+        onSubmit: (text) => update(ctxDeal.id, { notes: appendDealNote(ctxDeal.notes, text) }),
       },
     },
     {
@@ -416,6 +420,32 @@ interface DealDetailProps {
 function DealDetail({ deal, onClose, onUpdate, onDelete }: DealDetailProps) {
   const [editingNextAction, setEditingNextAction] = useState(deal.next_action ?? '')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [noteDraft, setNoteDraft] = useState('')
+  const [pushed, setPushed] = useState(false)
+
+  const createTask = useTaskStore((s) => s.create)
+  const user = useAuthStore((s) => s.user)
+
+  const noteLines = (deal.notes ?? '').split('\n').map((l) => l.trim()).filter(Boolean)
+
+  const addNote = () => {
+    const text = noteDraft.trim()
+    if (!text) return
+    onUpdate({ notes: appendDealNote(deal.notes, text) })
+    setNoteDraft('')
+  }
+
+  const pushToTasks = () => {
+    if (!user) return
+    createTask(user.uid, {
+      title: deal.next_action?.trim() || deal.name,
+      bucket: 'next',
+      source: 'manual',
+      notes: `From deal: ${deal.name}`,
+    })
+    setPushed(true)
+    setTimeout(() => setPushed(false), 2500)
+  }
 
   return (
     <div
@@ -462,6 +492,47 @@ function DealDetail({ deal, onClose, onUpdate, onDelete }: DealDetailProps) {
               placeholder="What needs to happen next?"
             />
           </div>
+
+          {/* Notes / activity log — add and review timestamped entries (touch-friendly) */}
+          <div>
+            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
+              Notes &amp; activity
+            </span>
+            {noteLines.length > 0 ? (
+              <div className="max-h-40 overflow-y-auto space-y-1 mb-2 pr-1">
+                {noteLines.slice().reverse().map((line, i) => (
+                  <p key={i} className="text-[12px] font-sans text-ink-2 leading-snug">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] font-sans italic text-ink-3 mb-2">No notes yet.</p>
+            )}
+            <div className="flex items-end gap-2">
+              <textarea
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault()
+                    addNote()
+                  }
+                }}
+                rows={2}
+                className="form-input w-full"
+                placeholder="Add a note…"
+              />
+              <button
+                type="button"
+                onClick={addNote}
+                disabled={!noteDraft.trim()}
+                className="text-[11px] font-sans font-semibold uppercase tracking-wider text-accent disabled:opacity-40 whitespace-nowrap px-2 py-2"
+              >
+                Add
+              </button>
+            </div>
+          </div>
         </div>
         <div className="modal-actions">
           {confirmDelete ? (
@@ -494,6 +565,13 @@ function DealDetail({ deal, onClose, onUpdate, onDelete }: DealDetailProps) {
                 Delete deal
               </button>
               <div className="modal-actions-right">
+                <button
+                  type="button"
+                  onClick={pushToTasks}
+                  className="text-[11px] font-sans font-semibold uppercase tracking-wider text-accent hover:text-accent-press transition-colors whitespace-nowrap"
+                >
+                  {pushed ? '✓ Added to Tasks' : '↗ Push to Tasks'}
+                </button>
                 <button type="button" onClick={onClose} className="btn-secondary">
                   Done
                 </button>
