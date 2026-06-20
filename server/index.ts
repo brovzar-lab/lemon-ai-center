@@ -45,6 +45,33 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true })
 })
 
+// C-2: Cron trigger — before CORS so server-to-server requests (no Origin) aren't rejected
+import { requireCronSecret } from './middleware/cronAuth'
+import { runJob, JOBS } from './lib/engine'
+import type { EngineJobId } from '@shared/types'
+
+const CRON_VALID_JOBS = new Set<string>([...JOBS.map((j) => j.id), 'seed_from_vault'])
+
+app.post('/api/engine/cron/:jobId', requireCronSecret, express.json(), async (req, res) => {
+  const uid = process.env.CEO_UID
+  if (!uid) {
+    res.status(503).json({ error: { code: 'NO_UID', message: 'CEO_UID not configured', retryable: false } })
+    return
+  }
+  const jobId = req.params.jobId
+  if (!CRON_VALID_JOBS.has(jobId)) {
+    res.status(400).json({ error: { code: 'UNKNOWN_JOB', message: `Unknown job: ${jobId}`, retryable: false } })
+    return
+  }
+  const startedAt = Date.now()
+  try {
+    await runJob(uid, jobId as EngineJobId)
+    res.json({ data: { ok: true, jobId, durationMs: Date.now() - startedAt } })
+  } catch (err) {
+    res.status(500).json({ error: { code: 'JOB_FAILED', message: (err as Error).message, retryable: true } })
+  }
+})
+
 // Security & logging
 app.use(helmet({
   contentSecurityPolicy: isProd
