@@ -16,6 +16,21 @@ export function AudioPlayer() {
   const [transcript, setTranscript] = useState('')
   const [lineIndex, setLineIndex] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const unlockedRef = useRef(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // A valid 0-length silent WAV, used to "unlock" the <audio> element inside
+  // the tap gesture so iOS Safari allows playback after the async TTS fetch.
+  const silentWavUrl = useMemo(() => {
+    const bytes = new Uint8Array(44)
+    const dv = new DataView(bytes.buffer)
+    const w = (o: number, s: string) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)) }
+    w(0, 'RIFF'); dv.setUint32(4, 36, true); w(8, 'WAVE'); w(12, 'fmt ')
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true)
+    dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true)
+    w(36, 'data'); dv.setUint32(40, 0, true)
+    return URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
+  }, [])
 
   // Build the brief text for TTS
   const briefText = overview
@@ -40,58 +55,99 @@ export function AudioPlayer() {
     audio.currentTime = pct * duration
   }, [audioUrl, duration])
 
-  // Generate TTS via Gemini
-  const generateAudio = async () => {
+  // iOS Safari blocks audio that starts after an async gap. Playing the silent
+  // WAV synchronously inside the tap "blesses" the element so the real TTS clip
+  // (fetched async) is allowed to play afterward.
+  const unlockAudio = () => {
+    const audio = audioRef.current
+    if (!audio || unlockedRef.current) return
+    try {
+      audio.src = silentWavUrl
+      const p = audio.play()
+      if (p) p.then(() => audio.pause()).catch(() => {})
+      unlockedRef.current = true
+    } catch {
+      /* ignore — best-effort unlock */
+    }
+  }
+
+  // Last-resort fallback when Gemini TTS is unavailable (e.g. no API key).
+  // Browser SpeechSynthesis is robotic and unreliable on iOS, so we only use it
+  // if the real voice fails — and surface a message so it's not a silent no-op.
+  const speakFallback = () => {
+    try {
+      const synth = window.speechSynthesis
+      if (!synth || !briefText) return
+      synth.cancel()
+      const utterance = new SpeechSynthesisUtterance(briefText)
+      utterance.rate = 0.95
+      utterance.onend = () => setPlaying(false)
+      const pick = () => synth.getVoices().find((v) => v.lang?.startsWith('en')) || null
+      utterance.voice = pick()
+      if (!utterance.voice) synth.onvoiceschanged = () => { utterance.voice = pick() }
+      synth.speak(utterance)
+      setPlaying(true)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Fetch the Gemini WAV and play it. Called from the tap path after unlock.
+  const loadAndPlay = async () => {
     if (loading || !briefText) return
     setLoading(true)
-
+    setError(null)
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: briefText }),
       })
-
-      if (!res.ok) throw new Error('TTS generation failed')
-
+      if (!res.ok) {
+        setError(
+          res.status === 503
+            ? 'High-quality voice unavailable — add a Gemini API key.'
+            : 'Voice failed to generate — tap to retry.',
+        )
+        speakFallback()
+        return
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       setAudioUrl(url)
-      setDuration(estimatedDuration)
       setTranscript(lines[0] || '')
-      setPlaying(true)
+      const audio = audioRef.current
+      if (!audio) return
+      audio.src = url
+      try {
+        await audio.play()
+        setPlaying(true)
+      } catch {
+        // Element wasn't unlocked in time — the next tap will play cleanly.
+        setError('Tap play again to start audio.')
+      }
     } catch (err) {
       console.error('TTS error:', err)
-      // Fallback: use browser SpeechSynthesis
-      const utterance = new SpeechSynthesisUtterance(briefText)
-      utterance.rate = 0.9
-      utterance.pitch = 1
-      utterance.voice = speechSynthesis.getVoices().find((v) => v.lang === 'en-US') || null
-      utterance.onend = () => setPlaying(false)
-      speechSynthesis.speak(utterance)
-      setDuration(estimatedDuration)
-      setTranscript(lines[0] || '')
-      setPlaying(true)
+      setError('Voice failed — tap to retry.')
+      speakFallback()
     } finally {
       setLoading(false)
     }
   }
 
-  // Audio element event handlers
+  // Attach playback listeners once to the persistent <audio> element.
   useEffect(() => {
     const audio = audioRef.current
-    if (!audio || !audioUrl) return
-
-    audio.src = audioUrl
-    audio.play()
+    if (!audio) return
 
     const handleTime = () => {
       setCurrentTime(audio.currentTime)
-      // Update transcript line based on time
-      const pct = audio.currentTime / audio.duration
-      const idx = Math.min(Math.floor(pct * lines.length), lines.length - 1)
-      setLineIndex(idx)
-      setTranscript(lines[idx] || '')
+      if (audio.duration) {
+        const pct = audio.currentTime / audio.duration
+        const idx = Math.min(Math.floor(pct * lines.length), Math.max(lines.length - 1, 0))
+        setLineIndex(idx)
+        setTranscript(lines[idx] || '')
+      }
     }
     const handleDuration = () => setDuration(audio.duration)
     const handleEnd = () => setPlaying(false)
@@ -105,23 +161,33 @@ export function AudioPlayer() {
       audio.removeEventListener('loadedmetadata', handleDuration)
       audio.removeEventListener('ended', handleEnd)
     }
-  }, [audioUrl])
+  }, [lines.length])
 
   const togglePlay = () => {
-    if (!audioUrl) {
-      generateAudio()
-      return
-    }
     const audio = audioRef.current
     if (!audio) return
-    if (playing) {
-      audio.pause()
-      speechSynthesis.pause()
-    } else {
-      audio.play()
-      speechSynthesis.resume()
+
+    // Already generated — just toggle play/pause synchronously (gesture-safe).
+    if (audioUrl) {
+      if (playing) {
+        audio.pause()
+        setPlaying(false)
+      } else {
+        audio.play().then(() => setPlaying(true)).catch(() => {})
+      }
+      return
     }
-    setPlaying(!playing)
+
+    // Fallback speech in progress — stop it.
+    if (window.speechSynthesis?.speaking) {
+      window.speechSynthesis.cancel()
+      setPlaying(false)
+      return
+    }
+
+    // First play: unlock within the gesture, then fetch + play.
+    unlockAudio()
+    void loadAndPlay()
   }
 
   const formatTime = (s: number) => {
@@ -185,6 +251,13 @@ export function AudioPlayer() {
         </span>
       </div>
 
+      {/* Inline error — never fail silently */}
+      {error && (
+        <p className="mt-2 text-[11px] font-sans text-data-coral" role="status">
+          {error}
+        </p>
+      )}
+
       {/* Transcript preview */}
       <div className="mt-3 border-t border-line pt-2">
         <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mb-1">
@@ -196,7 +269,7 @@ export function AudioPlayer() {
       </div>
 
       {/* Hidden audio element */}
-      <audio ref={audioRef} preload="none" />
+      <audio ref={audioRef} preload="auto" />
 
       <hr className="ed-rule mt-4" />
     </section>
