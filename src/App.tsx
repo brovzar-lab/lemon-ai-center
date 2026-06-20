@@ -2,11 +2,9 @@ import { AuthGate } from '@/components/AuthGate'
 import { Dashboard } from '@/components/Dashboard'
 import { lazy, Suspense } from 'react'
 
-// Agentation component inspector — dev only, zero-cost in production
-// Click any element in the browser → copies React component file path → paste here to fix
-const Agentation = import.meta.env.DEV
-  ? lazy(() => import('agentation').then((m) => ({ default: m.Agentation })))
-  : null
+// Agentation component inspector — always on (local + deployed)
+// Click any element → copies React component file path → paste to AI to fix
+const Agentation = lazy(() => import('agentation').then((m) => ({ default: m.Agentation })))
 
 export function App() {
   return (
