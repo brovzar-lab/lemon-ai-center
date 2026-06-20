@@ -4,16 +4,15 @@ import { X } from 'lucide-react'
 type CorrectionState = 'idle' | 'submitting' | 'success' | 'error'
 
 interface CorrectionResult {
-  rule: string
-  category: string
+  memory: string
   summary: string
-  action: string
   savedTo: string
 }
 
 /**
  * A floating feedback input that lets the CEO correct the dashboard.
- * Type a correction → AI extracts a rule → saves to Obsidian Brain → future briefings learn.
+ * Type a correction → AI distills it into a memory statement → saved to the
+ * CEO's Memory (Firestore) → injected into every future briefing.
  */
 export function CorrectionInput() {
   const [text, setText] = useState('')
@@ -88,9 +87,9 @@ export function CorrectionInput() {
       {/* Header */}
       <div className="correction-header">
         <div>
-          <span className="correction-title">Teach the AI</span>
+          <span className="correction-title">Save a correction</span>
           <p className="text-[10px] font-sans text-ink-3 mt-0.5">
-            Your note becomes a rule in <code>briefing-rules.md</code> — applied to every future briefing.
+            Saved to your <strong>Memory</strong> — remembered by the assistant and applied to every future briefing.
           </p>
         </div>
         <button
@@ -106,10 +105,10 @@ export function CorrectionInput() {
       {/* Success state */}
       {state === 'success' && result && (
         <div className="correction-success">
-          <p className="correction-success-title">✓ Rule saved</p>
-          <p className="correction-success-rule">{result.rule}</p>
+          <p className="correction-success-title">✓ Saved to Memory</p>
+          <p className="correction-success-rule">{result.memory}</p>
           <p className="correction-success-meta">
-            Saved to <code>{result.savedTo}</code> · Category: {result.category}
+            Remembered by the assistant · shapes future briefings
           </p>
         </div>
       )}
@@ -144,7 +143,7 @@ export function CorrectionInput() {
               {state === 'submitting' ? (
                 <span className="correction-spinner" />
               ) : (
-                'Save Rule'
+                'Save to Memory'
               )}
             </button>
           </div>
