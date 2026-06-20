@@ -79,6 +79,10 @@
    THEME SWITCH TRANSITIONS
    ═══════════════════════════════════════════ */
 html {
+  /* Lock the page to the viewport width — no sideways scrolling on mobile.
+     `clip` (not `hidden`) does NOT create a scroll container, so the sticky
+     header keeps sticking to the viewport. */
+  overflow-x: clip;
   transition: background-color 300ms ease;
 }
 
@@ -101,6 +105,10 @@ html *::after {
     font-feature-settings: 'tnum';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Belt-and-suspenders with html: clip any horizontal spillover so the
+       document can never scroll left/right on a phone. */
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   ::-webkit-scrollbar {

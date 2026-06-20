@@ -196,7 +196,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-ink font-sans">
+    <div className="min-h-screen bg-bg text-ink font-sans overflow-x-clip">
       <DemoBanner />
       <Header onOpenSettings={() => setSettingsOpen(true)} />
 
