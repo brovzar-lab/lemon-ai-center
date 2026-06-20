@@ -89,8 +89,12 @@ app.use(helmet({
 app.use(morgan(isProd ? 'combined' : 'dev'))
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow: no origin (curl/mobile), localhost, tunnel, and lemonfilms.com
-    if (!origin) return cb(null, true)
+    // H-5: In production, require an Origin header to prevent file:// protocol attacks.
+    // In dev, allow no-origin requests (curl, Postman, mobile clients).
+    if (!origin) {
+      if (isProd) return cb(new Error('CORS: Origin header required in production'))
+      return cb(null, true)
+    }
     const allowed = [
       /^http:\/\/localhost/,
       /\.trycloudflare\.com$/,
@@ -120,7 +124,9 @@ app.use(
     store: new FirestoreSessionStore(),
     cookie: {
       httpOnly: true,
-      secure: false, // Cloudflare Tunnel terminates TLS; Railway sees HTTP internally. Secure:true causes redirect loops.
+      // C-1: trust proxy (line 41) makes Express check X-Forwarded-Proto from
+      // Cloudflare Tunnel, so secure:true works correctly behind the reverse proxy.
+      secure: isProd,
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',

@@ -190,10 +190,14 @@ export function Dashboard() {
   }, [isAuthenticated, user?.uid, opsViews, subscribeDeals, subscribeProjects, subscribeLemonDelegations, subscribeTrackers, subscribeMission])
 
   const handleReply = (thread: InboxThread) => {
+    // M-6: Extract actual email from the From header (e.g. "John Smith <john@example.com>")
+    // instead of guessing by converting the display name to dots.
+    const emailMatch = thread.from.match(/<([^>]+)>/)
+    const fromEmail = emailMatch?.[1] ?? `${thread.from.toLowerCase().replace(/\s/g, '.')}@${thread.fromDomain}`
     setReplyEmail({
       threadId: thread.id,
       from: thread.from,
-      fromEmail: `${thread.from.toLowerCase().replace(/\s/g, '.')}@${thread.fromDomain}`,
+      fromEmail,
       subject: thread.subject,
       snippet: thread.snippet,
     })

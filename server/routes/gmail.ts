@@ -1,11 +1,26 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import { getGmailClient } from '../lib/googleAuth'
 import { tagThread, prioritizeThread, DEFAULT_TAG_PATTERNS } from '../lib/threadTags'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { gmailLimit, gmailSendLimit } from '../middleware/rateLimit'
 import { writeAuditLog } from '../lib/auditLog'
+import { db } from '../lib/firebase'
 import type { InboxThread, ThreadTag, ThreadPriority } from '@shared/types'
+
+// H-1: Sanitize CRLF from MIME header values to prevent header injection
+function sanitizeHeader(val: string): string {
+  return val.replace(/[\r\n]/g, '')
+}
+
+// M-1: Zod schema for email send — validates email format, lengths, and required fields
+const SendSchema = z.object({
+  threadId: z.string().min(1).max(50),
+  to: z.string().email('Invalid email address'),
+  subject: z.string().max(500, 'Subject must be at most 500 characters'),
+  body: z.string().max(50_000, 'Body must be at most 50,000 characters'),
+})
 
 export const gmailRouter = Router()
 gmailRouter.use(requireAuth)
@@ -81,10 +96,19 @@ gmailRouter.get('/threads/:id', gmailLimit, async (req, res) => {
 
 gmailRouter.post('/send', csrfCheck, gmailSendLimit, async (req, res) => {
   const uid = req.session.uid!
-  const { threadId, to, subject, body } = req.body as { threadId: string; to: string; subject: string; body: string }
+  // M-1: Validate input with Zod
+  const parsed = SendSchema.safeParse(req.body)
+  if (!parsed.success) {
+    const msg = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
+    return res.status(400).json({ error: { code: 'INVALID_INPUT', message: msg, retryable: false } })
+  }
+  const { threadId, to, subject, body } = parsed.data
   try {
     const gmail = await getGmailClient(uid)
-    const raw = Buffer.from(`To: ${to}\r\nSubject: ${subject}\r\nContent-Type: text/plain\r\n\r\n${body}`).toString('base64url')
+    // H-1: Sanitize To and Subject to prevent CRLF header injection
+    const raw = Buffer.from(
+      `To: ${sanitizeHeader(to)}\r\nSubject: ${sanitizeHeader(subject)}\r\nContent-Type: text/plain\r\n\r\n${body}`
+    ).toString('base64url')
     await gmail.users.messages.send({ userId: 'me', requestBody: { raw, threadId } })
     writeAuditLog(uid, 'gmail_send', req.ip || '', req.headers['user-agent'] || '', { threadId }).catch(() => {})
     res.json({ data: { sent: true } })
@@ -111,8 +135,11 @@ gmailRouter.post('/archive', csrfCheck, gmailLimit, async (req, res) => {
   try {
     const gmail = await getGmailClient(uid)
     await gmail.users.messages.modify({ userId: 'me', id: messageId, requestBody: { removeLabelIds: ['INBOX'] } })
-    // Track for undo
-    triageUndoStack.set(`${uid}:${messageId}`, { action: 'archive', originalLabels: ['INBOX'], at: Date.now() })
+    // H-4: Track for undo in Firestore (survives deploys)
+    await db.collection(`users/${uid}/triage_undo`).doc(messageId).set({
+      action: 'archive', originalLabels: ['INBOX'], at: Date.now(),
+      expiresAt: new Date(Date.now() + UNDO_TTL_MS),
+    })
     res.json({ data: { archived: true } })
   } catch {
     res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Archive failed', retryable: true } })
@@ -121,16 +148,9 @@ gmailRouter.post('/archive', csrfCheck, gmailLimit, async (req, res) => {
 
 // --- Consolidation: Email Triage Enhancements (from DASH-2) ---
 
-// Undo stack — ephemeral, per-server instance. Entries expire after 10 minutes.
-const triageUndoStack = new Map<string, { action: string; originalLabels: string[]; deferLabel?: string; at: number }>()
-
-// A-8: Periodic cleanup sweep to prevent memory leak from abandoned undo entries
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, entry] of triageUndoStack) {
-    if (now - entry.at > 10 * 60 * 1000) triageUndoStack.delete(key)
-  }
-}, 60_000)
+// H-4: Undo entries are now stored in Firestore instead of an in-memory Map.
+// This survives Railway deploys/restarts. Entries have a 10-minute TTL.
+const UNDO_TTL_MS = 10 * 60 * 1000
 
 gmailRouter.post('/triage/defer', csrfCheck, gmailLimit, async (req, res) => {
   const uid = req.session.uid!
@@ -160,8 +180,11 @@ gmailRouter.post('/triage/defer', csrfCheck, gmailLimit, async (req, res) => {
       requestBody: { removeLabelIds: ['INBOX'], addLabelIds: [labelId] },
     })
 
-    // Track for undo
-    triageUndoStack.set(`${uid}:${messageId}`, { action: 'defer', originalLabels: ['INBOX'], deferLabel: labelId, at: Date.now() })
+    // H-4: Track for undo in Firestore (survives deploys)
+    await db.collection(`users/${uid}/triage_undo`).doc(messageId).set({
+      action: 'defer', originalLabels: ['INBOX'], deferLabel: labelId, at: Date.now(),
+      expiresAt: new Date(Date.now() + UNDO_TTL_MS),
+    })
     writeAuditLog(uid, 'triage_defer', req.ip || '', req.headers['user-agent'] || '', { messageId, deferLabel }).catch(() => {})
 
     res.json({ data: { deferred: true, label: deferLabel } })
@@ -173,22 +196,26 @@ gmailRouter.post('/triage/defer', csrfCheck, gmailLimit, async (req, res) => {
 gmailRouter.post('/triage/undo', csrfCheck, gmailLimit, async (req, res) => {
   const uid = req.session.uid!
   const { messageId } = req.body as { messageId: string }
-  const key = `${uid}:${messageId}`
-  const entry = triageUndoStack.get(key)
 
-  if (!entry) {
+  // H-4: Read undo entry from Firestore
+  const undoRef = db.collection(`users/${uid}/triage_undo`).doc(messageId)
+  const undoDoc = await undoRef.get()
+
+  if (!undoDoc.exists) {
     return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No triage action to undo', retryable: false } })
   }
 
+  const entry = undoDoc.data()!
+
   // Expire after 10 minutes
-  if (Date.now() - entry.at > 10 * 60 * 1000) {
-    triageUndoStack.delete(key)
+  if (Date.now() - entry.at > UNDO_TTL_MS) {
+    await undoRef.delete()
     return res.status(410).json({ error: { code: 'EXPIRED', message: 'Undo window expired (10 min)', retryable: false } })
   }
 
   try {
     const gmail = await getGmailClient(uid)
-    const addBack = entry.originalLabels
+    const addBack = entry.originalLabels as string[]
     const removeLabels = entry.deferLabel ? [entry.deferLabel] : []
 
     await gmail.users.messages.modify({
@@ -197,7 +224,7 @@ gmailRouter.post('/triage/undo', csrfCheck, gmailLimit, async (req, res) => {
       requestBody: { addLabelIds: addBack, removeLabelIds: removeLabels },
     })
 
-    triageUndoStack.delete(key)
+    await undoRef.delete()
     writeAuditLog(uid, 'triage_undo', req.ip || '', req.headers['user-agent'] || '', { messageId, undoneAction: entry.action }).catch(() => {})
 
     res.json({ data: { undone: true, restoredLabels: addBack } })
