@@ -30,7 +30,7 @@ import { scanRouter } from './routes/scan'
 import { engineRouter } from './routes/engine'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
-import { initEngine } from './lib/engine'
+import { initEngine, stopEngine } from './lib/engine'
 import { requireAuth } from './middleware/requireAuth'
 
 export const app = express()
@@ -197,7 +197,7 @@ if (isProd) {
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3001
-  app.listen(PORT, async () => {
+  const server = app.listen(PORT, async () => {
     console.log(`Server running on :${PORT}`)
 
     // On Railway: clone vault from GitHub. Locally: use OBSIDIAN_VAULT_PATH.
@@ -216,5 +216,21 @@ if (require.main === module) {
     // watchlist) + boot catch-up. Replaces the old 6:30 precompute cron —
     // precompute now runs inside morning_assembly at 5:30.
     initEngine()
+  })
+
+  // M-5: Graceful shutdown — Railway sends SIGTERM before killing containers.
+  // Stop accepting connections, drain running engine jobs, then exit.
+  process.on('SIGTERM', () => {
+    console.log('[server] SIGTERM received — draining...')
+    server.close(async () => {
+      console.log('[server] HTTP server closed')
+      await stopEngine(25_000) // 25s budget (Railway gives 30s)
+      process.exit(0)
+    })
+    // Force exit after 28s if drain doesn't finish
+    setTimeout(() => {
+      console.warn('[server] Forced exit after timeout')
+      process.exit(1)
+    }, 28_000)
   })
 }

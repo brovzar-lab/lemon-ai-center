@@ -169,7 +169,8 @@ export function initEngine(): void {
   }
 
   for (const job of JOBS) {
-    cron.schedule(job.schedule, () => void runJob(uid, job.id), { timezone: ENGINE_TZ })
+    const task = cron.schedule(job.schedule, () => void runJob(uid, job.id), { timezone: ENGINE_TZ })
+    cronTasks.push(task)
   }
   console.log(`[engine] ${JOBS.length} jobs scheduled (${ENGINE_TZ})`)
 
@@ -185,4 +186,32 @@ export function initEngine(): void {
       }
     })()
   }, 15_000)
+}
+
+// M-5: Track cron tasks for graceful shutdown
+const cronTasks: cron.ScheduledTask[] = []
+
+/**
+ * M-5: Stop all cron jobs and wait for running engine jobs to drain.
+ * Called on SIGTERM so Railway deploys don't interrupt mid-write operations.
+ * Waits up to `timeoutMs` for in-flight jobs to complete.
+ */
+export async function stopEngine(timeoutMs = 30_000): Promise<void> {
+  // Stop scheduling new runs
+  for (const task of cronTasks) task.stop()
+  cronTasks.length = 0
+  console.log('[engine] Cron jobs stopped')
+
+  // Wait for running jobs to drain
+  if (running.size === 0) return
+  console.log(`[engine] Waiting for ${running.size} running job(s) to drain...`)
+  const deadline = Date.now() + timeoutMs
+  while (running.size > 0 && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 500))
+  }
+  if (running.size > 0) {
+    console.warn(`[engine] ${running.size} job(s) still running after ${timeoutMs}ms — forcing exit`)
+  } else {
+    console.log('[engine] All jobs drained')
+  }
 }
