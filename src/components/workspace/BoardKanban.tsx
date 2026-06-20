@@ -96,7 +96,7 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
   }
 
   return (
-    <div className="grid gap-3 grid-flow-col auto-cols-fr overflow-x-auto pb-2">
+    <div className="grid gap-3 grid-flow-col auto-cols-fr overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
       {columns.map((col) => {
         const colItems = grouped.get(col.key) ?? []
         const isOver = overColumn === col.key

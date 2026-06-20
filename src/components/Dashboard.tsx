@@ -204,7 +204,7 @@ export function Dashboard() {
         <FocusModeProvider>
           <main
             id="main-content"
-            className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16"
+            className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 overflow-x-clip"
             data-focus={focusActive ? 'on' : 'off'}
           >
             <EditorialMasthead />
@@ -244,7 +244,7 @@ export function Dashboard() {
         </FocusModeProvider>
       ) : (
         /* Legacy layout — preserved exactly as-is */
-        <main className="max-w-[1440px] mx-auto px-4 pb-16">
+        <main className="max-w-[1440px] mx-auto px-4 pb-16 overflow-x-clip">
           <BriefPanel />
           <NextUpBar />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">

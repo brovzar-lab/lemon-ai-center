@@ -93,9 +93,9 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
 
   if (phase === 'done' && stats) {
     return (
-      <div className="flex items-center gap-2 text-[11px] font-sans text-data-teal">
-        <CheckCircle2 size={14} />
-        <span>
+      <div className="flex items-center gap-2 text-[11px] font-sans text-data-teal min-w-0">
+        <CheckCircle2 size={14} className="flex-shrink-0" />
+        <span className="truncate max-w-[44vw] sm:max-w-none">
           Found {stats.deals} deals, {stats.projects} projects, {stats.delegations} delegations, {stats.memories} memories
         </span>
       </div>
@@ -120,9 +120,9 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
 
   if (isRunning) {
     return (
-      <div className="flex items-center gap-2 text-[11px] font-sans text-ink-2">
-        <Loader2 size={14} className="animate-spin" />
-        <span>{message}</span>
+      <div className="flex items-center gap-2 text-[11px] font-sans text-ink-2 min-w-0">
+        <Loader2 size={14} className="animate-spin flex-shrink-0" />
+        <span className="truncate max-w-[44vw] sm:max-w-none">{message}</span>
       </div>
     )
   }
@@ -132,11 +132,11 @@ export function ScanInboxButton({ compact }: { compact?: boolean }) {
       <button
         type="button"
         onClick={() => startScan(40)}
-        className="text-[11px] font-sans font-semibold uppercase tracking-wider text-data-coral hover:text-data-coral/80 transition-colors flex items-center gap-1.5 min-h-[36px]"
+        className="text-[11px] font-sans font-semibold uppercase tracking-wider text-data-coral hover:text-data-coral/80 transition-colors flex items-center gap-1.5 min-h-[36px] flex-shrink-0"
         aria-label="Scan inbox for deals, projects, and delegations"
       >
         <Scan size={14} />
-        Scan Inbox
+        <span className="hidden sm:inline">Scan Inbox</span>
       </button>
     )
   }
