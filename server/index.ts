@@ -40,6 +40,11 @@ const isProd = process.env.NODE_ENV === 'production'
 // Trust Cloudflare Tunnel / reverse proxy headers (X-Forwarded-For, X-Forwarded-Proto)
 app.set('trust proxy', 1)
 
+// Healthcheck — before any middleware so Railway's agent (no Origin header) isn't blocked by CORS
+app.get('/health', (_req, res) => {
+  res.json({ ok: true })
+})
+
 // Security & logging
 app.use(helmet({
   contentSecurityPolicy: isProd
@@ -134,9 +139,6 @@ app.use(
   }),
 )
 
-app.get('/health', (_req, res) => {
-  res.json({ ok: true })
-})
 
 app.use('/api/ready', readyRouter)
 
