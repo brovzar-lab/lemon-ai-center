@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BillyDrawer } from '../components/BillyDrawer'
 import { useUIStore } from '../stores/useUIStore'
 
@@ -17,9 +17,10 @@ test('BillyDrawer is visible when drawerOpen=true', () => {
   expect(screen.getByTestId('billy-drawer')).toBeInTheDocument()
 })
 
-test('close button hides drawer', () => {
+test('close button hides drawer', async () => {
   useUIStore.setState({ ...useUIStore.getState(), drawerOpen: true })
   render(<BillyDrawer />)
   fireEvent.click(screen.getByRole('button', { name: /close/i }))
-  expect(useUIStore.getState().drawerOpen).toBe(false)
+  // Close runs a 200ms exit animation before calling closeDrawer().
+  await waitFor(() => expect(useUIStore.getState().drawerOpen).toBe(false))
 })

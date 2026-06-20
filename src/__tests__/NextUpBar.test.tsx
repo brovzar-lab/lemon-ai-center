@@ -30,10 +30,10 @@ test('clicking PREP opens MeetingPrepModal', () => {
   render(<NextUpBar />)
   const required = seeds.meetings.filter(m => m.isRequired)
   if (required.length === 0) return
-  const meetingPill = screen.queryByTestId('meeting-pill')
-  if (meetingPill) {
-    // Legacy mode
-    fireEvent.click(meetingPill)
+  const meetingPills = screen.queryAllByTestId('meeting-pill')
+  if (meetingPills.length > 0) {
+    // Legacy mode — one pill per required meeting; clicking any opens prep
+    fireEvent.click(meetingPills[0])
   } else {
     // New dashboard mode
     fireEvent.click(screen.getByText(/PREP/i))

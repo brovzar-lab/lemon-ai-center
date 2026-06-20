@@ -64,11 +64,14 @@ beforeAll(() => {
 
 import { authRouter } from './auth'
 
+// Captures the session object handed to the most recent request, so tests can
+// assert on server-side session state (e.g. the OAuth state token).
+let lastSession: any
 function makeApp() {
   const app = express()
   app.use(express.json())
   app.use((req: any, _res, next) => {
-    req.session = { uid: undefined, email: undefined, cookie: {}, destroy: (cb: any) => cb?.() }
+    req.session = lastSession = { uid: undefined, email: undefined, cookie: {}, save: (cb: any) => cb?.(), destroy: (cb: any) => cb?.() }
     req.sessionID = 'test-sid'
     req.cookies = {}
     next()
@@ -84,10 +87,12 @@ describe('GET /auth/google/start', () => {
     expect(res.headers.location).toContain('accounts.google.com')
   })
 
-  test('sets state cookie', async () => {
-    const res = await request(makeApp()).get('/auth/google/start')
-    const setCookie = res.headers['set-cookie'] as unknown as string[]
-    expect(setCookie?.some((c: string) => c.includes('state'))).toBe(true)
+  test('stores oauth state server-side in the session', async () => {
+    // State is persisted in the Firestore-backed session (not a client cookie),
+    // then validated against the callback's state param to prevent CSRF.
+    await request(makeApp()).get('/auth/google/start')
+    expect(typeof lastSession.oauthState).toBe('string')
+    expect(lastSession.oauthState.length).toBeGreaterThan(0)
   })
 })
 

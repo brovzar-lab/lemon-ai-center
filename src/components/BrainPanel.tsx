@@ -50,7 +50,8 @@ export function BrainPanel() {
   // Initial load
   useEffect(() => {
     fetchStatus()
-  }, [fetchStatus])
+    fetchRecent()
+  }, [fetchStatus, fetchRecent])
 
   // Debounced search
   const handleSearchChange = useCallback(
@@ -199,9 +200,40 @@ export function BrainPanel() {
             </div>
           )}
         </>
+      ) : recent.length > 0 ? (
+        <>
+          <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mb-2">
+            Recently updated
+          </p>
+          <div className="flex flex-col gap-1" role="list" aria-label="Recent notes">
+            {recent.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => openNote(item.path)}
+                className="flex items-start gap-2 text-left group hover:bg-sunken/50 p-1.5 -mx-1.5 transition-colors min-h-[36px]"
+                role="listitem"
+                aria-label={`${item.title} — ${item.folder}`}
+              >
+                <span className="flex-shrink-0 text-[12px] mt-0.5" aria-hidden="true">
+                  {folderIcon(item.folder)}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-sans font-semibold text-ink truncate leading-tight">
+                    {item.title}
+                    <span className="text-ink-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </p>
+                  <p className="text-[10px] font-sans text-ink-3 truncate">
+                    {item.folder} · {timeAgo(item.modifiedAt)}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
       ) : (
         <p className="text-[11px] font-sans text-ink-3 italic">
-          Type to search 321 notes across deals, people, projects, and meetings.
+          Type to search your notes across deals, people, projects, and meetings.
         </p>
       )}
 

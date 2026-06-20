@@ -28,16 +28,16 @@ export function Header({ onOpenSettings }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-bg/90 backdrop-blur-sm border-b border-line px-6 py-2.5 flex items-center justify-between" role="banner">
-      <div className="flex items-center gap-3">
-        <span className="text-[11px] font-sans font-bold uppercase tracking-[0.2em] text-ink">
+    <header className="sticky top-0 z-40 bg-bg/90 backdrop-blur-sm border-b border-line px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 overflow-x-clip" role="banner">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-[11px] font-sans font-bold uppercase tracking-[0.2em] text-ink whitespace-nowrap">
           Lemon Studios
         </span>
-        <span className="text-[11px] font-sans uppercase tracking-[0.2em] text-ink-3">
+        <span className="hidden sm:inline text-[11px] font-sans uppercase tracking-[0.2em] text-ink-3">
           Command
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <SyncingPill />
         <ScanInboxButton compact />
         {/* Theme toggle */}
@@ -63,14 +63,14 @@ export function Header({ onOpenSettings }: HeaderProps) {
           type="button"
           onClick={syncAll}
           disabled={isStreaming}
-          className="text-[11px] font-sans font-semibold text-ink-2 hover:text-ink transition-colors px-3 py-1.5 rounded-md border border-line hover:border-line disabled:opacity-40 min-h-[36px] flex items-center gap-1.5"
+          className="text-[11px] font-sans font-semibold text-ink-2 hover:text-ink transition-colors px-2.5 sm:px-3 py-1.5 rounded-md border border-line hover:border-line disabled:opacity-40 min-w-[36px] min-h-[36px] flex items-center justify-center gap-1.5"
           aria-label="Refresh all data"
         >
-          <RefreshCw size={14} /> Sync
+          <RefreshCw size={14} /> <span className="hidden sm:inline">Sync</span>
         </button>
         <a
           href="/auth/google/logout"
-          className="text-[11px] font-sans text-ink-3 hover:text-ink-3 transition-colors"
+          className="text-[11px] font-sans text-ink-3 hover:text-ink-3 transition-colors whitespace-nowrap flex-shrink-0"
           aria-label="Sign out of your account"
         >
           Sign out

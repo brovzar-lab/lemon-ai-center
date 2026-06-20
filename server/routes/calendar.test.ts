@@ -33,7 +33,7 @@ describe('GET /api/calendar/events', () => {
       data: {
         items: [{
           id: 'ev1',
-          summary: 'Team meeting',
+          summary: 'BR Strategy Sync',
           start: { dateTime: now.toISOString() },
           end: { dateTime: new Date(now.getTime() + 3600000).toISOString() },
           attendees: [{ email: 'billy@lemonfilms.com', responseStatus: 'accepted', self: true }],

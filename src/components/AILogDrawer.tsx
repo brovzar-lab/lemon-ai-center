@@ -31,7 +31,7 @@ export function AILogDrawer() {
         type="button"
         onClick={() => setOpen(!open)}
         className={[
-          'fixed bottom-20 right-6 z-40 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all',
+          'fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-[calc(1.5rem+env(safe-area-inset-right,0px))] z-40 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all',
           count > 0
             ? 'bg-surface border-data-coral/30 text-ink'
             : 'bg-surface border-line text-ink-3',
@@ -57,7 +57,7 @@ export function AILogDrawer() {
             onClick={() => setOpen(false)}
           />
           {/* Panel */}
-          <div className="w-[380px] bg-surface border-l border-line p-5 overflow-y-auto">
+          <div className="w-[min(85vw,380px)] bg-surface border-l border-line p-5 overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-[10px] font-sans font-semibold text-ink-3 tracking-widest uppercase">
                 AI Actions (24h)

@@ -79,6 +79,10 @@
    THEME SWITCH TRANSITIONS
    ═══════════════════════════════════════════ */
 html {
+  /* Lock the page to the viewport width — no sideways scrolling on mobile.
+     `clip` (not `hidden`) does NOT create a scroll container, so the sticky
+     header keeps sticking to the viewport. */
+  overflow-x: clip;
   transition: background-color 300ms ease;
 }
 
@@ -101,6 +105,10 @@ html *::after {
     font-feature-settings: 'tnum';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Belt-and-suspenders with html: clip any horizontal spillover so the
+       document can never scroll left/right on a phone. */
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   ::-webkit-scrollbar {
@@ -536,9 +544,11 @@ a:focus-visible,
   }
   /* ─── Correction Input ─── */
   .correction-trigger {
-    @apply fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5
+    @apply fixed z-50 flex items-center gap-2 px-4 py-2.5
            font-sans text-xs
            transition-all duration-200 cursor-pointer;
+    right: calc(1.5rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
     background: var(--surface);
     border: 1px solid var(--line);
     color: var(--ink-2);
@@ -557,8 +567,10 @@ a:focus-visible,
   }
 
   .correction-panel {
-    @apply fixed bottom-6 right-6 z-50 w-[380px]
-           p-4 flex flex-col gap-3;
+    @apply fixed z-50 p-4 flex flex-col gap-3;
+    right: calc(1.5rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    width: min(380px, calc(100vw - 2rem));
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);

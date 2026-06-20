@@ -68,7 +68,7 @@ export function EditorialMasthead() {
       <div className="ed-rule-double mb-4" />
 
       {/* Title row */}
-      <div className="flex items-end justify-between gap-6 mb-1">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-1">
         <div>
           <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-none">
             Executive Briefing
@@ -78,7 +78,7 @@ export function EditorialMasthead() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4 pb-1">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pb-1">
           {/* Stats */}
           <div className="text-right">
             <span className="font-display text-3xl font-semibold text-ink leading-none">{doneCount}</span>
@@ -97,7 +97,7 @@ export function EditorialMasthead() {
           </div>
 
           {/* Mode pills */}
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex flex-wrap items-center gap-2 sm:ml-4">
             {opsViews && slipCount > 0 && (
               <button
                 type="button"
