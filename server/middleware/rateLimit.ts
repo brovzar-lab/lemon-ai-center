@@ -7,6 +7,10 @@ export function makeRateLimit(windowMs: number, max: number) {
     max,
     standardHeaders: true,
     legacyHeaders: false,
+    // We key on sessionID first (single-user CEO app), so the app-wide
+    // `trust proxy: true` doesn't actually enable IP-spoofed limit bypass —
+    // silence express-rate-limit's permissive-trust-proxy validation error.
+    validate: { trustProxy: false },
     keyGenerator: (req: Request) => (req as any).sessionID || req.ip || 'anonymous',
     handler: (_req, res) => {
       res.status(429).json({

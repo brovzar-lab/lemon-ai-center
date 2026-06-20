@@ -37,8 +37,12 @@ export const app = express()
 
 const isProd = process.env.NODE_ENV === 'production'
 
-// Trust Cloudflare Tunnel / reverse proxy headers (X-Forwarded-For, X-Forwarded-Proto)
-app.set('trust proxy', 1)
+// Trust the full proxy chain (Cloudflare edge → Cloudflare Tunnel → Railway edge)
+// so req.secure reflects the client's original HTTPS. With a single-hop value,
+// an internal http hop can make Express think the request is insecure, which
+// makes express-session silently DROP the `secure` session cookie — the user
+// then lands in demo mode on every refresh. Trusting the chain fixes that.
+app.set('trust proxy', true)
 
 // Healthcheck — before any middleware so Railway's agent (no Origin header) isn't blocked by CORS
 app.get('/health', (_req, res) => {
@@ -152,6 +156,9 @@ app.use(
     secret: sessionSecret || 'dev-secret-change-me-local-only',
     resave: false,
     saveUninitialized: false,
+    // Re-issue the cookie (with a fresh 30-day expiry) on every response so an
+    // authenticated session keeps renewing as long as the dashboard is used.
+    rolling: true,
     store: new FirestoreSessionStore(),
     cookie: {
       httpOnly: true,
