@@ -1,4 +1,3 @@
-import cron from 'node-cron'
 import { db } from '../firebase'
 import { ENGINE_TZ } from './constants'
 import type { EngineJobId } from '@shared/types'
@@ -15,6 +14,12 @@ import { runSeedFromVault } from './jobs/seedFromVault'
  * The Engine — every scheduled job that keeps the dashboard alive
  * without Billy clicking anything. Spec §4.
  *
+ * C-2: Scheduling moved to Railway Cron Services (external HTTP triggers).
+ * This module now only handles:
+ * - Job definitions and metadata (JOBS array)
+ * - Job execution with heartbeat/ledger (runJob)
+ * - Boot catch-up (overdue jobs run on container start)
+ *
  * Reliability rules:
  * - Every run writes a heartbeat to users/{uid}/engine_jobs/{jobId}
  * - On boot, jobs whose last success is older than their period run
@@ -24,7 +29,7 @@ import { runSeedFromVault } from './jobs/seedFromVault'
 
 interface JobDef {
   id: EngineJobId
-  /** node-cron expression, evaluated in ENGINE_TZ */
+  /** Cron expression (for documentation — scheduling is now external) */
   schedule: string
   /** Expected period in ms — drives boot catch-up */
   periodMs: number
@@ -160,7 +165,14 @@ async function catchUp(uid: string): Promise<void> {
   }
 }
 
-/** Wire the engine to the cron clock. Call once at server boot. */
+/**
+ * C-2: Boot-only initialization. Call once at server start.
+ *
+ * Scheduling is now handled by external Railway Cron Services that
+ * POST to /api/engine/cron/:jobId. This function only runs:
+ * 1. First-run vault seeding
+ * 2. Catch-up for overdue jobs (in case container was down)
+ */
 export function initEngine(): void {
   const uid = process.env.CEO_UID
   if (!uid) {
@@ -168,11 +180,7 @@ export function initEngine(): void {
     return
   }
 
-  for (const job of JOBS) {
-    const task = cron.schedule(job.schedule, () => void runJob(uid, job.id), { timezone: ENGINE_TZ })
-    cronTasks.push(task)
-  }
-  console.log(`[engine] ${JOBS.length} jobs scheduled (${ENGINE_TZ})`)
+  console.log(`[engine] Boot-only mode — scheduling handled by Railway Cron (${ENGINE_TZ})`)
 
   // Defer boot work so the server is responsive immediately:
   // first-run seeding, then overdue-job catch-up.
@@ -188,22 +196,19 @@ export function initEngine(): void {
   }, 15_000)
 }
 
-// M-5: Track cron tasks for graceful shutdown
-const cronTasks: cron.ScheduledTask[] = []
-
 /**
- * M-5: Stop all cron jobs and wait for running engine jobs to drain.
+ * C-2: Wait for running engine jobs to drain.
  * Called on SIGTERM so Railway deploys don't interrupt mid-write operations.
  * Waits up to `timeoutMs` for in-flight jobs to complete.
+ *
+ * (Simplified from Phase 3 — no cron tasks to stop, just drain running jobs.)
  */
 export async function stopEngine(timeoutMs = 30_000): Promise<void> {
-  // Stop scheduling new runs
-  for (const task of cronTasks) task.stop()
-  cronTasks.length = 0
-  console.log('[engine] Cron jobs stopped')
+  if (running.size === 0) {
+    console.log('[engine] No running jobs — clean shutdown')
+    return
+  }
 
-  // Wait for running jobs to drain
-  if (running.size === 0) return
   console.log(`[engine] Waiting for ${running.size} running job(s) to drain...`)
   const deadline = Date.now() + timeoutMs
   while (running.size > 0 && Date.now() < deadline) {
