@@ -121,12 +121,9 @@ app.use(helmet({
 app.use(morgan(isProd ? 'combined' : 'dev'))
 app.use(cors({
   origin: (origin, cb) => {
-    // H-5: In production, require an Origin header to prevent file:// protocol attacks.
-    // In dev, allow no-origin requests (curl, Postman, mobile clients).
-    if (!origin) {
-      if (isProd) return cb(new Error('CORS: Origin header required in production'))
-      return cb(null, true)
-    }
+    // No Origin header = same-origin navigation or server-to-server request.
+    // Safe to allow — CSRF is handled by sameSite cookies + csrfCheck middleware.
+    if (!origin) return cb(null, true)
     const allowed = [
       /^http:\/\/localhost/,
       /\.trycloudflare\.com$/,
