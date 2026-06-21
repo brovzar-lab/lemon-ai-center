@@ -181,6 +181,23 @@ export async function assembleContext(uid: string): Promise<{ items: ContextItem
     }
   }
 
+  // ── Load active CEO memories/corrections from Firestore ──
+  // Manual corrections (via the Correct button) + auto-extracted facts the CEO
+  // has kept active. These persist across deploys and shape every briefing.
+  try {
+    const snap = await db.collection(`users/${uid}/memories`).where('active', '==', true).get()
+    const memText = snap.docs
+      .map((d) => (d.data() as { text?: string }).text)
+      .filter(Boolean)
+      .map((t) => `- ${t}`)
+      .join('\n')
+    if (memText) {
+      block = `CEO MEMORY & CORRECTIONS (facts and guidance from the CEO — honor these):\n${memText}\n\n${block}`
+    }
+  } catch (err) {
+    console.warn('[memory] Context injection failed:', (err as Error).message)
+  }
+
   // Enforce total context budget
   if (block.length > MAX_CONTEXT_CHARS) {
     block = block.slice(0, MAX_CONTEXT_CHARS) + '\n... (truncated to budget)'

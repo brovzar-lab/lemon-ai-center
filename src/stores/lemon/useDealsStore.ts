@@ -12,8 +12,19 @@ import { lemonDb, isLemonWorkspaceConfigured, opsPath } from '@/lib/firestoreLem
 import { apiFetch } from '@/lib/apiClient'
 import type { LemonDeal, DealStatus } from '@shared/types'
 
-/** Fire-and-forget re-rank so the Five Fronts update immediately after deal mutations */
-const rerank = () => void apiFetch('/api/engine/run/slip_detect', { method: 'POST' }).catch(() => {})
+/**
+ * Fire-and-forget re-rank so the Five Fronts update after deal mutations.
+ * Debounced: a burst of edits (notes, next-action, several status drags)
+ * collapses into a single engine call ~4s after the last change instead of
+ * hammering the server on every keystroke-save.
+ */
+let rerankTimer: ReturnType<typeof setTimeout> | undefined
+const rerank = () => {
+  if (rerankTimer) clearTimeout(rerankTimer)
+  rerankTimer = setTimeout(() => {
+    void apiFetch('/api/engine/run/slip_detect', { method: 'POST' }).catch(() => {})
+  }, 4000)
+}
 
 interface DealsState {
   deals: LemonDeal[]

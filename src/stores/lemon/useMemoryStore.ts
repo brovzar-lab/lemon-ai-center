@@ -29,7 +29,7 @@ export const useMemoryStore = create<MemoryState>()((set) => ({
   configured: isLemonWorkspaceConfigured(),
 
   subscribe: () => {
-    const path = opsPath('memory_entries')
+    const path = opsPath('memories')
     if (!path) return () => {}
     set({ loading: true })
     const q = query(collection(lemonDb, path), orderBy('learned_at', 'desc'))
@@ -48,7 +48,7 @@ export const useMemoryStore = create<MemoryState>()((set) => ({
   },
 
   add: async (text, source = 'manual') => {
-    const path = opsPath('memory_entries')
+    const path = opsPath('memories')
     if (!path) return
     await addDoc(collection(lemonDb, path), {
       text,
@@ -59,13 +59,13 @@ export const useMemoryStore = create<MemoryState>()((set) => ({
   },
 
   setActive: async (id, active) => {
-    const path = opsPath('memory_entries')
+    const path = opsPath('memories')
     if (!path) return
     await updateDoc(doc(lemonDb, `${path}/${id}`), { active })
   },
 
   remove: async (id) => {
-    const path = opsPath('memory_entries')
+    const path = opsPath('memories')
     if (!path) return
     await deleteDoc(doc(lemonDb, `${path}/${id}`))
   },
