@@ -23,10 +23,17 @@ export function useScanInbox() {
     setError(null)
 
     try {
-      // Get CSRF token
-      const csrfRes = await fetch('/api/csrf')
-      const csrfData = await csrfRes.json()
-      const token = csrfData.data?.token || ''
+      // Get CSRF token (resilient to failures)
+      let token = ''
+      try {
+        const csrfRes = await fetch('/api/csrf')
+        if (csrfRes.ok) {
+          const csrfData = await csrfRes.json()
+          token = csrfData.data?.token || ''
+        }
+      } catch {
+        // proceed without CSRF token
+      }
 
       const response = await fetch('/api/scan/inbox', {
         method: 'POST',

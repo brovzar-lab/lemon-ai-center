@@ -1,57 +1,78 @@
-import { useFocusModeStore } from '@/stores/useFocusModeStore'
-import { useRoughMorningStore } from '@/stores/useRoughMorningStore'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useTaskStore } from '@/stores/useTaskStore'
-import { useDealsStore } from '@/stores/lemon/useDealsStore'
-import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
-import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
-import { useFeatureFlags } from '@/hooks/useFeatureFlags'
-import { useViewStore } from '@/stores/useViewStore'
 import { useAuthStore } from '@/stores/useAuthStore'
-import {
-  detectSlippingThreads,
-  detectOverdueDelegations,
-  detectStallingDeals,
-} from '@/lib/inbox/slipDetection'
+import { useCalendarStore } from '@/stores/useCalendarStore'
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-export function EditorialMasthead() {
-  const focusActive = useFocusModeStore((s) => s.active)
-  const focusToggle = useFocusModeStore((s) => s.toggle)
-  const roughActive = useRoughMorningStore((s) => s.active)
-  const roughToggle = useRoughMorningStore((s) => s.toggle)
+function useHeadline(): string {
   const threads = useInboxStore((s) => s.threads)
   const tasks = useTaskStore((s) => s.tasks)
-  const deals = useDealsStore((s) => s.deals)
-  const projects = useProjectsStore((s) => s.projects)
-  const delegations = useLemonDelegationsStore((s) => s.delegations)
-  const { opsViews } = useFeatureFlags()
-  const setView = useViewStore((s) => s.setView)
   const authUser = useAuthStore((s) => s.user)
+  const events = useCalendarStore((s) => s.events)
 
-  const slipCount =
-    detectSlippingThreads(threads, deals, projects).length +
-    detectOverdueDelegations(delegations).length +
-    detectStallingDeals(deals).length
+  const firstName = authUser?.displayName?.split(' ')[0] || 'Boss'
+  const now = new Date()
+  const hour = now.getHours()
+  const day = now.getDay()
+  const isWeekend = day === 0 || day === 6
+
+  const urgentThreads = threads.filter((t) => {
+    if (!t.receivedAt) return false
+    const age = Date.now() - new Date(t.receivedAt).getTime()
+    return age > 24 * 60 * 60 * 1000
+  }).length
+
+  const pendingTasks = tasks.filter((t) => !t.done).length
+
+  // Next meeting within 3 hours
+  const soonEvent = events?.find((e) => {
+    const start = new Date(e.start).getTime()
+    return start > Date.now() && start - Date.now() < 3 * 60 * 60 * 1000
+  })
+
+  // Build contextual headline
+  if (soonEvent) {
+    const mins = Math.round((new Date(soonEvent.start).getTime() - Date.now()) / 60000)
+    const timeStr = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`
+    return `${soonEvent.title || 'Meeting'} in ${timeStr}`
+  }
+
+  if (hour >= 5 && hour < 12) {
+    if (isWeekend && urgentThreads === 0) return `${DAYS_SHORT[day]} morning — inbox is light`
+    if (urgentThreads > 0) return `Good morning, ${firstName} — ${urgentThreads} threads need you`
+    if (pendingTasks > 3) return `Good morning — ${pendingTasks} tasks on your plate`
+    return `Good morning, ${firstName}`
+  }
+
+  if (hour >= 12 && hour < 17) {
+    if (urgentThreads > 0) return `Afternoon wire — ${urgentThreads} threads awaiting reply`
+    if (pendingTasks === 0) return `Quiet afternoon — deep work time`
+    return `The afternoon wire`
+  }
+
+  // Evening / night
+  if (urgentThreads === 0 && pendingTasks <= 2) return `End of day — nothing urgent`
+  if (urgentThreads > 0) return `Evening check — ${urgentThreads} still pending`
+  return `End of day — ${pendingTasks} tasks remain`
+}
+
+export function EditorialMasthead() {
+  const threads = useInboxStore((s) => s.threads)
+  const headline = useHeadline()
 
   const today = new Date()
-  const doneCount = tasks.filter((t) => t.done).length
-
-  // Volume number: day of year
   const startOfYear = new Date(today.getFullYear(), 0, 0)
   const diff = today.getTime() - startOfYear.getTime()
   const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24))
 
   const timeStr = today.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false })
 
-  // Extract city name from timezone (e.g., 'America/Mexico_City' -> 'Mexico City')
   const tzCity = (() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-      const city = tz.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'
-      return city
+      return tz.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'
     } catch {
       return 'Local'
     }
@@ -67,78 +88,10 @@ export function EditorialMasthead() {
       {/* Double rule */}
       <div className="ed-rule-double mb-4" />
 
-      {/* Title row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-1">
-        <div>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-none">
-            Executive Briefing
-          </h1>
-          <p className="font-display text-sm italic text-ink-3 mt-1">
-            By your chief of staff · for {authUser?.displayName || 'CEO'}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pb-1">
-          {/* Stats */}
-          <div className="text-right">
-            <span className="font-display text-3xl font-semibold text-ink leading-none">{doneCount}</span>
-            <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mt-0.5">Shipped</p>
-          </div>
-          <div className="text-right">
-            <span className="font-display text-3xl font-semibold text-ink leading-none">
-              {(() => {
-                const mins = useFocusModeStore.getState().totalFocusMinutes()
-                const h = Math.floor(mins / 60)
-                const m = mins % 60
-                return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}` : `${m}m`
-              })()}
-            </span>
-            <p className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-ink-3 mt-0.5">Focus</p>
-          </div>
-
-          {/* Mode pills */}
-          <div className="flex flex-wrap items-center gap-2 sm:ml-4">
-            {opsViews && slipCount > 0 && (
-              <button
-                type="button"
-                onClick={() => setView('inbox')}
-                className="text-[10px] font-sans font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border bg-data-coral/15 text-data-coral border-data-coral/30 hover:bg-data-coral/25 transition-colors min-h-[36px]"
-                aria-label={`${slipCount} items at risk — open Inbox Intel`}
-              >
-                ● {slipCount} at risk
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={roughToggle}
-              className={[
-                'text-[10px] font-sans font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
-                roughActive
-                  ? 'bg-data-coral/15 text-data-coral border-data-coral/30'
-                  : 'text-ink-3 border-line hover:border-accent hover:text-ink-2',
-              ].join(' ')}
-              aria-label={roughActive ? 'Deactivate rough morning mode' : 'Activate rough morning mode'}
-              aria-pressed={roughActive}
-            >
-              Rough Morning
-            </button>
-            <button
-              type="button"
-              onClick={() => focusToggle()}
-              className={[
-                'text-[10px] font-sans font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full border transition-all min-h-[36px]',
-                focusActive
-                  ? 'bg-ink text-bg border-ink'
-                  : 'text-ink-3 border-line hover:border-accent hover:text-ink-2',
-              ].join(' ')}
-              aria-label={focusActive ? 'Exit single-task focus mode' : 'Enter single-task focus mode'}
-              aria-pressed={focusActive}
-            >
-              ● Single-Task Mode [F]
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Dynamic headline */}
+      <h1 className="font-display text-3xl sm:text-4xl font-semibold text-ink tracking-tight leading-tight">
+        {headline}
+      </h1>
 
       {/* Double rule */}
       <div className="ed-rule-double mt-4" />

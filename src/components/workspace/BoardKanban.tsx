@@ -169,7 +169,7 @@ export function BoardKanban<T extends { id: string }, TKey extends string>({
                       }
                     }}
                     className={[
-                      'group relative cursor-grab active:cursor-grabbing rounded-lg border bg-bg px-3 py-2.5 transition-all',
+                      'group relative cursor-grab active:cursor-grabbing rounded-lg border bg-bg px-3 py-2.5 transition-all overflow-hidden',
                       'border-line hover:border-line hover:bg-sunken',
                       isDragging ? 'opacity-30 scale-[0.98]' : 'opacity-100',
                     ].join(' ')}

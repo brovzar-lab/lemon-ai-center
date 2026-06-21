@@ -40,6 +40,50 @@ function appendDealNote(existing: string | undefined, text: string): string {
   return existing ? `${existing}\n${line}` : line
 }
 
+// ── Counterparty Grouping ────────────────────────────────────────
+
+interface CounterpartyGroup {
+  counterparty: string
+  deals: LemonDeal[]
+}
+
+function groupByCounterparty(deals: LemonDeal[]): (LemonDeal | CounterpartyGroup)[] {
+  const groups: Record<string, LemonDeal[]> = {}
+  const standalone: LemonDeal[] = []
+
+  for (const d of deals) {
+    const cp = d.counterparty?.trim()
+    if (!cp) {
+      standalone.push(d)
+    } else {
+      if (!groups[cp]) groups[cp] = []
+      groups[cp].push(d)
+    }
+  }
+
+  const result: (LemonDeal | CounterpartyGroup)[] = []
+
+  // Multi-deal groups first
+  for (const [counterparty, groupDeals] of Object.entries(groups)) {
+    if (groupDeals.length === 1) {
+      result.push(groupDeals[0])
+    } else {
+      result.push({ counterparty, deals: groupDeals })
+    }
+  }
+
+  // Standalone deals after
+  result.push(...standalone)
+
+  return result
+}
+
+function isGroup(item: LemonDeal | CounterpartyGroup): item is CounterpartyGroup {
+  return 'deals' in item && 'counterparty' in item && Array.isArray((item as any).deals)
+}
+
+// ── Main Component ───────────────────────────────────────────────
+
 export function DealsView() {
   const deals = useDealsStore((s) => s.deals)
   const subscribe = useDealsStore((s) => s.subscribe)
@@ -52,13 +96,30 @@ export function DealsView() {
 
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<NewDealForm>(EMPTY_FORM)
-  const [activeDeal, setActiveDeal] = useState<LemonDeal | null>(null)
+  const [popover, setPopover] = useState<{ deal: LemonDeal; anchor: { x: number; y: number } } | null>(null)
   const { contextMenu, onContextMenu, closeMenu } = useContextMenu()
   const [ctxDeal, setCtxDeal] = useState<LemonDeal | null>(null)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const handleDealContext = (deal: LemonDeal, e: React.MouseEvent) => {
     setCtxDeal(deal)
     onContextMenu(e)
+  }
+
+  const handleDealClick = (deal: LemonDeal, e?: React.MouseEvent) => {
+    const anchor = e
+      ? { x: Math.min(e.clientX, window.innerWidth - 360), y: Math.min(e.clientY, window.innerHeight - 400) }
+      : { x: window.innerWidth / 2 - 170, y: 200 }
+    setPopover({ deal, anchor })
+  }
+
+  const toggleGroup = (counterparty: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(counterparty)) next.delete(counterparty)
+      else next.add(counterparty)
+      return next
+    })
   }
 
   const ctxActions: ContextAction[] = ctxDeal ? [
@@ -83,7 +144,7 @@ export function DealsView() {
       icon: '◉',
       onClick: () => updateStatus(ctxDeal.id, col.key),
     })),
-    { label: 'Open details', icon: '⊙', onClick: () => setActiveDeal(ctxDeal) },
+    { label: 'Open details', icon: '⊙', onClick: () => handleDealClick(ctxDeal) },
     { label: 'Delete deal', icon: '🗑', danger: true, onClick: () => remove(ctxDeal.id) },
   ] : []
 
@@ -259,14 +320,14 @@ export function DealsView() {
         </div>
         </>
       ) : (
-        <BoardKanban
+        <DealsKanban
+          deals={deals}
           columns={COLUMNS}
-          items={deals}
-          getColumn={(d) => (d.status ?? 'active') as DealStatus}
+          expandedGroups={expandedGroups}
+          onToggleGroup={toggleGroup}
           onMove={(id, target) => updateStatus(id, target)}
-          onCardClick={(d) => setActiveDeal(d)}
-          onCardContextMenu={(d, e) => handleDealContext(d, e)}
-          renderCard={(deal) => <DealCard deal={deal} />}
+          onCardClick={handleDealClick}
+          onCardContextMenu={handleDealContext}
         />
       )}
 
@@ -280,18 +341,23 @@ export function DealsView() {
         />
       )}
 
-      {/* Detail drawer */}
-      {activeDeal && (
-        <DealDetail
-          deal={activeDeal}
-          onClose={() => setActiveDeal(null)}
+      {/* Floating popover detail */}
+      {popover && (
+        <DealPopover
+          deal={popover.deal}
+          anchor={popover.anchor}
+          onClose={() => setPopover(null)}
           onUpdate={async (patch) => {
-            await update(activeDeal.id, patch)
-            setActiveDeal({ ...activeDeal, ...patch })
+            await update(popover.deal.id, patch)
+            setPopover({ ...popover, deal: { ...popover.deal, ...patch } })
+          }}
+          onUpdateStatus={async (status) => {
+            await updateStatus(popover.deal.id, status)
+            setPopover({ ...popover, deal: { ...popover.deal, status } })
           }}
           onDelete={async () => {
-            await remove(activeDeal.id)
-            setActiveDeal(null)
+            await remove(popover.deal.id)
+            setPopover(null)
           }}
         />
       )}
@@ -318,50 +384,205 @@ export function DealsView() {
   )
 }
 
-function Field({
-  label,
-  required,
-  children,
+// ── DealsKanban (grouped columns) ────────────────────────────────
+
+function DealsKanban({
+  deals,
+  columns,
+  expandedGroups,
+  onToggleGroup,
+  onMove,
+  onCardClick,
+  onCardContextMenu,
 }: {
-  label: string
-  required?: boolean
-  children: React.ReactNode
+  deals: LemonDeal[]
+  columns: BoardColumnDef<DealStatus>[]
+  expandedGroups: Set<string>
+  onToggleGroup: (cp: string) => void
+  onMove: (id: string, target: DealStatus) => void
+  onCardClick: (deal: LemonDeal, e?: React.MouseEvent) => void
+  onCardContextMenu: (deal: LemonDeal, e: React.MouseEvent) => void
 }) {
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [overColumn, setOverColumn] = useState<DealStatus | null>(null)
+
   return (
-    <label className="block">
-      <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
-        {label}
-        {required && <span className="ml-1 text-data-coral">*</span>}
-      </span>
-      {children}
-    </label>
+    <div className="grid grid-flow-col auto-cols-fr gap-3">
+      {columns.map((col) => {
+        const colDeals = deals.filter((d) => (d.status ?? 'active') === col.key)
+        const grouped = groupByCounterparty(colDeals)
+        const isOver = overColumn === col.key && draggingId !== null
+
+        return (
+          <section key={col.key} className="flex flex-col gap-2">
+            <header className="flex items-center gap-2 px-1">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: col.accent }}
+                aria-hidden
+              />
+              <span className="text-[11px] font-sans font-semibold text-ink uppercase tracking-wider">
+                {col.label}
+              </span>
+              <span className="text-[10px] font-sans text-ink-3 tabular-nums">{colDeals.length}</span>
+              {col.subtitle && (
+                <p className="text-[10px] font-sans italic text-ink-3 ml-auto">{col.subtitle}</p>
+              )}
+            </header>
+
+            <div
+              onDragOver={(e) => { e.preventDefault(); setOverColumn(col.key) }}
+              onDragLeave={() => setOverColumn(null)}
+              onDrop={(e) => {
+                e.preventDefault()
+                const id = e.dataTransfer.getData('text/plain')
+                if (id) onMove(id, col.key)
+                setOverColumn(null)
+                setDraggingId(null)
+              }}
+              className={[
+                'flex-1 min-h-[120px] rounded-xl p-2 space-y-2 border transition-colors',
+                isOver ? 'bg-sunken border-accent/40' : 'bg-surface border-line',
+              ].join(' ')}
+            >
+              {grouped.map((item) => {
+                if (isGroup(item)) {
+                  const expanded = expandedGroups.has(item.counterparty)
+                  return (
+                    <div key={`group-${item.counterparty}`} className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => onToggleGroup(item.counterparty)}
+                        className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-sunken/50 hover:bg-sunken text-left transition-colors"
+                      >
+                        <span className="text-[10px] text-ink-3">{expanded ? '▾' : '▸'}</span>
+                        <span className="text-[11px] font-sans font-semibold text-ink truncate flex-1">
+                          {item.counterparty}
+                        </span>
+                        <span className="text-[10px] font-mono text-ink-3 tabular-nums">
+                          {item.deals.length}
+                        </span>
+                      </button>
+                      {expanded && item.deals.map((deal) => (
+                        <DealCardWrapper
+                          key={deal.id}
+                          deal={deal}
+                          draggingId={draggingId}
+                          onDragStart={setDraggingId}
+                          onDragEnd={() => setDraggingId(null)}
+                          onClick={onCardClick}
+                          onContextMenu={onCardContextMenu}
+                          indent
+                        />
+                      ))}
+                    </div>
+                  )
+                }
+                return (
+                  <DealCardWrapper
+                    key={item.id}
+                    deal={item}
+                    draggingId={draggingId}
+                    onDragStart={setDraggingId}
+                    onDragEnd={() => setDraggingId(null)}
+                    onClick={onCardClick}
+                    onContextMenu={onCardContextMenu}
+                  />
+                )
+              })}
+              {colDeals.length === 0 && (
+                <p className="text-[11px] italic font-sans text-ink-3 text-center py-6">
+                  No deals
+                </p>
+              )}
+            </div>
+          </section>
+        )
+      })}
+    </div>
   )
 }
+
+// ── Card Wrapper (draggable) ─────────────────────────────────────
+
+function DealCardWrapper({
+  deal,
+  draggingId,
+  onDragStart,
+  onDragEnd,
+  onClick,
+  onContextMenu,
+  indent,
+}: {
+  deal: LemonDeal
+  draggingId: string | null
+  onDragStart: (id: string) => void
+  onDragEnd: () => void
+  onClick: (deal: LemonDeal, e?: React.MouseEvent) => void
+  onContextMenu: (deal: LemonDeal, e: React.MouseEvent) => void
+  indent?: boolean
+}) {
+  const isDragging = draggingId === deal.id
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', deal.id)
+        onDragStart(deal.id)
+      }}
+      onDragEnd={onDragEnd}
+      onClick={(e) => onClick(deal, e)}
+      onContextMenu={(e) => { e.preventDefault(); onContextMenu(deal, e) }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick(deal)
+        }
+      }}
+      className={[
+        'group relative cursor-grab active:cursor-grabbing rounded-lg border bg-bg px-3 py-2.5 transition-all overflow-hidden',
+        'border-line hover:border-line hover:bg-sunken',
+        isDragging ? 'opacity-30 scale-[0.98]' : 'opacity-100',
+        indent ? 'ml-3' : '',
+      ].join(' ')}
+      style={isDragging ? undefined : { boxShadow: '0 1px 0 rgba(0,0,0,0.04)' }}
+    >
+      <DealCard deal={deal} />
+    </div>
+  )
+}
+
+// ── DealCard (fixed overflow) ────────────────────────────────────
 
 function DealCard({ deal }: { deal: LemonDeal }) {
   return (
     <>
       <div className="flex items-start justify-between gap-2">
-        <h4 className="text-[13px] font-sans font-semibold leading-tight text-ink">
+        <h4 className="text-[13px] font-sans font-semibold leading-tight text-ink line-clamp-2">
           {deal.name}
         </h4>
         {deal.value && (
-          <span className="text-[10px] font-mono whitespace-nowrap flex-shrink-0 text-data-teal tabular-nums">
+          <span
+            className="text-[10px] font-mono truncate max-w-[120px] flex-shrink-0 text-data-teal tabular-nums"
+            title={deal.value}
+          >
             {deal.value}
           </span>
         )}
       </div>
       {deal.counterparty && (
-        <p className="text-[11px] font-sans mt-1 text-ink-3">{deal.counterparty}</p>
+        <p className="text-[11px] font-sans mt-1 text-ink-3 truncate">{deal.counterparty}</p>
       )}
       <div className="flex items-center gap-1.5 mt-1.5">
         {deal.owner && (
-          <span className="inline-block text-[10px] font-sans px-1.5 py-0.5 rounded bg-sunken text-ink-3">
+          <span className="inline-block text-[10px] font-sans px-1.5 py-0.5 rounded bg-sunken text-ink-3 truncate max-w-[80px]">
             {deal.owner}
           </span>
         )}
         {deal.project && (
-          <span className="inline-block text-[10px] font-sans px-1.5 py-0.5 rounded bg-sunken text-ink-3">
+          <span className="inline-block text-[10px] font-sans px-1.5 py-0.5 rounded bg-sunken text-ink-3 truncate max-w-[80px]">
             {deal.project}
           </span>
         )}
@@ -379,6 +600,219 @@ function DealCard({ deal }: { deal: LemonDeal }) {
     </>
   )
 }
+
+// ── Deal Popover ─────────────────────────────────────────────────
+
+function DealPopover({
+  deal,
+  anchor,
+  onClose,
+  onUpdate,
+  onUpdateStatus,
+  onDelete,
+}: {
+  deal: LemonDeal
+  anchor: { x: number; y: number }
+  onClose: () => void
+  onUpdate: (patch: Partial<LemonDeal>) => Promise<void>
+  onUpdateStatus: (status: DealStatus) => Promise<void>
+  onDelete: () => Promise<void>
+}) {
+  const [editingNextAction, setEditingNextAction] = useState(deal.next_action ?? '')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [noteDraft, setNoteDraft] = useState('')
+  const [pushed, setPushed] = useState(false)
+
+  const createTask = useTaskStore((s) => s.create)
+  const user = useAuthStore((s) => s.user)
+
+  const noteLines = (deal.notes ?? '').split('\n').map((l) => l.trim()).filter(Boolean)
+
+  const addNote = () => {
+    const text = noteDraft.trim()
+    if (!text) return
+    onUpdate({ notes: appendDealNote(deal.notes, text) })
+    setNoteDraft('')
+  }
+
+  const pushToTasks = () => {
+    if (!user) return
+    createTask(user.uid, {
+      title: deal.next_action?.trim() || deal.name,
+      bucket: 'next',
+      source: 'manual',
+      notes: `From deal: ${deal.name}`,
+    })
+    setPushed(true)
+    setTimeout(() => setPushed(false), 2500)
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      {/* Popover */}
+      <div
+        className="fixed z-50 bg-surface border border-line rounded-xl shadow-2xl w-[340px] max-h-[70vh] overflow-y-auto"
+        style={{ top: anchor.y, left: anchor.x }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-4 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-[14px] font-sans font-semibold text-ink leading-tight">{deal.name}</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-ink-3 hover:text-ink text-sm flex-shrink-0"
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
+
+          {deal.value && (
+            <div className="text-[12px] font-mono text-data-teal">{deal.value}</div>
+          )}
+
+          <div className="space-y-2">
+            <PopoverRow label="Counterparty" value={deal.counterparty ?? '—'} />
+            <PopoverRow label="Owner" value={deal.owner ?? '—'} />
+            <PopoverRow label="Project" value={deal.project ?? '—'} />
+          </div>
+
+          {/* Next action — editable */}
+          <div>
+            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
+              Next action
+            </span>
+            <textarea
+              value={editingNextAction}
+              onChange={(e) => setEditingNextAction(e.target.value)}
+              onBlur={() => {
+                if (editingNextAction !== (deal.next_action ?? '')) {
+                  onUpdate({ next_action: editingNextAction })
+                }
+              }}
+              rows={2}
+              className="form-input w-full"
+              placeholder="What needs to happen next?"
+            />
+          </div>
+
+          {/* Notes / Activity log */}
+          <div>
+            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
+              Notes & Activity
+            </span>
+            {noteLines.length > 0 ? (
+              <div className="max-h-[120px] overflow-y-auto space-y-1 mb-2">
+                {noteLines.map((line, i) => (
+                  <p key={i} className="text-[11px] font-sans text-ink-3">{line}</p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] font-sans text-ink-3 italic mb-2">No notes yet</p>
+            )}
+            <div className="flex gap-1.5">
+              <input
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') addNote() }}
+                placeholder="Add a note…"
+                className="form-input flex-1"
+              />
+              <button
+                type="button"
+                onClick={addNote}
+                disabled={!noteDraft.trim()}
+                className="text-[10px] font-sans font-semibold uppercase tracking-wider text-accent hover:text-accent/80 px-2 disabled:opacity-30"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          {/* Push to Tasks */}
+          {deal.next_action && (
+            <button
+              type="button"
+              onClick={pushToTasks}
+              disabled={pushed}
+              className="w-full text-[11px] font-sans font-semibold uppercase tracking-wider text-center py-1.5 rounded-md border border-line hover:border-accent text-ink-2 hover:text-ink transition-colors disabled:opacity-50"
+            >
+              {pushed ? '✓ Pushed to Tasks' : '→ Push Next Action to Tasks'}
+            </button>
+          )}
+
+          {/* Quick status move */}
+          <div>
+            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1.5">
+              Move to
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {COLUMNS.map((col) => (
+                <button
+                  key={col.key}
+                  type="button"
+                  disabled={col.key === deal.status}
+                  onClick={() => onUpdateStatus(col.key)}
+                  className={[
+                    'text-[10px] font-sans px-2.5 py-1 rounded-full border transition-colors',
+                    col.key === deal.status
+                      ? 'bg-accent/15 text-accent border-accent/30 font-semibold'
+                      : 'text-ink-3 border-line hover:border-accent hover:text-ink',
+                  ].join(' ')}
+                >
+                  {col.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Delete */}
+          <div className="pt-2 border-t border-line flex items-center justify-between">
+            {confirmDelete ? (
+              <>
+                <span className="text-[11px] font-sans text-data-coral">Delete this deal?</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="text-[11px] font-sans text-ink-3 hover:text-ink"
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="text-[11px] font-sans font-semibold text-data-coral hover:brightness-110"
+                    onClick={onDelete}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="text-[11px] font-sans text-ink-3 hover:text-data-coral transition-colors"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Delete deal
+                </button>
+                <button type="button" onClick={onClose} className="text-[11px] font-sans text-ink-3 hover:text-ink">
+                  Done
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
 
 function PipelineBar({
   counts,
@@ -410,181 +844,27 @@ function PipelineBar({
   )
 }
 
-interface DealDetailProps {
-  deal: LemonDeal
-  onClose: () => void
-  onUpdate: (patch: Partial<LemonDeal>) => Promise<void>
-  onDelete: () => Promise<void>
-}
-
-function DealDetail({ deal, onClose, onUpdate, onDelete }: DealDetailProps) {
-  const [editingNextAction, setEditingNextAction] = useState(deal.next_action ?? '')
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [noteDraft, setNoteDraft] = useState('')
-  const [pushed, setPushed] = useState(false)
-
-  const createTask = useTaskStore((s) => s.create)
-  const user = useAuthStore((s) => s.user)
-
-  const noteLines = (deal.notes ?? '').split('\n').map((l) => l.trim()).filter(Boolean)
-
-  const addNote = () => {
-    const text = noteDraft.trim()
-    if (!text) return
-    onUpdate({ notes: appendDealNote(deal.notes, text) })
-    setNoteDraft('')
-  }
-
-  const pushToTasks = () => {
-    if (!user) return
-    createTask(user.uid, {
-      title: deal.next_action?.trim() || deal.name,
-      bucket: 'next',
-      source: 'manual',
-      notes: `From deal: ${deal.name}`,
-    })
-    setPushed(true)
-    setTimeout(() => setPushed(false), 2500)
-  }
-
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string
+  required?: boolean
+  children: React.ReactNode
+}) {
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Deal — ${deal.name}`}
-      className="modal-backdrop"
-      onClick={onClose}
-    >
-      <div
-        className="modal-content max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <div className="min-w-0">
-            <h3 className="modal-title truncate">{deal.name}</h3>
-            <p className="text-[11px] font-sans text-ink-3">
-              {COLUMNS.find((c) => c.key === deal.status)?.label ?? 'Active'}
-            </p>
-          </div>
-          <button type="button" onClick={onClose} className="modal-close" aria-label="Close">
-            ×
-          </button>
-        </div>
-        <div className="px-5 py-4 space-y-3">
-          <Row label="Counterparty" value={deal.counterparty ?? '—'} />
-          <Row label="Owner" value={deal.owner ?? '—'} />
-          <Row label="Value" value={deal.value ?? '—'} />
-          <Row label="Project" value={deal.project ?? '—'} />
-          <div>
-            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
-              Next action
-            </span>
-            <textarea
-              value={editingNextAction}
-              onChange={(e) => setEditingNextAction(e.target.value)}
-              onBlur={() => {
-                if (editingNextAction !== (deal.next_action ?? '')) {
-                  onUpdate({ next_action: editingNextAction })
-                }
-              }}
-              rows={2}
-              className="form-input w-full"
-              placeholder="What needs to happen next?"
-            />
-          </div>
-
-          {/* Notes / activity log — add and review timestamped entries (touch-friendly) */}
-          <div>
-            <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
-              Notes &amp; activity
-            </span>
-            {noteLines.length > 0 ? (
-              <div className="max-h-40 overflow-y-auto space-y-1 mb-2 pr-1">
-                {noteLines.slice().reverse().map((line, i) => (
-                  <p key={i} className="text-[12px] font-sans text-ink-2 leading-snug">
-                    {line}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[11px] font-sans italic text-ink-3 mb-2">No notes yet.</p>
-            )}
-            <div className="flex items-end gap-2">
-              <textarea
-                value={noteDraft}
-                onChange={(e) => setNoteDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault()
-                    addNote()
-                  }
-                }}
-                rows={2}
-                className="form-input w-full"
-                placeholder="Add a note…"
-              />
-              <button
-                type="button"
-                onClick={addNote}
-                disabled={!noteDraft.trim()}
-                className="text-[11px] font-sans font-semibold uppercase tracking-wider text-accent disabled:opacity-40 whitespace-nowrap px-2 py-2"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="modal-actions">
-          {confirmDelete ? (
-            <>
-              <span className="text-[11px] font-sans text-data-coral">Delete this deal?</span>
-              <div className="modal-actions-right">
-                <button
-                  type="button"
-                  className="text-[11px] font-sans text-ink-3 hover:text-ink"
-                  onClick={() => setConfirmDelete(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-error text-white px-3 py-1.5 rounded-md hover:brightness-110"
-                  onClick={onDelete}
-                >
-                  Delete
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="text-[11px] font-sans text-ink-3 hover:text-data-coral transition-colors"
-                onClick={() => setConfirmDelete(true)}
-              >
-                Delete deal
-              </button>
-              <div className="modal-actions-right">
-                <button
-                  type="button"
-                  onClick={pushToTasks}
-                  className="text-[11px] font-sans font-semibold uppercase tracking-wider text-accent hover:text-accent-press transition-colors whitespace-nowrap"
-                >
-                  {pushed ? '✓ Added to Tasks' : '↗ Push to Tasks'}
-                </button>
-                <button type="button" onClick={onClose} className="btn-secondary">
-                  Done
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+    <label className="block">
+      <span className="block text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 mb-1">
+        {label}
+        {required && <span className="ml-1 text-data-coral">*</span>}
+      </span>
+      {children}
+    </label>
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function PopoverRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-ink-3 whitespace-nowrap">

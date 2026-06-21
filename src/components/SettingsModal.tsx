@@ -1,8 +1,14 @@
 import React, { useState } from 'react'
-import { X, Flame, Feather } from 'lucide-react'
+import { X, Flame, Feather, RefreshCw } from 'lucide-react'
 import { TONE_TIERS, trainVoiceProfile, saveVoiceProfile } from '../lib/voiceProfile'
 import VoiceDiff from './VoiceDiff'
+import { ScanInboxButton } from './ScanInboxButton'
+import { SyncingPill } from './SyncingPill'
 import { useMissionStore } from '@/stores/useMissionStore'
+import { useInboxStore } from '@/stores/useInboxStore'
+import { useCalendarStore } from '@/stores/useCalendarStore'
+import { useBrainStore } from '@/stores/useBrainStore'
+import { useBriefStore } from '@/stores/useBriefStore'
 import type { VoiceProfile, ToneTier } from '../lib/voiceProfile'
 
 interface Props {
@@ -17,10 +23,26 @@ export default function SettingsModal({ open, onClose, voiceProfile, onProfileUp
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [proposed, setProposed] = useState<VoiceProfile | null>(null)
   const [emailsAnalyzed, setEmailsAnalyzed] = useState(0)
+  const [isSyncing, setIsSyncing] = useState(false)
   const advisorTone = useMissionStore((s) => s.advisorTone)
   const setAdvisorTone = useMissionStore((s) => s.setAdvisorTone)
 
+  const fetchInbox = useInboxStore((s) => s.fetch)
+  const fetchCalendar = useCalendarStore((s) => s.fetch)
+  const fetchBrain = useBrainStore((s) => s.fetchStatus)
+  const refreshBrief = useBriefStore((s) => s.refresh)
+
   if (!open) return null
+
+  async function syncAll() {
+    setIsSyncing(true)
+    try {
+      await Promise.all([fetchInbox(), fetchCalendar(), fetchBrain()])
+      refreshBrief(true)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   async function pullFromGmail() {
     setAnalyzing(true)
@@ -50,6 +72,34 @@ export default function SettingsModal({ open, onClose, voiceProfile, onProfileUp
         <div className="modal-header">
           <span className="modal-title">Settings</span>
           <button onClick={onClose} className="modal-close" aria-label="Close"><X size={16} /></button>
+        </div>
+
+        {/* Data & Sync Section */}
+        <div className="settings-section">
+          <div className="settings-section-header">
+            <div>
+              <h3 className="settings-section-title">Data & Sync</h3>
+              <p className="settings-section-desc">
+                Refresh your data or scan inbox for new deals, projects, and delegations.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+            <ScanInboxButton />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                onClick={syncAll}
+                disabled={isSyncing}
+                className="settings-train-btn"
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+                {isSyncing ? 'Syncing...' : 'Sync All Data'}
+              </button>
+              <SyncingPill />
+            </div>
+          </div>
         </div>
 
         {/* Advisor Tone Section */}

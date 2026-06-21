@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useDealsStore } from '@/stores/lemon/useDealsStore'
 import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
@@ -11,17 +11,45 @@ import {
 } from '@/lib/inbox/slipDetection'
 import { useViewStore } from '@/stores/useViewStore'
 import { EmptyState } from '@/components/workspace/EmptyState'
-import { TasksEisenhower } from '@/components/workspace/TasksEisenhower'
-import type {
-  InboxThread,
-  InboxSlip,
-  LemonDelegation,
-  LemonDeal,
-} from '@shared/types'
+import type { InboxThread, InboxSlip, LemonDelegation, LemonDeal } from '@shared/types'
 
 interface InboxIntelViewProps {
   onReply?: (thread: InboxThread) => void
 }
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+function formatAge(dateStr: string | undefined): string {
+  if (!dateStr) return ''
+  const ms = Date.now() - new Date(dateStr).getTime()
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  if (hours < 1) return 'just now'
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return days === 1 ? '1 day ago' : `${days} days ago`
+}
+
+function daysSince(dateStr: string | undefined): number {
+  if (!dateStr) return 999
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
+}
+
+function extractName(from: string): string {
+  const match = from.match(/^([^<]+)/)
+  return match ? match[1].trim() : from
+}
+
+// ── Types ────────────────────────────────────────────────────────
+
+interface NarrativeItem {
+  id: string
+  priority: 'urgent' | 'attention' | 'info'
+  message: string
+  context?: string
+  actions: Array<{ label: string; onClick: () => void }>
+}
+
+// ── Component ────────────────────────────────────────────────────
 
 export function InboxIntelView({ onReply }: InboxIntelViewProps) {
   const fetchInbox = useInboxStore((s) => s.fetch)
@@ -37,6 +65,8 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
   const openDrawer = useUIStore((s) => s.openDrawer)
   const setActiveContext = useUIStore((s) => s.setActiveContext)
   const setView = useViewStore((s) => s.setView)
+
+  const [showInfo, setShowInfo] = useState(false)
 
   useEffect(() => {
     if (threads.length === 0 && !inboxLoading) fetchInbox()
@@ -56,14 +86,113 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
   const overdue = useMemo(() => detectOverdueDelegations(delegations), [delegations])
   const stallingDeals = useMemo(() => detectStallingDeals(deals), [deals])
 
-  const linked = slipping.filter(
-    (s) => s.reason === 'tied_to_active_deal' || s.reason === 'tied_to_active_project',
-  )
-  const awaiting = slipping.filter((s) => s.reason === 'awaiting_reply')
+  // ── Build narrative ──────────────────────────────────────────────
 
-  const totalAtRisk = awaiting.length + overdue.length + stallingDeals.length
+  const narrative = useMemo(() => {
+    const items: NarrativeItem[] = []
 
-  // Weekly pulse — uses `updated_at` as a proxy for stage movement
+    // Helper: resolve deal name from ID
+    const getDealName = (id?: string) => {
+      if (!id) return undefined
+      return deals.find((d) => d.id === id)?.name
+    }
+    // Helper: resolve project title from ID
+    const getProjectTitle = (id?: string) => {
+      if (!id) return undefined
+      return projects.find((p) => p.id === id)?.title
+    }
+
+    // Urgent: threads awaiting reply > 24h
+    const awaiting = slipping.filter((s) => s.reason === 'awaiting_reply')
+    for (const slip of awaiting) {
+      const thread = threads.find((t) => t.id === slip.threadId)
+      if (!thread) continue
+      const age = daysSince(thread.receivedAt)
+      const name = extractName(thread.from)
+      const dealName = getDealName(slip.linkedDealId)
+      const projectTitle = getProjectTitle(slip.linkedProjectId)
+      items.push({
+        id: `thread-${thread.id}`,
+        priority: age > 1 ? 'urgent' : 'attention',
+        message: `${name} hasn't replied in ${age} day${age !== 1 ? 's' : ''} — "${thread.subject}".`,
+        context: dealName ? `Tied to ${dealName} deal` : projectTitle ? `Tied to ${projectTitle}` : undefined,
+        actions: [
+          ...(onReply ? [{ label: 'Reply', onClick: () => onReply(thread) }] : []),
+          {
+            label: 'Open in Billy',
+            onClick: () => {
+              setActiveContext({ kind: 'thread', id: thread.id })
+              openDrawer()
+            },
+          },
+        ],
+      })
+    }
+
+    // Urgent: overdue delegations
+    for (const d of overdue) {
+      const age = daysSince(d.expected_by)
+      items.push({
+        id: `deleg-${d.id}`,
+        priority: 'urgent',
+        message: `The delegation to ${d.person || 'someone'} for "${d.task}" was due ${age} day${age !== 1 ? 's' : ''} ago. No update yet.`,
+        actions: [
+          {
+            label: 'Follow up',
+            onClick: () => {
+              setActiveContext({ kind: 'delegation' as any, id: d.id })
+              openDrawer()
+            },
+          },
+          {
+            label: 'Mark done',
+            onClick: () => setDelegationStatus(d.id, 'completed'),
+          },
+        ],
+      })
+    }
+
+    // Attention: stalling deals
+    for (const deal of stallingDeals) {
+      const age = daysSince(deal.updated_at)
+      const reason = !deal.next_action
+        ? 'has no next action'
+        : `hasn't moved in ${age} days`
+      items.push({
+        id: `deal-${deal.id}`,
+        priority: 'attention',
+        message: `The ${deal.name} deal ${reason}.${deal.counterparty ? ` (${deal.counterparty})` : ''}`,
+        actions: [
+          { label: 'Add next action', onClick: () => setView('deals') },
+          { label: 'Open deal', onClick: () => setView('deals') },
+        ],
+      })
+    }
+
+    // Info: linked threads (tied to active deals/projects but not urgent)
+    const linked = slipping.filter(
+      (s) => s.reason === 'tied_to_active_deal' || s.reason === 'tied_to_active_project',
+    )
+    if (linked.length > 0) {
+      items.push({
+        id: 'info-linked',
+        priority: 'info',
+        message: `${linked.length} thread${linked.length !== 1 ? 's are' : ' is'} linked to active projects but ${linked.length !== 1 ? "don't" : "doesn't"} need urgent action.`,
+        actions: [
+          { label: showInfo ? 'Hide details' : 'Show details', onClick: () => setShowInfo(!showInfo) },
+        ],
+      })
+    }
+
+    // Sort: urgent first, then attention, then info
+    const order = { urgent: 0, attention: 1, info: 2 }
+    items.sort((a, b) => order[a.priority] - order[b.priority])
+
+    return { items, linked, getDealName, getProjectTitle }
+  }, [slipping, overdue, stallingDeals, threads, deals, projects, onReply, setActiveContext, openDrawer, setDelegationStatus, setView, showInfo])
+
+  // ── Weekly pulse ─────────────────────────────────────────────────
+
   const weekAgo = useMemo(() => Date.now() - 7 * 24 * 60 * 60 * 1000, [])
   const dealsClosedThisWeek = deals.filter((d) => {
     if (d.status !== 'closed') return false
@@ -80,11 +209,15 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
     return Number.isFinite(t) && t >= weekAgo
   }).length
 
-  function openInBillyDrawer(thread: InboxThread | undefined) {
-    if (!thread) return
-    setActiveContext({ kind: 'thread', id: thread.id })
-    openDrawer()
+  // ── Render ───────────────────────────────────────────────────────
+
+  const priorityDot: Record<NarrativeItem['priority'], string> = {
+    urgent: 'bg-data-coral',
+    attention: 'bg-amber-400',
+    info: 'bg-data-teal',
   }
+
+  const totalUrgent = narrative.items.filter((i) => i.priority !== 'info').length
 
   return (
     <section className="space-y-5 animate-in">
@@ -93,391 +226,95 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
           <h2 className="font-display text-2xl font-semibold text-ink leading-tight">
             Inbox Intelligence
           </h2>
-          <p className="text-xs font-sans text-ink-3 mt-1 max-w-2xl leading-relaxed">
-            What you're missing right now. Heuristic-driven slip detection across
-            inbox, delegations, and deals. AI summaries land in P2 — for now, ask
-            Billy directly using the chat drawer.
+          <p className="text-sm font-sans text-ink-2 mt-2 leading-relaxed max-w-2xl">
+            {totalUrgent > 0
+              ? `You have ${totalUrgent} thing${totalUrgent !== 1 ? 's' : ''} that need${totalUrgent === 1 ? 's' : ''} attention today.`
+              : 'Everything looks good — nothing urgent right now.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {totalAtRisk > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-medium px-2.5 py-1 rounded-full bg-data-coral/15 text-data-coral">
-              <span className="w-1.5 h-1.5 rounded-full bg-data-coral" aria-hidden />
-              {totalAtRisk} at risk
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveContext({ kind: null, id: null })
-              openDrawer()
-            }}
-            className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-3.5 py-1.5 rounded-md hover:brightness-110 transition-all"
-          >
-            Ask AI: what am I missing?
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveContext({ kind: null, id: null })
+            openDrawer()
+          }}
+          className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-3.5 py-1.5 rounded-md hover:brightness-110 transition-all"
+        >
+          Ask Billy: what am I missing?
+        </button>
       </header>
 
-      {/* Weekly pulse — progress signals to balance "what's slipping" */}
-      <div className="grid grid-cols-3 gap-3">
-        <PulseStat
-          label="Deals closed"
-          value={dealsClosedThisWeek}
-          accent="var(--data-teal)"
-          hint="Last 7 days"
+      {/* Narrative items */}
+      {narrative.items.length === 0 ? (
+        <EmptyState
+          title="All clear"
+          body="No slipping threads, overdue delegations, or stalling deals."
         />
-        <PulseStat
-          label="Projects moved"
-          value={projectsAdvancedThisWeek}
-          accent="var(--data-blue)"
-          hint="Stage changes"
-        />
-        <PulseStat
-          label="Delegations done"
-          value={delegationsCompletedThisWeek}
-          accent="var(--accent)"
-          hint="By your team"
-        />
-      </div>
+      ) : (
+        <div className="bg-surface border border-line rounded-xl divide-y divide-line">
+          {narrative.items.map((item) => (
+            <div key={item.id} className="px-5 py-4">
+              <div className="flex items-start gap-3">
+                <span
+                  className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${priorityDot[item.priority]}`}
+                  aria-hidden
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-sans text-ink leading-relaxed">
+                    {item.message}
+                  </p>
+                  {item.context && (
+                    <p className="text-xs font-sans text-ink-3 mt-1">{item.context}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    {item.actions.map((action) => (
+                      <button
+                        key={action.label}
+                        type="button"
+                        onClick={action.onClick}
+                        className="text-[11px] font-sans font-semibold uppercase tracking-wider text-accent hover:text-accent/80 transition-colors"
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-      {/* Eisenhower task grid for right-now decisions */}
-      <TasksEisenhower />
+              {/* Expand linked threads detail */}
+              {item.id === 'info-linked' && showInfo && (
+                <div className="mt-3 ml-5 space-y-2">
+                  {narrative.linked.map((slip) => {
+                    const thread = threads.find((t) => t.id === slip.threadId)
+                    if (!thread) return null
+                    const dealName = narrative.getDealName(slip.linkedDealId)
+                    const projectTitle = narrative.getProjectTitle(slip.linkedProjectId)
+                    return (
+                      <div key={slip.threadId} className="text-xs font-sans text-ink-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-data-teal flex-shrink-0" aria-hidden />
+                        <span className="truncate">
+                          {extractName(thread.from)} — "{thread.subject}"
+                          {dealName && ` · ${dealName}`}
+                          {projectTitle && ` · ${projectTitle}`}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Lane: Awaiting your reply */}
-      <Lane
-        title="Slipping — awaiting your reply"
-        accent="var(--data-coral)"
-        count={awaiting.length}
-        emptyTitle="Nothing slipping right now"
-        emptyBody="HOT older than 24h or MED older than 72h would surface here."
-      >
-        {awaiting.map((slip) => {
-          const thread = threads.find((t) => t.id === slip.threadId)
-          if (!thread) return null
-          return (
-            <SlipCard
-              key={slip.threadId}
-              slip={slip}
-              thread={thread}
-              actions={
-                <>
-                  <ActionButton onClick={() => onReply?.(thread)}>Reply</ActionButton>
-                  <ActionButton onClick={() => openInBillyDrawer(thread)}>Ask Billy</ActionButton>
-                </>
-              }
-            />
-          )
-        })}
-      </Lane>
-
-      {/* Lane: Tied to deals/projects */}
-      <Lane
-        title="Tied to active deals & projects"
-        accent="var(--accent)"
-        count={linked.length}
-        emptyTitle="No threads matched to active ops"
-        emptyBody="Threads whose subject mentions an active deal counterparty or project title appear here."
-      >
-        {linked.map((slip) => {
-          const thread = threads.find((t) => t.id === slip.threadId)
-          if (!thread) return null
-          const deal = slip.linkedDealId
-            ? deals.find((d) => d.id === slip.linkedDealId)
-            : undefined
-          const project = slip.linkedProjectId
-            ? projects.find((p) => p.id === slip.linkedProjectId)
-            : undefined
-          return (
-            <SlipCard
-              key={slip.threadId}
-              slip={slip}
-              thread={thread}
-              footer={
-                deal ? (
-                  <button
-                    type="button"
-                    onClick={() => setView('deals')}
-                    className="text-[11px] font-sans font-medium uppercase tracking-wider text-accent hover:opacity-80"
-                  >
-                    Open deal · {deal.name}
-                  </button>
-                ) : project ? (
-                  <button
-                    type="button"
-                    onClick={() => setView('projects')}
-                    className="text-[11px] font-sans font-medium uppercase tracking-wider text-accent hover:opacity-80"
-                  >
-                    Open project · {project.title}
-                  </button>
-                ) : null
-              }
-              actions={
-                <>
-                  <ActionButton onClick={() => onReply?.(thread)}>Reply</ActionButton>
-                  <ActionButton onClick={() => openInBillyDrawer(thread)}>Ask Billy</ActionButton>
-                </>
-              }
-            />
-          )
-        })}
-      </Lane>
-
-      {/* Lane: Blocked on others */}
-      <Lane
-        title="Blocked on others — overdue follow-ups"
-        accent="var(--data-blue)"
-        count={overdue.length}
-        emptyTitle="Nobody is owing you anything overdue"
-        emptyBody="Pending delegations whose `expected_by` has passed land here."
-      >
-        {overdue.map((d) => (
-          <DelegationRow
-            key={d.id}
-            delegation={d}
-            onComplete={() => setDelegationStatus(d.id, 'completed')}
-          />
-        ))}
-      </Lane>
-
-      {/* Lane: Stalling deals */}
-      <Lane
-        title="Stalling deals — no next action or stale > 7d"
-        accent="var(--error)"
-        count={stallingDeals.length}
-        emptyTitle="Pipeline is moving"
-        emptyBody="Deals with no `next_action` or untouched for over a week appear here."
-      >
-        {stallingDeals.map((d) => (
-          <DealStalling key={d.id} deal={d} onOpen={() => setView('deals')} />
-        ))}
-      </Lane>
+      {/* Weekly pulse — one line */}
+      {(dealsClosedThisWeek > 0 || projectsAdvancedThisWeek > 0 || delegationsCompletedThisWeek > 0) && (
+        <p className="text-xs font-sans text-ink-3 pt-2 border-t border-line">
+          This week: {dealsClosedThisWeek} deal{dealsClosedThisWeek !== 1 ? 's' : ''} closed
+          {' · '}{projectsAdvancedThisWeek} project{projectsAdvancedThisWeek !== 1 ? 's' : ''} advanced
+          {' · '}{delegationsCompletedThisWeek} delegation{delegationsCompletedThisWeek !== 1 ? 's' : ''} completed.
+        </p>
+      )}
     </section>
   )
-}
-
-function Lane({
-  title,
-  accent,
-  count,
-  emptyTitle,
-  emptyBody,
-  children,
-}: {
-  title: string
-  accent: string
-  count: number
-  emptyTitle: string
-  emptyBody: string
-  children: React.ReactNode
-}) {
-  const isEmpty = count === 0
-  return (
-    <article aria-label={title}>
-      <header className="flex items-center gap-2 mb-2">
-        <span
-          aria-hidden
-          className="inline-block w-2 h-2 rounded-full"
-          style={{ background: accent }}
-        />
-        <h3 className="text-[11px] font-sans font-bold uppercase tracking-[0.18em] text-ink-2">
-          {title}
-        </h3>
-        <span className="text-[11px] font-sans tabular-nums text-ink-3 ml-auto">
-          {count}
-        </span>
-      </header>
-      {isEmpty ? (
-        <div className="bg-surface border border-line rounded-xl px-4 py-5 text-center">
-          <p className="text-[12px] font-sans italic text-ink-2">{emptyTitle}</p>
-          <p className="text-[11px] font-sans text-ink-3 mt-1 leading-snug max-w-md mx-auto">
-            {emptyBody}
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-2">{children}</ul>
-      )}
-    </article>
-  )
-}
-
-function SlipCard({
-  slip,
-  thread,
-  actions,
-  footer,
-}: {
-  slip: InboxSlip
-  thread: InboxThread
-  actions?: React.ReactNode
-  footer?: React.ReactNode
-}) {
-  const ageLabel = formatAge(slip.ageHours)
-  const priorityClass =
-    slip.priority === 'HOT'
-      ? 'bg-data-coral/15 text-data-coral'
-      : slip.priority === 'MED'
-        ? 'bg-accent/15 text-accent'
-        : 'bg-sunken text-ink-3'
-
-  return (
-    <li className="bg-surface border border-line rounded-xl px-4 py-3 group hover:border-line transition-colors">
-      <div className="flex items-start gap-3">
-        <span
-          className={`inline-flex items-center text-[11px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${priorityClass} flex-shrink-0`}
-        >
-          {slip.priority}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-sans font-semibold text-ink truncate">
-            {thread.subject}
-          </p>
-          <p className="text-[11px] font-sans text-ink-3 line-clamp-2 mt-0.5 leading-snug">
-            {thread.snippet}
-          </p>
-          <div className="flex items-center gap-2 mt-1.5 text-[11px] font-sans text-ink-3 flex-wrap">
-            <span>{thread.from}</span>
-            <span>·</span>
-            <span className="font-mono">{ageLabel}</span>
-          </div>
-          {footer && <div className="mt-2">{footer}</div>}
-        </div>
-        {actions && (
-          <div className="flex items-center gap-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
-            {actions}
-          </div>
-        )}
-      </div>
-    </li>
-  )
-}
-
-function DelegationRow({
-  delegation,
-  onComplete,
-}: {
-  delegation: LemonDelegation
-  onComplete: () => void
-}) {
-  const expected = delegation.expected_by ? new Date(delegation.expected_by) : null
-  const overdueDays = expected
-    ? Math.floor((Date.now() - expected.getTime()) / (1000 * 60 * 60 * 24))
-    : null
-
-  return (
-    <li className="bg-surface border border-line rounded-xl px-4 py-3 flex items-start gap-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-sans font-semibold text-ink leading-snug">
-          {delegation.task}
-        </p>
-        <div className="flex items-center gap-2 mt-1 text-[11px] font-sans text-ink-3 flex-wrap">
-          <span className="text-data-blue font-medium">{delegation.person}</span>
-          {expected && (
-            <>
-              <span>·</span>
-              <span className="font-mono">
-                expected {expected.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
-            </>
-          )}
-          {overdueDays !== null && overdueDays > 0 && (
-            <span className="text-data-coral font-medium">{overdueDays}d overdue</span>
-          )}
-        </div>
-        {delegation.context && (
-          <p className="text-[11px] font-sans text-ink-3 mt-1 line-clamp-2 leading-snug">
-            {delegation.context}
-          </p>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={onComplete}
-        className="text-[11px] font-sans font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-line hover:border-data-teal/40 hover:text-data-teal text-ink-2 transition-colors flex-shrink-0"
-      >
-        Mark done
-      </button>
-    </li>
-  )
-}
-
-function DealStalling({ deal, onOpen }: { deal: LemonDeal; onOpen: () => void }) {
-  return (
-    <li className="bg-surface border border-line rounded-xl px-4 py-3 flex items-start gap-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-sans font-semibold text-ink leading-snug">
-          {deal.name}
-        </p>
-        <div className="flex items-center gap-2 mt-1 text-[11px] font-sans text-ink-3">
-          {deal.counterparty && <span>{deal.counterparty}</span>}
-          {!deal.next_action && (
-            <span className="text-data-coral font-medium">No next action set</span>
-          )}
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="text-[11px] font-sans font-medium uppercase tracking-wider px-2.5 py-1 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors flex-shrink-0"
-      >
-        Open
-      </button>
-    </li>
-  )
-}
-
-function ActionButton({
-  onClick,
-  children,
-}: {
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="text-[11px] font-sans font-medium uppercase tracking-wider px-2 py-1 rounded-md border border-line hover:border-line text-ink-2 hover:text-ink transition-colors"
-    >
-      {children}
-    </button>
-  )
-}
-
-function PulseStat({
-  label,
-  value,
-  accent,
-  hint,
-}: {
-  label: string
-  value: number
-  accent: string
-  hint: string
-}) {
-  return (
-    <div className="bg-surface border border-line rounded-xl px-4 py-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-ink-3">
-          {label}
-        </span>
-        <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
-      </div>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className="font-display text-3xl font-semibold text-ink leading-none tabular-nums">
-          {value}
-        </span>
-        <span className="text-[11px] font-sans italic text-ink-3">{hint}</span>
-      </div>
-    </div>
-  )
-}
-
-function formatAge(hours: number): string {
-  if (hours < 1) return 'just now'
-  if (hours < 24) return `${Math.round(hours)}h ago`
-  const days = Math.round(hours / 24)
-  if (days < 14) return `${days}d ago`
-  const weeks = Math.round(days / 7)
-  return `${weeks}w ago`
 }
