@@ -32,6 +32,7 @@ import { slateRouter } from './routes/slate'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
 import { initEngine, stopEngine } from './lib/engine'
+import { initSlateWatcher } from './lib/slate/watcher'
 import { requireAuth } from './middleware/requireAuth'
 
 export const app = express()
@@ -253,6 +254,10 @@ if (require.main === module) {
     // watchlist) + boot catch-up. Replaces the old 6:30 precompute cron —
     // precompute now runs inside morning_assembly at 5:30.
     initEngine()
+
+    // DEVELOPMENT-HELL: catch-up scan + folder watcher when the
+    // DEVELOPMENT/ folder is reachable from this host (D4 local mode).
+    void initSlateWatcher()
   })
 
   // M-5: Graceful shutdown — Railway sends SIGTERM before killing containers.

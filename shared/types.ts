@@ -580,6 +580,14 @@ export interface SlateDeadline {
   what: string
 }
 
+export interface SlateCurrentDraft {
+  version: number
+  date?: string
+  label?: string
+  ep?: number
+  file: string // path relative to the project folder
+}
+
 export interface SlateProject {
   slug: string // == DEVELOPMENT/ folder name, immutable
   title: string
@@ -597,6 +605,48 @@ export interface SlateProject {
   staleness_days?: number // per-project override of the stage default
   notes?: string
   last_touched?: string // ISO — every file event updates this; drives staleness
+  current_draft?: SlateCurrentDraft | null // highest version in 04-drafts/
+  unfiled_count?: number // files in this project that need confirmation
   created_at?: string
   updated_at?: string
+}
+
+// ── DEVELOPMENT-HELL: onboarding + scanner ──────────────────────────────
+
+export interface SlateConfig {
+  devFolderPath: string // absolute path to DEVELOPMENT/ on the Mac
+  onboardedAt: string
+  lastScanAt?: string
+}
+
+export type SlateConfirmReason =
+  | 'unfiled' // dropped in _inbox/ or loose in the root — needs filing
+  | 'bad-name' // breaks the naming convention for its folder
+  | 'missing-yaml' // project folder without a project.yaml
+  | 'bad-yaml' // project.yaml unreadable or fails validation
+
+export interface SlateConfirmItem {
+  id: string // stable hash of path — idempotent across rescans
+  path: string // relative to DEVELOPMENT/
+  project?: string // slug when the file belongs to a project folder
+  reason: SlateConfirmReason
+  detail: string
+  seenAt: string
+}
+
+export interface SlateStatusPayload {
+  onboarded: boolean
+  devFolderPath?: string
+  folderAccessible?: boolean // false when the path isn't on this machine (e.g. Railway)
+  watcherActive: boolean
+  projectCount: number
+  confirmCount: number
+  lastScanAt?: string
+}
+
+export interface SlateScanSummary {
+  projects: number
+  confirmItems: number
+  vaultNotesWritten: number
+  scannedAt: string
 }

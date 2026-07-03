@@ -86,7 +86,7 @@ export function Dashboard() {
   const lemonDelegations = useLemonDelegationsStore((s) => s.delegations)
   const fetchToday = useTodayStore((s) => s.fetchToday)
   const fetchProgress = useTodayStore((s) => s.fetchProgress)
-  const fetchSlate = useSlateStore((s) => s.fetch)
+  const fetchSlate = useSlateStore((s) => s.refresh)
 
   // Voice profile state
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile>(DEFAULT_VOICE_PROFILE)
