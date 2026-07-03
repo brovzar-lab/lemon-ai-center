@@ -12,6 +12,7 @@ import { runSlateScan } from '../lib/slate/scanner'
 import { isSlateWatcherActive, startSlateWatcher } from '../lib/slate/watcher'
 import { getIngestStatus, runSlateIngestion, searchSlate, slateIndexSize } from '../lib/slate/ingest'
 import { fireSkillRun, listSkillRuns, listSkills, SkillRunError } from '../lib/slate/skills'
+import { ensureBriefing } from '../lib/slate/briefing'
 import type { SlateStatusPayload } from '@shared/types'
 
 /**
@@ -127,6 +128,52 @@ slateRouter.get('/search', async (req, res) => {
     console.error('[slate] Search failed:', (err as Error).message)
     res.status(500).json({
       error: { code: 'SEARCH_FAILED', message: (err as Error).message, retryable: true },
+    })
+  }
+})
+
+/**
+ * GET /api/slate/briefing
+ * The morning briefing (spec §5). Returns today's cached briefing when
+ * ready; otherwise kicks off background generation and reports
+ * `{ status: 'generating' }` — the UI polls. Never blocks on the brain.
+ */
+slateRouter.get('/briefing', async (_req, res) => {
+  try {
+    if (!(await getSlateConfig())) {
+      res.status(409).json({
+        error: { code: 'NOT_ONBOARDED', message: 'Run the setup wizard first', retryable: false },
+      })
+      return
+    }
+    const result = await ensureBriefing(false)
+    res.json({ data: result })
+  } catch (err) {
+    console.error('[slate] Briefing failed:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'BRIEFING_FAILED', message: 'Could not load the briefing', retryable: true },
+    })
+  }
+})
+
+/**
+ * POST /api/slate/briefing/refresh
+ * Force a fresh briefing for today (regenerates even if one is cached).
+ */
+slateRouter.post('/briefing/refresh', csrfCheck, async (_req, res) => {
+  try {
+    if (!(await getSlateConfig())) {
+      res.status(409).json({
+        error: { code: 'NOT_ONBOARDED', message: 'Run the setup wizard first', retryable: false },
+      })
+      return
+    }
+    const result = await ensureBriefing(true)
+    res.json({ data: result })
+  } catch (err) {
+    console.error('[slate] Briefing refresh failed:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'BRIEFING_FAILED', message: 'Could not refresh the briefing', retryable: true },
     })
   }
 })

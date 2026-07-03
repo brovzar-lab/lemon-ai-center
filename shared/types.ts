@@ -684,3 +684,102 @@ export interface SlateScanSummary {
   vaultNotesWritten: number
   scannedAt: string
 }
+
+// ── DEVELOPMENT-HELL: morning briefing (spec §5) ────────────────────────
+// Five sections, generated fresh on module open and cached for the day.
+// Deterministic sections stand on their own; the brain adds the judgment
+// layer (headline + today's pushes) on top.
+
+export type SlateBriefingStatus = 'generating' | 'ready' | 'failed'
+
+/** What Moved — one change since the previous briefing. */
+export interface SlateBriefingMovement {
+  project: string
+  title: string
+  kind: 'new-project' | 'stage' | 'new-draft' | 'coverage' | 'touched' | 'archived'
+  detail: string
+}
+
+/** Going Stale — one project past (or nearing) its staleness threshold. */
+export interface SlateBriefingStale {
+  project: string
+  title: string
+  stage: SlateStage
+  days: number
+  threshold: number
+  level: 'aging' | 'stale'
+  clock: 'touch' | 'waiting'
+}
+
+/** Waiting On — someone owing something, with days elapsed. */
+export interface SlateBriefingWaiting {
+  project: string
+  title: string
+  who: string
+  what: string
+  since: string
+  days: number
+  isWriter: boolean
+}
+
+/**
+ * Suggested Nudge — a candidate to poke (spec §5). M7 surfaces who/why;
+ * the recipient-language drafting + Gmail draft + copy button are M8.
+ */
+export interface SlateBriefingNudge {
+  project: string
+  title: string
+  recipient: string
+  contact?: string // email — enables the Gmail draft in M8
+  language?: SlateLanguage // nudge drafted in this language (M8)
+  reason: string
+  days: number
+}
+
+/** An approaching deadline — the brain flags these ahead of thresholds. */
+export interface SlateBriefingDeadline {
+  project: string
+  title: string
+  date: string
+  what: string
+  daysUntil: number
+}
+
+/** A long-paused project resurfaced monthly ("still paused on purpose?"). */
+export interface SlateBriefingPaused {
+  project: string
+  title: string
+  days: number
+}
+
+/** Per-project state stored so the next briefing can diff "What Moved". */
+export interface SlateBriefingSnapshotEntry {
+  stage: string
+  draftVersion: number | null
+  lastTouched: string | null
+  status: string
+}
+
+export interface SlateBriefing {
+  date: string // YYYY-MM-DD in America/Mexico_City — the cache key
+  status: SlateBriefingStatus
+  /** brain one-liner: the single most important thing about the slate today */
+  headline?: string
+  whatMoved: SlateBriefingMovement[]
+  goingStale: SlateBriefingStale[]
+  waitingOn: SlateBriefingWaiting[]
+  suggestedNudges: SlateBriefingNudge[]
+  upcomingDeadlines: SlateBriefingDeadline[]
+  pausedCheck: SlateBriefingPaused[]
+  /** brain's 1–3 concrete recommendations */
+  todaysPushes: string[]
+  /** true when there was no prior briefing to diff against */
+  firstRun: boolean
+  comparedTo?: string // date of the briefing "What Moved" diffed against
+  projectCount: number
+  generatedAt?: string
+  model?: string
+  error?: string
+  /** stored for the next diff — server-only, stripped from the API payload */
+  snapshot?: Record<string, SlateBriefingSnapshotEntry>
+}

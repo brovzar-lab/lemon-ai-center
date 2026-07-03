@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/workspace/EmptyState'
 import { SlateBoard } from '@/components/workspace/SlateBoard'
 import { SlateChat } from '@/components/workspace/SlateChat'
 import { SlateSkills } from '@/components/workspace/SlateSkills'
+import { SlateBriefing } from '@/components/workspace/SlateBriefing'
 import type { SlateConfirmItem } from '@shared/types'
 
 /**
@@ -65,6 +66,7 @@ export function DevHellView() {
         <SlateWizard />
       ) : (
         <>
+          {live.length > 0 && <SlateBriefing />}
           {confirm.length > 0 && <ConfirmQueue items={confirm} />}
           {projects.length === 0 ? (
             <EmptyState

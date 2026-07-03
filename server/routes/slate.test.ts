@@ -23,6 +23,7 @@ const {
   mockListSkills,
   mockFireSkillRun,
   mockListSkillRuns,
+  mockEnsureBriefing,
 } = vi.hoisted(() => ({
   mockListSlateProjects: vi.fn(),
   mockListSlateConfirmItems: vi.fn(),
@@ -40,6 +41,7 @@ const {
   mockListSkills: vi.fn(),
   mockFireSkillRun: vi.fn(),
   mockListSkillRuns: vi.fn(),
+  mockEnsureBriefing: vi.fn(),
 }))
 
 vi.mock('../lib/slate', () => ({
@@ -83,6 +85,9 @@ vi.mock('../lib/slate/skills', () => {
     listSkillRuns: mockListSkillRuns,
   }
 })
+vi.mock('../lib/slate/briefing', () => ({
+  ensureBriefing: mockEnsureBriefing,
+}))
 
 import { slateRouter } from './slate'
 
@@ -130,6 +135,7 @@ beforeEach(() => {
   ])
   mockFireSkillRun.mockReset().mockResolvedValue({ runId: 'run-1' })
   mockListSkillRuns.mockReset().mockResolvedValue([])
+  mockEnsureBriefing.mockReset().mockResolvedValue({ status: 'generating' })
 })
 
 describe('auth', () => {
@@ -360,6 +366,48 @@ describe('POST /api/slate/rescan', () => {
     expect(mockRunSlateScan).toHaveBeenCalledWith(dir)
     expect(mockStartWatcher).toHaveBeenCalledWith(dir)
     fs.rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('briefing routes', () => {
+  const ONBOARDED = { devFolderPath: '/x', onboardedAt: '2026-07-01T00:00:00Z' }
+
+  test('GET /api/slate/briefing 409s before onboarding', async () => {
+    const res = await request(makeApp()).get('/api/slate/briefing')
+    expect(res.status).toBe(409)
+    expect(res.body.error.code).toBe('NOT_ONBOARDED')
+    expect(mockEnsureBriefing).not.toHaveBeenCalled()
+  })
+
+  test('GET /api/slate/briefing reports generating on a cold open', async () => {
+    mockGetSlateConfig.mockResolvedValue(ONBOARDED)
+    const res = await request(makeApp()).get('/api/slate/briefing')
+    expect(res.status).toBe(200)
+    expect(res.body.data.status).toBe('generating')
+    expect(mockEnsureBriefing).toHaveBeenCalledWith(false)
+  })
+
+  test('GET /api/slate/briefing returns the cached briefing when ready', async () => {
+    mockGetSlateConfig.mockResolvedValue(ONBOARDED)
+    mockEnsureBriefing.mockResolvedValue({
+      status: 'ready',
+      briefing: { date: '2026-07-03', status: 'ready', headline: 'Steady.', todaysPushes: [], goingStale: [] },
+    })
+    const res = await request(makeApp()).get('/api/slate/briefing')
+    expect(res.status).toBe(200)
+    expect(res.body.data.briefing.headline).toBe('Steady.')
+  })
+
+  test('POST /api/slate/briefing/refresh forces regeneration', async () => {
+    mockGetSlateConfig.mockResolvedValue(ONBOARDED)
+    const res = await request(makeApp()).post('/api/slate/briefing/refresh').set('Origin', OK_ORIGIN).send({})
+    expect(res.status).toBe(200)
+    expect(mockEnsureBriefing).toHaveBeenCalledWith(true)
+  })
+
+  test('POST /api/slate/briefing/refresh 409s before onboarding', async () => {
+    const res = await request(makeApp()).post('/api/slate/briefing/refresh').set('Origin', OK_ORIGIN).send({})
+    expect(res.status).toBe(409)
   })
 })
 
