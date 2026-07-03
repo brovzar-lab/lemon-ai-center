@@ -4,7 +4,9 @@ import os from 'os'
 import path from 'path'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
+import { chatLimit } from '../middleware/rateLimit'
 import { getSlateCounts, listSlateConfirmItems, listSlateProjects } from '../lib/slate'
+import { runSlateChat, type SlateChatTurn } from '../lib/slate/chat'
 import { getSlateConfig, saveSlateConfig } from '../lib/slate/config'
 import { runSlateScan } from '../lib/slate/scanner'
 import { isSlateWatcherActive, startSlateWatcher } from '../lib/slate/watcher'
@@ -126,6 +128,72 @@ slateRouter.get('/search', async (req, res) => {
       error: { code: 'SEARCH_FAILED', message: (err as Error).message, retryable: true },
     })
   }
+})
+
+/**
+ * POST /api/slate/chat
+ * Body: { message: string, history?: [{ role: 'user'|'assistant', text }] }
+ * The query chat (spec §3): SSE stream of token / tool / done events from
+ * the brain over hybrid retrieval. History rides with the request — the
+ * server keeps no conversation state, same as the Billy Drawer chat.
+ */
+slateRouter.post('/chat', csrfCheck, chatLimit, async (req, res) => {
+  const { message, history } = req.body as { message?: unknown; history?: unknown }
+
+  if (typeof message !== 'string' || message.trim().length === 0) {
+    res.status(400).json({
+      error: { code: 'INVALID_INPUT', message: 'message must be a non-empty string', retryable: false },
+    })
+    return
+  }
+  if (message.length > 10_000) {
+    res.status(400).json({
+      error: { code: 'INPUT_TOO_LONG', message: 'message must not exceed 10,000 characters', retryable: false },
+    })
+    return
+  }
+  const turns: SlateChatTurn[] = []
+  if (history !== undefined) {
+    if (!Array.isArray(history) || history.length > 20) {
+      res.status(400).json({
+        error: { code: 'INVALID_INPUT', message: 'history must be an array of at most 20 turns', retryable: false },
+      })
+      return
+    }
+    for (const turn of history) {
+      const role = (turn as SlateChatTurn)?.role
+      const text = (turn as SlateChatTurn)?.text
+      if ((role !== 'user' && role !== 'assistant') || typeof text !== 'string' || text.length > 12_000) {
+        res.status(400).json({
+          error: { code: 'INVALID_INPUT', message: 'history turns must be {role, text} with text ≤ 12,000 characters', retryable: false },
+        })
+        return
+      }
+      if (text.trim().length > 0) turns.push({ role, text })
+    }
+  }
+
+  if (!(await getSlateConfig())) {
+    res.status(409).json({
+      error: { code: 'NOT_ONBOARDED', message: 'Run the setup wizard first', retryable: false },
+    })
+    return
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+
+  try {
+    await runSlateChat(message, turns, (event) => {
+      res.write(`data: ${JSON.stringify(event)}\n\n`)
+    })
+    res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
+  } catch (err: any) {
+    console.error('[slate] Chat error:', err?.status, err?.message ?? err)
+    res.write(`data: ${JSON.stringify({ type: 'error', message: 'The slate brain hit an internal error' })}\n\n`)
+  }
+  res.end()
 })
 
 /**

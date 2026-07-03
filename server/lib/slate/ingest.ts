@@ -86,17 +86,22 @@ export interface IngestStatus {
 
 // ── In-memory index ──────────────────────────────────────────────────────
 
-interface IndexEntry {
+export interface SlateIndexEntry {
   meta: SlateChunkMeta
   text: string
   vector: Float32Array
 }
 
-const memoryIndex = new Map<string, IndexEntry>()
+const memoryIndex = new Map<string, SlateIndexEntry>()
 let indexLoaded = false
 
 export function slateIndexSize(): number {
   return memoryIndex.size
+}
+
+/** Read access to the in-memory index for the query chat's tools. */
+export function listIndexEntries(): SlateIndexEntry[] {
+  return [...memoryIndex.values()]
 }
 
 export function isSlateIndexLoaded(): boolean {

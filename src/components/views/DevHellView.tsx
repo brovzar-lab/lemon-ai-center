@@ -3,6 +3,7 @@ import { useSlateStore } from '@/stores/useSlateStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EmptyState } from '@/components/workspace/EmptyState'
 import { SlateBoard } from '@/components/workspace/SlateBoard'
+import { SlateChat } from '@/components/workspace/SlateChat'
 import type { SlateConfirmItem } from '@shared/types'
 
 /**
@@ -77,6 +78,7 @@ export function DevHellView() {
           ) : (
             <SlateBoard projects={projects} />
           )}
+          <SlateChat />
         </>
       )}
     </section>

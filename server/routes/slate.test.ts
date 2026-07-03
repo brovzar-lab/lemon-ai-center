@@ -19,6 +19,7 @@ const {
   mockRunSlateIngestion,
   mockSearchSlate,
   mockSlateIndexSize,
+  mockRunSlateChat,
 } = vi.hoisted(() => ({
   mockListSlateProjects: vi.fn(),
   mockListSlateConfirmItems: vi.fn(),
@@ -32,6 +33,7 @@ const {
   mockRunSlateIngestion: vi.fn(),
   mockSearchSlate: vi.fn(),
   mockSlateIndexSize: vi.fn(),
+  mockRunSlateChat: vi.fn(),
 }))
 
 vi.mock('../lib/slate', () => ({
@@ -55,6 +57,9 @@ vi.mock('../lib/slate/ingest', () => ({
   runSlateIngestion: mockRunSlateIngestion,
   searchSlate: mockSearchSlate,
   slateIndexSize: mockSlateIndexSize,
+}))
+vi.mock('../lib/slate/chat', () => ({
+  runSlateChat: mockRunSlateChat,
 }))
 
 import { slateRouter } from './slate'
@@ -93,6 +98,10 @@ beforeEach(() => {
   mockRunSlateIngestion.mockReset().mockResolvedValue(undefined)
   mockSearchSlate.mockReset().mockResolvedValue([])
   mockSlateIndexSize.mockReset().mockReturnValue(0)
+  mockRunSlateChat.mockReset().mockImplementation(async (_msg, _history, emit) => {
+    emit({ type: 'token', text: 'Answer.' })
+    emit({ type: 'tool', name: 'search_slate', label: 'Searched the slate' })
+  })
 })
 
 describe('auth', () => {
@@ -323,5 +332,80 @@ describe('POST /api/slate/rescan', () => {
     expect(mockRunSlateScan).toHaveBeenCalledWith(dir)
     expect(mockStartWatcher).toHaveBeenCalledWith(dir)
     fs.rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('POST /api/slate/chat', () => {
+  const ONBOARDED = { devFolderPath: '/x', onboardedAt: '2026-07-01T00:00:00Z' }
+
+  test('validates the message before anything streams', async () => {
+    mockGetSlateConfig.mockResolvedValue(ONBOARDED)
+    for (const body of [{}, { message: '' }, { message: 42 }, { message: 'x'.repeat(10_001) }]) {
+      const res = await request(makeApp()).post('/api/slate/chat').set('Origin', OK_ORIGIN).send(body)
+      expect(res.status).toBe(400)
+      expect(mockRunSlateChat).not.toHaveBeenCalled()
+    }
+  })
+
+  test('rejects malformed history', async () => {
+    mockGetSlateConfig.mockResolvedValue(ONBOARDED)
+    const bad = [
+      { message: 'hi', history: 'nope' },
+      { message: 'hi', history: [{ role: 'system', text: 'x' }] },
+      { message: 'hi', history: [{ role: 'user', text: 42 }] },
+    ]
+    for (const body of bad) {
+      const res = await request(makeApp()).post('/api/slate/chat').set('Origin', OK_ORIGIN).send(body)
+      expect(res.status).toBe(400)
+    }
+  })
+
+  test('409s before onboarding', async () => {
+    const res = await request(makeApp())
+      .post('/api/slate/chat')
+      .set('Origin', OK_ORIGIN)
+      .send({ message: 'what is stale?' })
+    expect(res.status).toBe(409)
+    expect(res.body.error.code).toBe('NOT_ONBOARDED')
+  })
+
+  test('streams token, tool and done events over SSE', async () => {
+    mockGetSlateConfig.mockResolvedValue(ONBOARDED)
+    const res = await request(makeApp())
+      .post('/api/slate/chat')
+      .set('Origin', OK_ORIGIN)
+      .send({
+        message: 'Which two projects are secretly the same movie?',
+        history: [
+          { role: 'user', text: 'hola' },
+          { role: 'assistant', text: 'hola Billy' },
+          { role: 'assistant', text: '   ' }, // blank turns are dropped, not rejected
+        ],
+      })
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toContain('text/event-stream')
+    expect(res.text).toContain('data: {"type":"token","text":"Answer."}')
+    expect(res.text).toContain('"type":"tool"')
+    expect(res.text).toContain('data: {"type":"done"}')
+    expect(mockRunSlateChat).toHaveBeenCalledWith(
+      'Which two projects are secretly the same movie?',
+      [
+        { role: 'user', text: 'hola' },
+        { role: 'assistant', text: 'hola Billy' },
+      ],
+      expect.any(Function),
+    )
+  })
+
+  test('a brain crash surfaces as an SSE error event, not a hung socket', async () => {
+    mockGetSlateConfig.mockResolvedValue(ONBOARDED)
+    mockRunSlateChat.mockRejectedValue(new Error('boom'))
+    const res = await request(makeApp())
+      .post('/api/slate/chat')
+      .set('Origin', OK_ORIGIN)
+      .send({ message: 'hi' })
+    expect(res.status).toBe(200)
+    expect(res.text).toContain('"type":"error"')
+    expect(res.text).not.toContain('boom') // internals never leak to the client
   })
 })
