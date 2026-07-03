@@ -20,6 +20,9 @@ const {
   mockSearchSlate,
   mockSlateIndexSize,
   mockRunSlateChat,
+  mockListSkills,
+  mockFireSkillRun,
+  mockListSkillRuns,
 } = vi.hoisted(() => ({
   mockListSlateProjects: vi.fn(),
   mockListSlateConfirmItems: vi.fn(),
@@ -34,6 +37,9 @@ const {
   mockSearchSlate: vi.fn(),
   mockSlateIndexSize: vi.fn(),
   mockRunSlateChat: vi.fn(),
+  mockListSkills: vi.fn(),
+  mockFireSkillRun: vi.fn(),
+  mockListSkillRuns: vi.fn(),
 }))
 
 vi.mock('../lib/slate', () => ({
@@ -61,6 +67,22 @@ vi.mock('../lib/slate/ingest', () => ({
 vi.mock('../lib/slate/chat', () => ({
   runSlateChat: mockRunSlateChat,
 }))
+vi.mock('../lib/slate/skills', () => {
+  class SkillRunError extends Error {
+    constructor(
+      public code: string,
+      message: string,
+    ) {
+      super(message)
+    }
+  }
+  return {
+    SkillRunError,
+    listSkills: mockListSkills,
+    fireSkillRun: mockFireSkillRun,
+    listSkillRuns: mockListSkillRuns,
+  }
+})
 
 import { slateRouter } from './slate'
 
@@ -102,6 +124,12 @@ beforeEach(() => {
     emit({ type: 'token', text: 'Answer.' })
     emit({ type: 'tool', name: 'search_slate', label: 'Searched the slate' })
   })
+  mockListSkills.mockReset().mockReturnValue([
+    { id: 'dev-exec', name: 'dev-exec', description: 'Head of Development', status: 'live' },
+    { id: 'film-finance', name: 'film-finance', description: 'Finance lead', status: 'review-pending' },
+  ])
+  mockFireSkillRun.mockReset().mockResolvedValue({ runId: 'run-1' })
+  mockListSkillRuns.mockReset().mockResolvedValue([])
 })
 
 describe('auth', () => {
@@ -332,6 +360,63 @@ describe('POST /api/slate/rescan', () => {
     expect(mockRunSlateScan).toHaveBeenCalledWith(dir)
     expect(mockStartWatcher).toHaveBeenCalledWith(dir)
     fs.rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('skills routes', () => {
+  test('GET /api/slate/skills lists the library, review-pending included', async () => {
+    const res = await request(makeApp()).get('/api/slate/skills')
+    expect(res.status).toBe(200)
+    expect(res.body.data.skills).toHaveLength(2)
+    expect(res.body.data.skills[1].status).toBe('review-pending')
+  })
+
+  test('POST /api/slate/skills/run validates input', async () => {
+    for (const body of [{}, { skill: 'dev-exec' }, { project: 'X' }, { skill: 'dev-exec', project: 'X', version: 0 }]) {
+      const res = await request(makeApp()).post('/api/slate/skills/run').set('Origin', OK_ORIGIN).send(body)
+      expect(res.status).toBe(400)
+    }
+    expect(mockFireSkillRun).not.toHaveBeenCalled()
+  })
+
+  test('POST /api/slate/skills/run fires and returns the runId', async () => {
+    const res = await request(makeApp())
+      .post('/api/slate/skills/run')
+      .set('Origin', OK_ORIGIN)
+      .send({ skill: 'dev-exec', project: 'LA-CASA', version: 2 })
+    expect(res.status).toBe(200)
+    expect(res.body.data.runId).toBe('run-1')
+    expect(mockFireSkillRun).toHaveBeenCalledWith('dev-exec', 'LA-CASA', 2)
+  })
+
+  test('SkillRunError codes map to honest statuses', async () => {
+    const { SkillRunError } = await import('../lib/slate/skills')
+    const cases: Array<[string, number]> = [
+      ['UNKNOWN_SKILL', 404],
+      ['UNKNOWN_PROJECT', 404],
+      ['REVIEW_PENDING', 422],
+      ['NO_MATERIAL', 422],
+      ['ALREADY_RUNNING', 409],
+      ['NOT_ONBOARDED', 409],
+      ['FOLDER_UNREACHABLE', 409],
+    ]
+    for (const [code, status] of cases) {
+      mockFireSkillRun.mockRejectedValueOnce(new (SkillRunError as any)(code, 'msg'))
+      const res = await request(makeApp())
+        .post('/api/slate/skills/run')
+        .set('Origin', OK_ORIGIN)
+        .send({ skill: 's', project: 'p' })
+      expect(res.status).toBe(status)
+      expect(res.body.error.code).toBe(code)
+    }
+  })
+
+  test('GET /api/slate/runs returns the log and clamps limit', async () => {
+    mockListSkillRuns.mockResolvedValue([{ id: 'r1', skill: 'dev-exec', project: 'X', status: 'done' }])
+    const res = await request(makeApp()).get('/api/slate/runs?limit=999')
+    expect(res.status).toBe(200)
+    expect(res.body.data.runs).toHaveLength(1)
+    expect(mockListSkillRuns).toHaveBeenCalledWith(50)
   })
 })
 

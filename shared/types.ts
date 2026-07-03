@@ -649,6 +649,35 @@ export interface SlateStatusPayload {
   ingestError?: string
 }
 
+// ── DEVELOPMENT-HELL: skills dispatch (spec §4, D6) ─────────────────────
+
+export interface SlateSkill {
+  id: string // folder name under skills/ — also the coverage-filename token
+  name: string
+  description: string
+  /** review-pending skills are listed but refuse to fire (D6.3) */
+  status: 'live' | 'review-pending'
+}
+
+export type SlateSkillRunStatus = 'running' | 'done' | 'failed'
+
+export interface SlateSkillRun {
+  id: string
+  skill: string
+  project: string
+  version?: number
+  model: string
+  status: SlateSkillRunStatus
+  startedAt: string
+  finishedAt?: string
+  durationMs?: number
+  outputFile?: string // DEVELOPMENT-relative path of the landed document
+  outputChars?: number
+  error?: string
+  /** learning signal (spec §4 "Learn") — wired to UI in a later milestone */
+  accepted: boolean | null
+}
+
 export interface SlateScanSummary {
   projects: number
   confirmItems: number

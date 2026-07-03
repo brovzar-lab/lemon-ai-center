@@ -11,6 +11,7 @@ import { getSlateConfig, saveSlateConfig } from '../lib/slate/config'
 import { runSlateScan } from '../lib/slate/scanner'
 import { isSlateWatcherActive, startSlateWatcher } from '../lib/slate/watcher'
 import { getIngestStatus, runSlateIngestion, searchSlate, slateIndexSize } from '../lib/slate/ingest'
+import { fireSkillRun, listSkillRuns, listSkills, SkillRunError } from '../lib/slate/skills'
 import type { SlateStatusPayload } from '@shared/types'
 
 /**
@@ -126,6 +127,80 @@ slateRouter.get('/search', async (req, res) => {
     console.error('[slate] Search failed:', (err as Error).message)
     res.status(500).json({
       error: { code: 'SEARCH_FAILED', message: (err as Error).message, retryable: true },
+    })
+  }
+})
+
+/**
+ * GET /api/slate/skills
+ * The canonical Lemon skill set (skills/ at the repo root, D6).
+ * review-pending skills are listed — the UI shows them awaiting review —
+ * but the runner refuses to fire them.
+ */
+slateRouter.get('/skills', (_req, res) => {
+  try {
+    res.json({ data: { skills: listSkills() } })
+  } catch (err) {
+    console.error('[slate] Failed to list skills:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'SKILLS_FAILED', message: 'Could not read the skill library', retryable: true },
+    })
+  }
+})
+
+/**
+ * POST /api/slate/skills/run
+ * Body: { skill: string, project: string, version?: number }
+ * Fires a skill at a project (spec §4). Validates synchronously, then the
+ * run finishes in the background — poll GET /api/slate/runs. The result
+ * lands in the project's coverage/ folder and is scanned + indexed.
+ */
+slateRouter.post('/skills/run', csrfCheck, async (req, res) => {
+  const { skill, project, version } = req.body ?? {}
+  if (typeof skill !== 'string' || !skill || typeof project !== 'string' || !project) {
+    res.status(400).json({
+      error: { code: 'INVALID_INPUT', message: 'skill and project are required', retryable: false },
+    })
+    return
+  }
+  if (version !== undefined && (!Number.isInteger(version) || version < 1)) {
+    res.status(400).json({
+      error: { code: 'INVALID_INPUT', message: 'version must be a positive integer', retryable: false },
+    })
+    return
+  }
+  try {
+    const { runId } = await fireSkillRun(skill, project, version)
+    res.json({ data: { runId } })
+  } catch (err) {
+    if (err instanceof SkillRunError) {
+      const status =
+        err.code === 'UNKNOWN_SKILL' || err.code === 'UNKNOWN_PROJECT' ? 404
+        : err.code === 'ALREADY_RUNNING' ? 409
+        : err.code === 'REVIEW_PENDING' || err.code === 'PROJECT_DEAD' || err.code === 'NO_MATERIAL' ? 422
+        : 409
+      res.status(status).json({ error: { code: err.code, message: err.message, retryable: false } })
+      return
+    }
+    console.error('[slate] Skill fire failed:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'RUN_FAILED', message: 'Could not start the skill run', retryable: true },
+    })
+  }
+})
+
+/**
+ * GET /api/slate/runs?limit=…
+ * Recent skill runs, newest first — the "Learn" log (spec §4).
+ */
+slateRouter.get('/runs', async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 50)
+  try {
+    res.json({ data: { runs: await listSkillRuns(limit) } })
+  } catch (err) {
+    console.error('[slate] Failed to list runs:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'RUNS_FAILED', message: 'Could not load the run log', retryable: true },
     })
   }
 })
