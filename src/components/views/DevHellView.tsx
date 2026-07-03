@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react'
 import { useSlateStore } from '@/stores/useSlateStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EmptyState } from '@/components/workspace/EmptyState'
-import type { SlateConfirmItem, SlateProject } from '@shared/types'
+import { SlateBoard } from '@/components/workspace/SlateBoard'
+import type { SlateConfirmItem } from '@shared/types'
 
 /**
  * DEVELOPMENT-HELL — the development slate.
  * Not onboarded → the setup wizard (creates the DEVELOPMENT/ folder,
- * saves its location, starts the watcher). Onboarded → the live slate:
- * projects from disk plus the confirm queue for anything the scanner
- * couldn't file deterministically. The board view lands next milestone.
+ * saves its location, starts the watcher). Onboarded → the slate board:
+ * the visual pipeline in film/series lanes, plus the confirm queue for
+ * anything the scanner couldn't file deterministically.
  */
 export function DevHellView() {
   const status = useSlateStore((s) => s.status)
@@ -24,8 +25,9 @@ export function DevHellView() {
     if (!loaded) void refresh()
   }, [loaded, refresh])
 
-  const internal = projects.filter((p) => p.origin !== 'external')
-  const external = projects.length - internal.length
+  const live = projects.filter((p) => p.status !== 'dead')
+  const archived = projects.length - live.length
+  const external = live.filter((p) => p.origin === 'external').length
 
   return (
     <section className="space-y-4 animate-in">
@@ -39,9 +41,9 @@ export function DevHellView() {
               ? 'The development slate · not set up yet'
               : projects.length === 0
                 ? 'The development slate · watching, nothing tracked yet'
-                : `${internal.length} project${internal.length === 1 ? '' : 's'} on the slate${
+                : `${live.length} on the slate${
                     external > 0 ? ` · ${external} external (firewalled)` : ''
-                  }`}
+                  }${archived > 0 ? ` · ${archived} archived` : ''}`}
           </p>
         </div>
         {status?.onboarded && <SlateMeta />}
@@ -67,12 +69,13 @@ export function DevHellView() {
               title="Folder connected — the slate is watching"
               body={`Drop a project folder into ${status?.devFolderPath ?? 'your DEVELOPMENT folder'} (one folder per project, with a project.yaml) and it appears here within seconds. Loose material goes in _inbox and lands in the confirm queue.`}
             />
+          ) : live.length === 0 ? (
+            <EmptyState
+              title="Everything on the slate is archived"
+              body="All tracked projects are in _archive. Move a project folder back out (or drop new material in) and the board wakes up."
+            />
           ) : (
-            <ul className="space-y-2">
-              {projects.map((p) => (
-                <ProjectRow key={p.slug} project={p} />
-              ))}
-            </ul>
+            <SlateBoard projects={projects} />
           )}
         </>
       )}
@@ -222,45 +225,3 @@ function ConfirmQueue({ items }: { items: SlateConfirmItem[] }) {
   )
 }
 
-function ProjectRow({ project: p }: { project: SlateProject }) {
-  return (
-    <li className="bg-surface rounded-xl shadow-card px-4 py-3 flex items-baseline justify-between gap-3">
-      <div className="min-w-0">
-        <span className="text-[13px] font-sans font-semibold text-ink">
-          {p.title}
-          {p.priority && (
-            <span className="ml-2 text-[9px] font-sans font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent align-middle">
-              {p.priority}
-            </span>
-          )}
-        </span>
-        {p.logline && <p className="text-[11px] font-sans text-ink-3 mt-0.5 truncate">{p.logline}</p>}
-        {p.waiting_on && (
-          <p className="text-[11px] font-sans italic text-ink-3 mt-0.5 truncate">
-            Waiting on {p.waiting_on.who} — {p.waiting_on.what} (since {p.waiting_on.since})
-          </p>
-        )}
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {p.origin === 'external' && (
-          <span className="text-[9px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-data-coral/15 text-data-coral">
-            External
-          </span>
-        )}
-        {(p.unfiled_count ?? 0) > 0 && (
-          <span className="text-[9px] font-sans font-bold px-1.5 py-0.5 rounded bg-data-coral/15 text-data-coral tabular-nums">
-            {p.unfiled_count} unfiled
-          </span>
-        )}
-        {p.current_draft && (
-          <span className="text-[9px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-data-teal/15 text-data-teal tabular-nums">
-            v{String(p.current_draft.version).padStart(2, '0')}
-          </span>
-        )}
-        <span className="text-[9px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-sunken text-ink-3">
-          {p.format} · {p.stage}
-        </span>
-      </div>
-    </li>
-  )
-}
