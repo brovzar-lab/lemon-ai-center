@@ -17,6 +17,7 @@ import { useViewStore } from '@/stores/useViewStore'
 import { WorkspaceTabs } from './workspace/WorkspaceTabs'
 import { DealsView } from './views/DealsView'
 import { ProjectsView } from './views/ProjectsView'
+import { DevHellView } from './views/DevHellView'
 import { MemoryView } from './views/MemoryView'
 import { ArchiveView } from './views/ArchiveView'
 import { InboxIntelView } from './views/InboxIntelView'
@@ -49,6 +50,7 @@ import { CorrectionInput } from './CorrectionInput'
 import { useDealsStore } from '@/stores/lemon/useDealsStore'
 import { useTodayStore } from '@/stores/useTodayStore'
 import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
+import { useSlateStore } from '@/stores/useSlateStore'
 import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
 // Mission Control (Spine + trackers)
 import { useTrackersStore } from '@/stores/useTrackersStore'
@@ -84,6 +86,7 @@ export function Dashboard() {
   const lemonDelegations = useLemonDelegationsStore((s) => s.delegations)
   const fetchToday = useTodayStore((s) => s.fetchToday)
   const fetchProgress = useTodayStore((s) => s.fetchProgress)
+  const fetchSlate = useSlateStore((s) => s.fetch)
 
   // Voice profile state
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile>(DEFAULT_VOICE_PROFILE)
@@ -142,6 +145,7 @@ export function Dashboard() {
     fetchSpark()
     fetchToday()
     fetchProgress()
+    fetchSlate()
 
     // Load voice profile
     loadVoiceProfile().then(setVoiceProfile)
@@ -226,6 +230,8 @@ export function Dashboard() {
               <DealsView />
             ) : view === 'projects' ? (
               <ProjectsView />
+            ) : view === 'devhell' ? (
+              <DevHellView />
             ) : view === 'fund' ? (
               <FundView />
             ) : view === 'writing' ? (

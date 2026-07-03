@@ -4,6 +4,7 @@ import { useInboxStore } from '@/stores/useInboxStore'
 import { useDealsStore } from '@/stores/lemon/useDealsStore'
 import { useProjectsStore } from '@/stores/lemon/useProjectsStore'
 import { useLemonDelegationsStore } from '@/stores/lemon/useLemonDelegationsStore'
+import { useSlateStore } from '@/stores/useSlateStore'
 import { detectSlippingThreads } from '@/lib/inbox/slipDetection'
 
 interface TabDef {
@@ -20,6 +21,7 @@ export function WorkspaceTabs() {
   const deals = useDealsStore((s) => s.deals)
   const projects = useProjectsStore((s) => s.projects)
   const delegations = useLemonDelegationsStore((s) => s.delegations)
+  const slateProjects = useSlateStore((s) => s.projects)
 
   // Keyboard shortcuts: g then 1..6 (gmail-style)
   useEffect(() => {
@@ -47,6 +49,7 @@ export function WorkspaceTabs() {
           '7': 'you',
           '8': 'memory',
           '9': 'archive',
+          '0': 'devhell',
         }
         const next = map[e.key]
         if (next) {
@@ -71,6 +74,7 @@ export function WorkspaceTabs() {
     { id: 'inbox', label: 'Inbox Intel', count: inboxCount, hint: 'g 2' },
     { id: 'deals', label: 'Deals', count: deals.filter((d) => d.status !== 'closed').length, hint: 'g 3' },
     { id: 'projects', label: 'Projects', count: projects.length, hint: 'g 4' },
+    { id: 'devhell', label: 'Dev Hell', count: slateProjects.filter((p) => p.status === 'active').length, hint: 'g 0' },
     { id: 'fund', label: 'Fund', hint: 'g 5' },
     { id: 'writing', label: 'Writing', hint: 'g 6' },
     { id: 'you', label: 'You', hint: 'g 7' },
@@ -127,11 +131,11 @@ export function WorkspaceTabs() {
       <span
         aria-hidden
         className="hidden md:inline text-[9px] font-sans uppercase tracking-[0.18em] text-ink-3 whitespace-nowrap ml-auto pl-3"
-        title="Press g then 1–9 to switch views"
+        title="Press g then 1–9 (or 0) to switch views"
       >
         <kbd className="px-1 rounded bg-sunken text-ink-3 font-mono">g</kbd>
         <span className="mx-1">+</span>
-        <kbd className="px-1 rounded bg-sunken text-ink-3 font-mono">1–9</kbd>
+        <kbd className="px-1 rounded bg-sunken text-ink-3 font-mono">0–9</kbd>
         <span className="ml-2 italic">to switch</span>
       </span>
     </nav>

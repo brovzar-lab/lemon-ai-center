@@ -539,3 +539,64 @@ export interface InboxSlip {
   linkedProjectId?: string
   linkedDelegationId?: string
 }
+
+// ── DEVELOPMENT-HELL: the development slate ─────────────────────────────
+// Source of truth is the DEVELOPMENT/ folder on disk (one folder per
+// project, project.yaml for metadata); Firestore `slate/*` mirrors it so
+// cloud and local sessions see the same slate. Doc id == slug == folder name.
+
+export type SlateFormat = 'film' | 'series'
+
+export const SLATE_FILM_STAGES = [
+  'idea', 'concept', 'treatment', 'outline', 'draft1', 'rewrites', 'polish', 'market-ready',
+] as const
+export const SLATE_SERIES_STAGES = [
+  'idea', 'concept', 'bible', 'pilot-outline', 'pilot-draft', 'rewrites', 'season-arc', 'market-ready',
+] as const
+
+export type SlateFilmStage = (typeof SLATE_FILM_STAGES)[number]
+export type SlateSeriesStage = (typeof SLATE_SERIES_STAGES)[number]
+export type SlateStage = SlateFilmStage | SlateSeriesStage
+
+export type SlateOrigin = 'internal' | 'external' // external material is firewalled
+export type SlateStatus = 'active' | 'paused' | 'dead'
+export type SlatePriority = 'A' | 'B' | 'C'
+export type SlateLanguage = 'es' | 'en' | 'both'
+
+export interface SlateWriter {
+  name: string
+  contact?: string // email enables Gmail-draft nudges
+  language?: SlateLanguage // nudges drafted in this language
+}
+
+export interface SlateWaitingOn {
+  who: string
+  what: string
+  since: string // ISO date
+}
+
+export interface SlateDeadline {
+  date: string // ISO date
+  what: string
+}
+
+export interface SlateProject {
+  slug: string // == DEVELOPMENT/ folder name, immutable
+  title: string
+  format: SlateFormat
+  stage: SlateStage
+  origin: SlateOrigin
+  status: SlateStatus
+  priority?: SlatePriority
+  language?: SlateLanguage
+  logline?: string
+  writers?: SlateWriter[]
+  waiting_on?: SlateWaitingOn | null
+  targets?: string[]
+  deadlines?: SlateDeadline[]
+  staleness_days?: number // per-project override of the stage default
+  notes?: string
+  last_touched?: string // ISO — every file event updates this; drives staleness
+  created_at?: string
+  updated_at?: string
+}

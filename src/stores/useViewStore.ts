@@ -5,6 +5,7 @@ export type ViewId =
   | 'inbox'
   | 'deals'
   | 'projects'
+  | 'devhell'
   | 'fund'
   | 'writing'
   | 'you'
@@ -16,6 +17,7 @@ const VALID_VIEWS: ViewId[] = [
   'inbox',
   'deals',
   'projects',
+  'devhell',
   'fund',
   'writing',
   'you',
