@@ -2,6 +2,7 @@ import chokidar, { FSWatcher } from 'chokidar'
 import fs from 'fs'
 import { getSlateConfig } from './config'
 import { runSlateScan } from './scanner'
+import { initSlateIndex, runSlateIngestion } from './ingest'
 
 /**
  * Watches the DEVELOPMENT/ folder and rescans on change (D4 local mode —
@@ -33,6 +34,7 @@ async function scanNow(root: string): Promise<void> {
   scanning = true
   try {
     await runSlateScan(root)
+    void runSlateIngestion(root) // background — never blocks the scan loop
   } catch (err) {
     console.error('[slate] Watch-triggered scan failed:', (err as Error).message)
   } finally {
@@ -93,6 +95,9 @@ export async function initSlateWatcher(): Promise<void> {
       console.log('[slate] Not onboarded yet — watcher idle')
       return
     }
+    // Hydrate the search index regardless of folder reachability — on
+    // Railway the folder is absent but the index still serves queries.
+    await initSlateIndex()
     if (!fs.existsSync(config.devFolderPath)) {
       console.log(`[slate] DEVELOPMENT folder not reachable from this host (${config.devFolderPath}) — watcher off`)
       return

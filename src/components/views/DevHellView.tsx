@@ -108,6 +108,19 @@ function SlateMeta() {
         <span className={`w-1.5 h-1.5 rounded-full ${status.watcherActive ? 'bg-data-teal' : 'bg-data-coral'}`} />
         {status.watcherActive ? 'Watching' : status.folderAccessible === false ? 'Folder unreachable' : 'Watcher off'}
       </span>
+      {(status.chunkCount ?? 0) > 0 && (
+        <span
+          className="text-[9px] font-sans font-bold uppercase tracking-wider px-2 py-1 rounded bg-sunken text-ink-3 tabular-nums"
+          title={status.lastIngestAt ? `Slate index · last ingest ${status.lastIngestAt}` : 'Slate index'}
+        >
+          {status.chunkCount} chunks
+        </span>
+      )}
+      {status.ingestRunning && (
+        <span className="text-[9px] font-sans font-bold uppercase tracking-wider px-2 py-1 rounded bg-data-violet/15 text-data-violet">
+          Indexing…
+        </span>
+      )}
       <button
         type="button"
         disabled={busy}

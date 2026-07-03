@@ -8,6 +8,7 @@ import { getSlateCounts, listSlateConfirmItems, listSlateProjects } from '../lib
 import { getSlateConfig, saveSlateConfig } from '../lib/slate/config'
 import { runSlateScan } from '../lib/slate/scanner'
 import { isSlateWatcherActive, startSlateWatcher } from '../lib/slate/watcher'
+import { getIngestStatus, runSlateIngestion, searchSlate, slateIndexSize } from '../lib/slate/ingest'
 import type { SlateStatusPayload } from '@shared/types'
 
 /**
@@ -32,6 +33,7 @@ async function buildStatus(): Promise<SlateStatusPayload> {
     return { onboarded: false, watcherActive: false, projectCount: 0, confirmCount: 0 }
   }
   const counts = await getSlateCounts()
+  const ingest = getIngestStatus()
   return {
     onboarded: true,
     devFolderPath: config.devFolderPath,
@@ -40,6 +42,10 @@ async function buildStatus(): Promise<SlateStatusPayload> {
     projectCount: counts.projects,
     confirmCount: counts.confirm,
     ...(config.lastScanAt ? { lastScanAt: config.lastScanAt } : {}),
+    chunkCount: slateIndexSize(),
+    ingestRunning: ingest.running,
+    ...(ingest.lastRunAt ? { lastIngestAt: ingest.lastRunAt } : {}),
+    ...(ingest.lastError ? { ingestError: ingest.lastError } : {}),
   }
 }
 
@@ -91,6 +97,38 @@ slateRouter.get('/confirm', async (_req, res) => {
 })
 
 /**
+ * GET /api/slate/search?q=…&scope=all|internal&project=…&limit=…
+ * Semantic search over the slate index. scope=internal is the external-
+ * material firewall (spec §7): external chunks never surface for
+ * internal creative work. Results always carry their origin.
+ */
+slateRouter.get('/search', async (req, res) => {
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
+  if (!q) {
+    res.json({ data: { query: '', results: [] } })
+    return
+  }
+  const scope = req.query.scope === 'internal' ? 'internal' : 'all'
+  const project = typeof req.query.project === 'string' && req.query.project ? req.query.project : undefined
+  const limit = Math.min(Math.max(Number(req.query.limit) || 12, 1), 50)
+  try {
+    const hits = await searchSlate(q, { scope, project, limit })
+    res.json({
+      data: {
+        query: q,
+        scope,
+        results: hits.map((h) => ({ ...h, text: h.text.slice(0, 600) })),
+      },
+    })
+  } catch (err) {
+    console.error('[slate] Search failed:', (err as Error).message)
+    res.status(500).json({
+      error: { code: 'SEARCH_FAILED', message: (err as Error).message, retryable: true },
+    })
+  }
+})
+
+/**
  * POST /api/slate/onboard
  * Body: { path?: string } — defaults to ~/DEVELOPMENT.
  * Creates the canonical folder skeleton (idempotent — existing material is
@@ -123,6 +161,7 @@ slateRouter.post('/onboard', csrfCheck, async (req, res) => {
     await saveSlateConfig({ devFolderPath: resolved, onboardedAt: new Date().toISOString() })
     const scan = await runSlateScan(resolved)
     startSlateWatcher(resolved)
+    void runSlateIngestion(resolved) // background — the response never waits on embeds
 
     res.json({ data: { status: await buildStatus(), scan } })
   } catch (err) {
@@ -158,6 +197,7 @@ slateRouter.post('/rescan', csrfCheck, async (_req, res) => {
     }
     const scan = await runSlateScan(config.devFolderPath)
     if (!isSlateWatcherActive()) startSlateWatcher(config.devFolderPath)
+    void runSlateIngestion(config.devFolderPath) // background
     res.json({ data: { status: await buildStatus(), scan } })
   } catch (err) {
     console.error('[slate] Rescan failed:', (err as Error).message)

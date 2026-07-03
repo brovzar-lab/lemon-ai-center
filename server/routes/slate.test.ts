@@ -15,6 +15,10 @@ const {
   mockRunSlateScan,
   mockIsWatcherActive,
   mockStartWatcher,
+  mockGetIngestStatus,
+  mockRunSlateIngestion,
+  mockSearchSlate,
+  mockSlateIndexSize,
 } = vi.hoisted(() => ({
   mockListSlateProjects: vi.fn(),
   mockListSlateConfirmItems: vi.fn(),
@@ -24,6 +28,10 @@ const {
   mockRunSlateScan: vi.fn(),
   mockIsWatcherActive: vi.fn(),
   mockStartWatcher: vi.fn(),
+  mockGetIngestStatus: vi.fn(),
+  mockRunSlateIngestion: vi.fn(),
+  mockSearchSlate: vi.fn(),
+  mockSlateIndexSize: vi.fn(),
 }))
 
 vi.mock('../lib/slate', () => ({
@@ -41,6 +49,12 @@ vi.mock('../lib/slate/scanner', () => ({
 vi.mock('../lib/slate/watcher', () => ({
   isSlateWatcherActive: mockIsWatcherActive,
   startSlateWatcher: mockStartWatcher,
+}))
+vi.mock('../lib/slate/ingest', () => ({
+  getIngestStatus: mockGetIngestStatus,
+  runSlateIngestion: mockRunSlateIngestion,
+  searchSlate: mockSearchSlate,
+  slateIndexSize: mockSlateIndexSize,
 }))
 
 import { slateRouter } from './slate'
@@ -69,6 +83,16 @@ beforeEach(() => {
   mockRunSlateScan.mockReset().mockResolvedValue(SCAN_SUMMARY)
   mockIsWatcherActive.mockReset().mockReturnValue(false)
   mockStartWatcher.mockReset()
+  mockGetIngestStatus.mockReset().mockReturnValue({
+    running: false,
+    filesIngested: 0,
+    filesSkipped: 0,
+    filesRemoved: 0,
+    chunksWritten: 0,
+  })
+  mockRunSlateIngestion.mockReset().mockResolvedValue(undefined)
+  mockSearchSlate.mockReset().mockResolvedValue([])
+  mockSlateIndexSize.mockReset().mockReturnValue(0)
 })
 
 describe('auth', () => {
@@ -189,6 +213,91 @@ describe('POST /api/slate/onboard', () => {
     const res = await request(makeApp()).post('/api/slate/onboard').set('Origin', OK_ORIGIN).send({ path: dir })
     expect(res.status).toBe(200)
     expect(fs.existsSync(path.join(dir, 'LA-CASA', 'project.yaml'))).toBe(true)
+  })
+})
+
+describe('GET /api/slate/search', () => {
+  test('empty query returns empty results without embedding', async () => {
+    const res = await request(makeApp()).get('/api/slate/search?q=')
+    expect(res.status).toBe(200)
+    expect(res.body.data.results).toEqual([])
+    expect(mockSearchSlate).not.toHaveBeenCalled()
+  })
+
+  test('passes scope/project/limit through and truncates text', async () => {
+    mockSearchSlate.mockResolvedValue([
+      {
+        score: 0.87,
+        text: 'y'.repeat(1000),
+        project: 'LA-CASA',
+        origin: 'internal',
+        file: 'LA-CASA/04-drafts/x.fdx',
+        kind: 'draft',
+        version: 3,
+        sceneIndex: 12,
+        sceneHeading: 'INT. COCINA - NOCHE',
+      },
+    ])
+    const res = await request(makeApp()).get(
+      '/api/slate/search?q=acto%20dos&scope=internal&project=LA-CASA&limit=5',
+    )
+    expect(res.status).toBe(200)
+    expect(mockSearchSlate).toHaveBeenCalledWith('acto dos', {
+      scope: 'internal',
+      project: 'LA-CASA',
+      limit: 5,
+    })
+    expect(res.body.data.results[0].text).toHaveLength(600)
+    expect(res.body.data.results[0].origin).toBe('internal')
+  })
+
+  test('wraps embedding failures in the error envelope', async () => {
+    mockSearchSlate.mockRejectedValue(new Error('Gemini embeddings 429: quota'))
+    const res = await request(makeApp()).get('/api/slate/search?q=x')
+    expect(res.status).toBe(500)
+    expect(res.body.error.code).toBe('SEARCH_FAILED')
+  })
+})
+
+describe('status ingest fields', () => {
+  test('status carries index size and ingest state once onboarded', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slate-ingest-status-'))
+    mockGetSlateConfig.mockResolvedValue({ devFolderPath: dir, onboardedAt: 'x' })
+    mockSlateIndexSize.mockReturnValue(123)
+    mockGetIngestStatus.mockReturnValue({
+      running: true,
+      lastRunAt: '2026-07-03T00:00:00Z',
+      filesIngested: 4,
+      filesSkipped: 1,
+      filesRemoved: 0,
+      chunksWritten: 40,
+    })
+    const res = await request(makeApp()).get('/api/slate/status')
+    expect(res.body.data).toMatchObject({
+      chunkCount: 123,
+      ingestRunning: true,
+      lastIngestAt: '2026-07-03T00:00:00Z',
+    })
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('ingestion kicks off in the background', () => {
+  test('onboard triggers ingestion after the scan', async () => {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'slate-kick-')), 'DEV')
+    const res = await request(makeApp()).post('/api/slate/onboard').set('Origin', OK_ORIGIN).send({ path: dir })
+    expect(res.status).toBe(200)
+    expect(mockRunSlateIngestion).toHaveBeenCalledWith(dir)
+    fs.rmSync(path.dirname(dir), { recursive: true, force: true })
+  })
+
+  test('rescan triggers ingestion after the scan', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slate-kick2-'))
+    mockGetSlateConfig.mockResolvedValue({ devFolderPath: dir, onboardedAt: 'x' })
+    const res = await request(makeApp()).post('/api/slate/rescan').set('Origin', OK_ORIGIN).send()
+    expect(res.status).toBe(200)
+    expect(mockRunSlateIngestion).toHaveBeenCalledWith(dir)
+    fs.rmSync(dir, { recursive: true, force: true })
   })
 })
 

@@ -642,6 +642,11 @@ export interface SlateStatusPayload {
   projectCount: number
   confirmCount: number
   lastScanAt?: string
+  // slate index (milestone 4)
+  chunkCount?: number
+  ingestRunning?: boolean
+  lastIngestAt?: string
+  ingestError?: string
 }
 
 export interface SlateScanSummary {
