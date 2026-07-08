@@ -26,6 +26,7 @@ import type { VoiceProfile } from '@/lib/voiceProfile'
 import type { InboxThread } from '@shared/types'
 import { Header } from './Header'
 import { DemoBanner } from './DemoBanner'
+import { ReconnectBanner } from './ReconnectBanner'
 import { SkillLauncher } from './SkillLauncher'
 import { BillyDrawer } from './BillyDrawer'
 import { MeetingPrepModal } from './MeetingPrepModal'
@@ -192,6 +193,7 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-bg text-ink font-sans overflow-x-clip">
       <DemoBanner />
+      <ReconnectBanner />
       <Header onOpenSettings={() => setSettingsOpen(true)} />
 
       <FocusModeProvider>

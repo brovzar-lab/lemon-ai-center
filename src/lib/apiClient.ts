@@ -1,3 +1,5 @@
+import { useConnectionStore } from '@/stores/useConnectionStore'
+
 export class ApiError extends Error {
   constructor(
     public readonly code: string,
@@ -29,6 +31,11 @@ export async function apiFetch<T = unknown>(
       errBody = { error: { code: 'UNKNOWN', message: response.statusText, retryable: false } }
     }
     const err = errBody.error ?? {}
+    // A dead Google connection is app-wide: raise the flag once so a single
+    // "Reconnect Google" banner shows, instead of each panel failing silently.
+    if ((err.code ?? '') === 'REAUTH_REQUIRED') {
+      useConnectionStore.getState().setReauthRequired(true)
+    }
     throw new ApiError(err.code ?? 'UNKNOWN', err.message ?? 'Request failed', err.retryable ?? false)
   }
 
