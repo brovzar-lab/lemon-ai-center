@@ -91,7 +91,6 @@ export function DealsView() {
   const updateStatus = useDealsStore((s) => s.updateStatus)
   const update = useDealsStore((s) => s.update)
   const remove = useDealsStore((s) => s.remove)
-  const configured = useDealsStore((s) => s.configured)
   const loading = useDealsStore((s) => s.loading)
 
   const [showForm, setShowForm] = useState(false)
@@ -168,15 +167,6 @@ export function DealsView() {
 
   const total = deals.length
   const openTotal = total - counts.closed
-
-  if (!configured) {
-    return (
-      <EmptyState
-        title="LEMON workspace not connected"
-        body="Set VITE_LEMON_FIREBASE_* environment variables to load deals from your existing LEMON Firebase project."
-      />
-    )
-  }
 
   function reset() {
     setForm(EMPTY_FORM)

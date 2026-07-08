@@ -3,7 +3,6 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useCalendarStore } from '@/stores/useCalendarStore'
 import { useBrainStore } from '@/stores/useBrainStore'
-import { useSparkStore } from '@/stores/useSparkStore'
 import { useBriefStore } from '@/stores/useBriefStore'
 import { useTaskStore } from '@/stores/useTaskStore'
 import { useDecisionStore } from '@/stores/useDecisionStore'
@@ -27,13 +26,6 @@ import type { VoiceProfile } from '@/lib/voiceProfile'
 import type { InboxThread } from '@shared/types'
 import { Header } from './Header'
 import { DemoBanner } from './DemoBanner'
-import { BriefPanel } from './BriefPanel'
-import { NextUpBar } from './NextUpBar'
-import { TasksPanel } from './TasksPanel'
-import { InboxPanel } from './InboxPanel'
-import { BrainPanel } from './BrainPanel'
-import { SparkCard } from './SparkCard'
-import { DecisionJournal } from './DecisionJournal'
 import { SkillLauncher } from './SkillLauncher'
 import { BillyDrawer } from './BillyDrawer'
 import { MeetingPrepModal } from './MeetingPrepModal'
@@ -70,13 +62,12 @@ export function Dashboard() {
   const fetchCalendar = useCalendarStore((s) => s.fetch)
   const fetchBrainStatus = useBrainStore((s) => s.fetchStatus)
   const fetchBrainRecent = useBrainStore((s) => s.fetchRecent)
-  const fetchSpark = useSparkStore((s) => s.fetch)
   const subscribeToTasks = useTaskStore((s) => s.subscribe)
   const subscribeToDecisions = useDecisionStore((s) => s.subscribe)
   const subscribeToCaptures = useCaptureStore((s) => s.subscribe)
   const subscribeToActions = useActionLogStore((s) => s.subscribe)
   const focusActive = useFocusModeStore((s) => s.active)
-  const { newDashboard, opsViews } = useFeatureFlags()
+  const { opsViews } = useFeatureFlags()
   const view = useViewStore((s) => s.view)
   const subscribeDeals = useDealsStore((s) => s.subscribe)
   const subscribeProjects = useProjectsStore((s) => s.subscribe)
@@ -142,7 +133,6 @@ export function Dashboard() {
     fetchCalendar()
     fetchBrainStatus()
     fetchBrainRecent()
-    fetchSpark()
     fetchToday()
     fetchProgress()
     fetchSlate()
@@ -204,66 +194,49 @@ export function Dashboard() {
       <DemoBanner />
       <Header onOpenSettings={() => setSettingsOpen(true)} />
 
-      {newDashboard ? (
-        <FocusModeProvider>
-          <main
-            id="main-content"
-            className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 overflow-x-clip"
-            data-focus={focusActive ? 'on' : 'off'}
-          >
-            <EditorialMasthead />
+      <FocusModeProvider>
+        <main
+          id="main-content"
+          className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 overflow-x-clip"
+          data-focus={focusActive ? 'on' : 'off'}
+        >
+          <EditorialMasthead />
 
-            {opsViews && <WorkspaceTabs />}
+          {opsViews && <WorkspaceTabs />}
 
-            {!opsViews || view === 'briefing' ? (
-              <BriefingView
-                eveningMode={eveningMode}
-                showWrapup={showWrapup}
-                waitingOnItems={waitingOnItems}
-                delegationQueueItems={delegationQueueItems}
-                onReply={handleReply}
-                onCreateTask={handleCreateTask}
-              />
-            ) : view === 'inbox' ? (
-              <InboxIntelView onReply={handleReply} />
-            ) : view === 'deals' ? (
-              <DealsView />
-            ) : view === 'projects' ? (
-              <ProjectsView />
-            ) : view === 'devhell' ? (
-              <DevHellView />
-            ) : view === 'fund' ? (
-              <FundView />
-            ) : view === 'writing' ? (
-              <WritingView />
-            ) : view === 'you' ? (
-              <YouView />
-            ) : view === 'memory' ? (
-              <MemoryView />
-            ) : view === 'archive' ? (
-              <ArchiveView />
-            ) : null}
-          </main>
-          <GlobalCapture />
-          <AILogDrawer />
-          <RoughMorningPanel />
-        </FocusModeProvider>
-      ) : (
-        /* Legacy layout — preserved exactly as-is */
-        <main className="max-w-[1440px] mx-auto px-4 pb-16 overflow-x-clip">
-          <BriefPanel />
-          <NextUpBar />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-            <TasksPanel />
-            <InboxPanel onReply={handleReply} onCreateTask={handleCreateTask} />
-            <BrainPanel />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-            <SparkCard />
-            <DecisionJournal />
-          </div>
+          {!opsViews || view === 'briefing' ? (
+            <BriefingView
+              eveningMode={eveningMode}
+              showWrapup={showWrapup}
+              waitingOnItems={waitingOnItems}
+              delegationQueueItems={delegationQueueItems}
+              onReply={handleReply}
+              onCreateTask={handleCreateTask}
+            />
+          ) : view === 'inbox' ? (
+            <InboxIntelView onReply={handleReply} />
+          ) : view === 'deals' ? (
+            <DealsView />
+          ) : view === 'projects' ? (
+            <ProjectsView />
+          ) : view === 'devhell' ? (
+            <DevHellView />
+          ) : view === 'fund' ? (
+            <FundView />
+          ) : view === 'writing' ? (
+            <WritingView />
+          ) : view === 'you' ? (
+            <YouView />
+          ) : view === 'memory' ? (
+            <MemoryView />
+          ) : view === 'archive' ? (
+            <ArchiveView />
+          ) : null}
         </main>
-      )}
+        <GlobalCapture />
+        <AILogDrawer />
+        <RoughMorningPanel />
+      </FocusModeProvider>
 
       {/* These stay exactly as-is regardless of layout flag */}
       <SkillLauncher />

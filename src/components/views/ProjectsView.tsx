@@ -45,7 +45,6 @@ export function ProjectsView() {
   const updateCategory = useProjectsStore((s) => s.updateCategory)
   const update = useProjectsStore((s) => s.update)
   const remove = useProjectsStore((s) => s.remove)
-  const configured = useProjectsStore((s) => s.configured)
   const loading = useProjectsStore((s) => s.loading)
   const tasks = useTaskStore((s) => s.tasks)
 
@@ -71,15 +70,6 @@ export function ProjectsView() {
     }
     return map
   }, [projects, tasks])
-
-  if (!configured) {
-    return (
-      <EmptyState
-        title="LEMON workspace not connected"
-        body="Set VITE_LEMON_FIREBASE_* environment variables to load projects from your existing LEMON Firebase project."
-      />
-    )
-  }
 
   function reset() {
     setForm(EMPTY_FORM)

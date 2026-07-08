@@ -7,19 +7,9 @@ export function ArchiveView() {
   const items = useArchiveStore((s) => s.items)
   const subscribe = useArchiveStore((s) => s.subscribe)
   const restore = useArchiveStore((s) => s.restore)
-  const configured = useArchiveStore((s) => s.configured)
   const loading = useArchiveStore((s) => s.loading)
 
   useEffect(() => subscribe(), [subscribe])
-
-  if (!configured) {
-    return (
-      <EmptyState
-        title="LEMON workspace not connected"
-        body="Set VITE_LEMON_FIREBASE_* env vars to load the archive."
-      />
-    )
-  }
 
   return (
     <section className="space-y-4 animate-in">
