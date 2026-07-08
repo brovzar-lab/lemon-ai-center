@@ -4,11 +4,12 @@ import { db } from '../lib/firebase'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { chatLimit } from '../middleware/rateLimit'
+import { CLAUDE_MODELS } from '@shared/models'
 
 export const draftReplyRouter = Router()
 draftReplyRouter.use(requireAuth)
 
-const MODEL = 'claude-sonnet-4-6'
+const MODEL = CLAUDE_MODELS.balanced
 
 interface VoiceProfile {
   trained: boolean

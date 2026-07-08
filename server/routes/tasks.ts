@@ -6,11 +6,12 @@ import { tasksGenerateLimit } from '../middleware/rateLimit'
 import { getGmailClient, getCalendarClient } from '../lib/googleAuth'
 import { respondIfReauthRequired } from '../lib/googleErrors'
 import { TASKS_GENERATE_SYSTEM } from '../lib/prompts'
+import { CLAUDE_MODELS } from '@shared/models'
 
 export const tasksRouter = Router()
 tasksRouter.use(requireAuth)
 
-const MODEL_TASKS = 'claude-haiku-4-5-20251001'
+const MODEL_TASKS = CLAUDE_MODELS.fast
 const MAX_SUGGESTIONS = 10
 
 function getAnthropicClient() {

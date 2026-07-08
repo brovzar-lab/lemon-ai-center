@@ -3,6 +3,7 @@ import { getCalendarClient } from '../../googleAuth'
 import { readSlips, writeState } from '../data'
 import { todayISO } from '../constants'
 import { db } from '../../firebase'
+import { CLAUDE_MODELS } from '@shared/models'
 
 /**
  * 18:00 — evening wrap: what happened today, what tomorrow looks like.
@@ -59,7 +60,7 @@ export async function runEveningWrap(uid: string): Promise<void> {
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_MODELS.fast,
       max_tokens: 250,
       system:
         'You write a 2-3 sentence end-of-day wrap for a CEO. Second person, calm, honest. Mention what got done and what is still hot. Use ONLY the provided facts. No markdown.',

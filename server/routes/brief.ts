@@ -18,14 +18,15 @@ import {
 import { csrfCheck } from '../middleware/csrfCheck'
 import { briefLimit } from '../middleware/rateLimit'
 import { getAnthropicClient } from '../lib/anthropic'
+import { CLAUDE_MODELS } from '@shared/models'
 import type { Citation, Claim } from '@shared/types'
 
 export const briefRouter = Router()
 
-const MODEL_BRIEF = 'claude-opus-4-7'
-const MODEL_PROSE = 'claude-sonnet-4-6'
-const MODEL_CHAT = 'claude-sonnet-4-6'
-const MODEL_SPARK = 'claude-haiku-4-5-20251001'
+const MODEL_BRIEF = CLAUDE_MODELS.smart
+const MODEL_PROSE = CLAUDE_MODELS.balanced
+const MODEL_CHAT = CLAUDE_MODELS.balanced
+const MODEL_SPARK = CLAUDE_MODELS.fast
 
 // Context budget caps — generous snippets to prevent hallucination from data gaps
 const MAX_THREADS = 12

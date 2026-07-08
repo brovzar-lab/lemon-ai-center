@@ -5,8 +5,9 @@ import { readTrackers, readSlips, readAdvisorTone } from '../data'
 import { committedMXN } from '../ranker'
 import { todayISO, ENGINE_TZ } from '../constants'
 import type { FrontKey, WeeklyReview } from '@shared/types'
+import { CLAUDE_MODELS } from '@shared/models'
 
-const REVIEW_MODEL = 'claude-sonnet-4-6'
+const REVIEW_MODEL = CLAUDE_MODELS.balanced
 
 /** Monday of the current week (engine TZ) as YYYY-MM-DD. */
 export function mondayOf(now: Date = new Date()): string {
@@ -59,7 +60,7 @@ export async function runWeeklyReview(uid: string): Promise<void> {
   if (rawEvents.length) {
     try {
       const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: CLAUDE_MODELS.fast,
         max_tokens: 1500,
         system: `Classify each calendar event title into exactly one bucket for a film studio CEO:
 - "fund": investor meetings, fund raise, GBM, Cinépolis, trust, capital

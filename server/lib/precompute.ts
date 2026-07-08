@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { CLAUDE_MODELS } from '@shared/models'
 import { db } from './firebase'
 import { computePriorityStack } from './priorityEngine'
 import { computeEnrichedFlags } from './relationshipContext'
@@ -32,7 +33,7 @@ ${eLines.length ? eLines.join('\n') : '  (no events today)'}`
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_MODELS.fast,
       max_tokens: 60,
       messages: [{ role: 'user', content: prompt }],
       system: 'You write executive north star sentences. One sentence. Direct, action-oriented.',

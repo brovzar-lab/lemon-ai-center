@@ -5,6 +5,7 @@ import { db } from '../lib/firebase'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { makeRateLimit } from '../middleware/rateLimit'
+import { CLAUDE_MODELS } from '@shared/models'
 
 export const correctionsRouter = Router()
 correctionsRouter.use(requireAuth)
@@ -44,7 +45,7 @@ correctionsRouter.post('/', csrfCheck, correctionsLimit, async (req, res) => {
     try {
       const anthropic = getAnthropicClient()
       const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: CLAUDE_MODELS.fast,
         max_tokens: 300,
         system: `You convert a CEO's correction into ONE clear, declarative memory statement the assistant should remember and honor going forward.
 Return ONLY valid JSON (no markdown): {"memory": "<one concise fact or instruction, e.g. 'Script Magazine is a newsletter — never surface it as HOT priority'>", "summary": "<≤8 word summary>"}`,

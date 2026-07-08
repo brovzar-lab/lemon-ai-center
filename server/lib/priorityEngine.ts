@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { CLAUDE_MODELS } from '@shared/models'
 import type { PriorityItem, PriorityLabel, PriorityUrgency } from '@shared/consolidation-types'
 
 export interface ContextSignal {
@@ -69,7 +70,7 @@ Rules:
 - ONLY reference information that appears in the Context above.`
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: CLAUDE_MODELS.balanced,
     max_tokens: 512,
     messages: [{ role: 'user', content: prompt }],
     system: 'You produce concise executive priority lists. Output only valid JSON arrays. No prose.',

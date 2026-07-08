@@ -5,11 +5,12 @@ import { getGmailClient } from '../lib/googleAuth'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { makeRateLimit } from '../middleware/rateLimit'
+import { CLAUDE_MODELS } from '@shared/models'
 
 export const voiceRouter = Router()
 voiceRouter.use(requireAuth)
 
-const MODEL = 'claude-sonnet-4-6'
+const MODEL = CLAUDE_MODELS.balanced
 
 function getAnthropicClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
