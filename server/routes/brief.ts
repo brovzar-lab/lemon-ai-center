@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { FieldValue } from 'firebase-admin/firestore'
 import { db } from '../lib/firebase'
 import { getGmailClient, getCalendarClient } from '../lib/googleAuth'
+import { respondIfReauthRequired } from '../lib/googleErrors'
 import { getBrainEngine } from '../lib/brain'
 import {
   JARVIS_SYSTEM,
@@ -17,14 +18,15 @@ import {
 import { csrfCheck } from '../middleware/csrfCheck'
 import { briefLimit } from '../middleware/rateLimit'
 import { getAnthropicClient } from '../lib/anthropic'
+import { CLAUDE_MODELS } from '@shared/models'
 import type { Citation, Claim } from '@shared/types'
 
 export const briefRouter = Router()
 
-const MODEL_BRIEF = 'claude-opus-4-7'
-const MODEL_PROSE = 'claude-sonnet-4-6'
-const MODEL_CHAT = 'claude-sonnet-4-6'
-const MODEL_SPARK = 'claude-haiku-4-5-20251001'
+const MODEL_BRIEF = CLAUDE_MODELS.smart
+const MODEL_PROSE = CLAUDE_MODELS.balanced
+const MODEL_CHAT = CLAUDE_MODELS.balanced
+const MODEL_SPARK = CLAUDE_MODELS.fast
 
 // Context budget caps — generous snippets to prevent hallucination from data gaps
 const MAX_THREADS = 12
@@ -86,6 +88,9 @@ export async function assembleContext(uid: string): Promise<{ items: ContextItem
       }
     }
   } catch (err) {
+    // A dead Google token must NOT be swallowed — let it propagate so the
+    // route returns REAUTH_REQUIRED instead of a briefing missing its inbox.
+    if ((err as { code?: string })?.code === 'REAUTH_REQUIRED') throw err
     console.warn('[brief] Gmail fetch failed:', err)
   }
 
@@ -118,6 +123,7 @@ export async function assembleContext(uid: string): Promise<{ items: ContextItem
       items.push({ type: 'calendar', id, label: `${summary} at ${start}`, snippet: desc })
     }
   } catch (err) {
+    if ((err as { code?: string })?.code === 'REAUTH_REQUIRED') throw err
     console.warn('[brief] Calendar fetch failed:', err)
   }
 
@@ -265,43 +271,63 @@ briefRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
   }
   const { forceRefresh = false } = req.body
 
-  // Assemble context (threads + calendar)
-  const { items, block: contextBlock, threadIds } = await assembleContext(uid)
+  // Assemble context (threads + calendar). This hits Gmail/Calendar and runs
+  // BEFORE the SSE stream opens, so surface a dead Google token / upstream
+  // failure as a normal JSON error here instead of hanging the request.
+  let ctx
+  try {
+    ctx = await assembleContext(uid)
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
+    return res.status(500).json({
+      error: { code: 'UPSTREAM_ERROR', message: 'Failed to assemble briefing context', retryable: true },
+    })
+  }
+  const { items, block: contextBlock, threadIds } = ctx
   const contextIds = items.map((i) => i.id)
   const briefId = computeBriefId(threadIds)
 
-  // Check cache (unless forceRefresh)
-  if (!forceRefresh) {
-    const cacheDoc = await db.collection(`users/${uid}/briefs`).doc(briefId).get()
-    if (cacheDoc.exists) {
-      const cached = cacheDoc.data()!
-      // Time-based TTL: regenerate if brief is older than 4 hours
-      const cachedGeneratedAt = cached.generatedAt?.toDate?.() ?? cached.generatedAt
-      const briefAgeMs = cachedGeneratedAt ? Date.now() - new Date(cachedGeneratedAt).getTime() : Infinity
-      if (briefAgeMs < 4 * 60 * 60 * 1000) {
-        return res.json({ data: { ...cached, isStale: false }, streaming: false })
-      }
-      // Brief is older than 4 hours — fall through to regeneration
-    }
-  }
-
-  // Fetch last brief for stale fallback
+  // Cache check + stale-fallback load. Both are Firestore reads that run BEFORE
+  // the SSE stream opens, so guard them: a Firestore failure must return an
+  // error, not hang the request with no response ever sent.
   let staleBrief: { jarvis: string; billy: string; generatedAt?: string; overview?: any; oneThing?: any; longBrief?: string } | null = null
-  const lastBriefSnap = await db
-    .collection(`users/${uid}/briefs`)
-    .orderBy('generatedAt', 'desc')
-    .limit(1)
-    .get()
-  if (!lastBriefSnap.empty) {
-    const d = lastBriefSnap.docs[0].data()
-    staleBrief = {
-      jarvis: d.jarvis,
-      billy: d.billy,
-      generatedAt: d.generatedAt?.toDate?.()?.toISOString(),
-      overview: d.overview,
-      oneThing: d.oneThing,
-      longBrief: d.longBrief,
+  try {
+    if (!forceRefresh) {
+      const cacheDoc = await db.collection(`users/${uid}/briefs`).doc(briefId).get()
+      if (cacheDoc.exists) {
+        const cached = cacheDoc.data()!
+        // Time-based TTL: regenerate if brief is older than 4 hours
+        const cachedGeneratedAt = cached.generatedAt?.toDate?.() ?? cached.generatedAt
+        const briefAgeMs = cachedGeneratedAt ? Date.now() - new Date(cachedGeneratedAt).getTime() : Infinity
+        if (briefAgeMs < 4 * 60 * 60 * 1000) {
+          return res.json({ data: { ...cached, isStale: false }, streaming: false })
+        }
+        // Brief is older than 4 hours — fall through to regeneration
+      }
     }
+
+    // Fetch last brief for stale fallback
+    const lastBriefSnap = await db
+      .collection(`users/${uid}/briefs`)
+      .orderBy('generatedAt', 'desc')
+      .limit(1)
+      .get()
+    if (!lastBriefSnap.empty) {
+      const d = lastBriefSnap.docs[0].data()
+      staleBrief = {
+        jarvis: d.jarvis,
+        billy: d.billy,
+        generatedAt: d.generatedAt?.toDate?.()?.toISOString(),
+        overview: d.overview,
+        oneThing: d.oneThing,
+        longBrief: d.longBrief,
+      }
+    }
+  } catch (err) {
+    console.error('[brief] Firestore cache read failed:', (err as Error).message)
+    return res.status(500).json({
+      error: { code: 'UPSTREAM_ERROR', message: 'Failed to load briefing cache', retryable: true },
+    })
   }
 
   // Begin SSE stream

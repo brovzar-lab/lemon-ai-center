@@ -4,10 +4,11 @@ import { CHAT_SYSTEM } from '../lib/prompts'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { chatLimit } from '../middleware/rateLimit'
 import { getAnthropicClient } from '../lib/anthropic'
+import { CLAUDE_MODELS } from '@shared/models'
 
 export const chatRouter = Router()
 
-const MODEL_CHAT = 'claude-sonnet-4-6'
+const MODEL_CHAT = CLAUDE_MODELS.balanced
 
 // --- Chat route: agentic — can read live state and act on the trackers ---
 

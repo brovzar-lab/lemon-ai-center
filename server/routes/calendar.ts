@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { getCalendarClient } from '../lib/googleAuth'
 import { requireAuth } from '../middleware/requireAuth'
 import { calendarLimit } from '../middleware/rateLimit'
+import { respondIfReauthRequired } from '../lib/googleErrors'
 import type { MeetingEvent } from '@shared/types'
 
 export const calendarRouter = Router()
@@ -47,6 +48,7 @@ calendarRouter.get('/events', calendarLimit, async (req, res) => {
 
     res.json({ data: events })
   } catch (err: any) {
+    if (respondIfReauthRequired(res, err)) return
     if (err.code === 403) {
       return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Calendar access denied', retryable: false } })
     }
@@ -60,7 +62,8 @@ calendarRouter.get('/events/:id', calendarLimit, async (req, res) => {
     const calendar = await getCalendarClient(uid)
     const event = await calendar.events.get({ calendarId: 'primary', eventId: req.params.id })
     res.json({ data: event.data })
-  } catch {
-    res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Event not found', retryable: false } })
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
+    res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Failed to load event', retryable: true } })
   }
 })

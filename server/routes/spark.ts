@@ -5,10 +5,11 @@ import { SPARK_SYSTEM } from '../lib/prompts'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { sparkLimit } from '../middleware/rateLimit'
 import { getAnthropicClient } from '../lib/anthropic'
+import { CLAUDE_MODELS } from '@shared/models'
 
 export const sparkRouter = Router()
 
-const MODEL_SPARK = 'claude-haiku-4-5-20251001'
+const MODEL_SPARK = CLAUDE_MODELS.fast
 
 // --- Spark route ---
 

@@ -7,6 +7,7 @@ interface InboxState {
   triageMode: boolean
   activeThread: string | null
   loading: boolean
+  error: string | null
   fetch: () => Promise<void>
   enterTriage: () => void
   exitTriage: () => void
@@ -21,14 +22,17 @@ export const useInboxStore = create<InboxState>()((set, get) => ({
   triageMode: false,
   activeThread: null,
   loading: false,
+  error: null,
 
   fetch: async () => {
-    set({ loading: true })
+    set({ loading: true, error: null })
     try {
       const threads = await apiFetch<InboxThread[]>('/api/gmail/threads')
-      set({ threads, loading: false })
-    } catch {
-      set({ loading: false })
+      set({ threads, loading: false, error: null })
+    } catch (err) {
+      // Do NOT leave threads silently empty — that renders as "all clear" and
+      // hides a real Gmail failure. Record the error so the view can say so.
+      set({ loading: false, error: (err as Error).message || 'Failed to load inbox' })
     }
   },
 

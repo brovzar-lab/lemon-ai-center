@@ -7,6 +7,7 @@ import type {
   ProjectCategory,
   LemonDelegationStatus,
 } from '@shared/types'
+import { CLAUDE_MODELS } from '@shared/models'
 
 /**
  * Headless inbox scan — extracted from routes/scan.ts so both the SSE
@@ -203,7 +204,7 @@ Respond with a single JSON object (no markdown fencing):
 }`
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: CLAUDE_MODELS.balanced,
     max_tokens: 4096,
     system: systemPrompt,
     messages: [

@@ -33,22 +33,22 @@ export class BrainIndex {
 
   /** Add or update a single document */
   addDoc(doc: BrainDocument): void {
-    const id = this.pathToId(doc.path)
-    // Remove old entry if updating
+    // Use the path itself as the FlexSearch id. A prior char-hash id could
+    // collide (two paths → same numeric id), which silently dropped one doc
+    // and made search return the wrong note. Path ids are unique by definition.
     if (this.docs.has(doc.path)) {
-      this.index.remove(id)
+      this.index.remove(doc.path)
     }
     this.docs.set(doc.path, doc)
     // Index a combined text of title + folder + plain text
     const indexText = `${doc.title} ${doc.folder.replace(/\//g, ' ')} ${doc.plainText}`
-    this.index.add(id, indexText)
+    this.index.add(doc.path, indexText)
   }
 
   /** Remove a document from the index */
   removeDoc(docPath: string): void {
-    const id = this.pathToId(docPath)
     this.docs.delete(docPath)
-    this.index.remove(id)
+    this.index.remove(docPath)
   }
 
   /** Get a document by path */
@@ -72,11 +72,11 @@ export class BrainIndex {
   search(query: string, limit = 20): BrainSearchResult[] {
     if (!query.trim()) return []
 
-    const ids = this.index.search(query, limit) as number[]
+    const ids = this.index.search(query, limit) as string[]
     const results: BrainSearchResult[] = []
 
     for (const id of ids) {
-      const doc = this.idToDoc(id)
+      const doc = this.docs.get(id)
       if (!doc) continue
 
       // Build a snippet around the query match
@@ -113,23 +113,6 @@ export class BrainIndex {
   }
 
   // ── Internals ──────────────────────────────────
-
-  private pathToId(path: string): number {
-    // Simple hash: sum of char codes
-    let hash = 0
-    for (let i = 0; i < path.length; i++) {
-      hash = ((hash << 5) - hash + path.charCodeAt(i)) | 0
-    }
-    return Math.abs(hash)
-  }
-
-  private idToDoc(id: number): BrainDocument | undefined {
-    // Reverse lookup — FlexSearch returns IDs, we need to match back
-    for (const doc of this.docs.values()) {
-      if (this.pathToId(doc.path) === id) return doc
-    }
-    return undefined
-  }
 
   private buildSnippet(doc: BrainDocument, query: string): string {
     const text = doc.plainText

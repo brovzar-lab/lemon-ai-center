@@ -67,27 +67,26 @@ todayRouter.get('/today-progress', async (req, res) => {
   const progress: TodayProgress = { done: 0, queued: 0, deferred: 0, archived: 0, logged: 0, decisions: 0 }
 
   try {
-    // Count tasks completed today
-    const tasksSnap = await db.collection(`users/${uid}/tasks`).where('done', '==', true).get()
+    // One pass over the user's tasks: count completed-today and created-today.
+    // (Previously two full scans; the second read the whole collection anyway.)
+    const tasksSnap = await db.collection(`users/${uid}/tasks`).get()
     for (const doc of tasksSnap.docs) {
       const d = doc.data()
       const doneAt = d.doneAt || ''
-      if (typeof doneAt === 'string' && doneAt.startsWith(todayIso)) {
-        progress.done++
-      }
-    }
-
-    // Count tasks created today
-    const createdSnap = await db.collection(`users/${uid}/tasks`).get()
-    for (const doc of createdSnap.docs) {
-      const d = doc.data()
       const createdAt = d.createdAt || ''
-      if (typeof createdAt === 'string' && createdAt.startsWith(todayIso) && !d.done) {
+      if (d.done && typeof doneAt === 'string' && doneAt.startsWith(todayIso)) {
+        progress.done++
+      } else if (!d.done && typeof createdAt === 'string' && createdAt.startsWith(todayIso)) {
         progress.queued++
       }
     }
-  } catch {
-    // Firestore unavailable
+  } catch (err) {
+    // Do NOT return fabricated zeros as if they were real (that reads as
+    // "0 done today" instead of "we couldn't load it"). Surface the failure.
+    console.error('[today-progress] Firestore read failed:', (err as Error).message)
+    return res.status(500).json({
+      error: { code: 'UPSTREAM_ERROR', message: 'Could not load today’s progress', retryable: true },
+    })
   }
 
   res.json({ data: progress })

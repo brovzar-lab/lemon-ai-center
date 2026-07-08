@@ -11,7 +11,6 @@ export function MemoryView() {
   const add = useMemoryStore((s) => s.add)
   const setActive = useMemoryStore((s) => s.setActive)
   const remove = useMemoryStore((s) => s.remove)
-  const configured = useMemoryStore((s) => s.configured)
   const loading = useMemoryStore((s) => s.loading)
 
   const [draft, setDraft] = useState('')
@@ -33,15 +32,6 @@ export function MemoryView() {
         return entries
     }
   }, [entries, filter])
-
-  if (!configured) {
-    return (
-      <EmptyState
-        title="LEMON workspace not connected"
-        body="Set VITE_LEMON_FIREBASE_* env vars to load memory entries."
-      />
-    )
-  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()

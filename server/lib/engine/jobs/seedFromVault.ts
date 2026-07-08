@@ -4,8 +4,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import { FieldValue } from 'firebase-admin/firestore'
 import { db } from '../../firebase'
 import type { InvestorStage, ScriptStage } from '@shared/types'
+import { CLAUDE_MODELS } from '@shared/models'
 
-const SEED_MODEL = 'claude-sonnet-4-6'
+const SEED_MODEL = CLAUDE_MODELS.balanced
 
 /**
  * First-run seeding: extract investors, slate scripts, hard deadlines,

@@ -55,6 +55,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
   const fetchInbox = useInboxStore((s) => s.fetch)
   const threads = useInboxStore((s) => s.threads)
   const inboxLoading = useInboxStore((s) => s.loading)
+  const inboxError = useInboxStore((s) => s.error)
   const subscribeDelegations = useLemonDelegationsStore((s) => s.subscribe)
   const delegations = useLemonDelegationsStore((s) => s.delegations)
   const setDelegationStatus = useLemonDelegationsStore((s) => s.setStatus)
@@ -218,6 +219,10 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
   }
 
   const totalUrgent = narrative.items.filter((i) => i.priority !== 'info').length
+  // Show the inbox error state ONLY when there's genuinely nothing to display.
+  // A transient background-poll failure (usePollingEngine refetches every 2 min)
+  // must not blank good/stale threads or hide unrelated delegation/deal alerts.
+  const inboxLoadFailedEmpty = Boolean(inboxError) && narrative.items.length === 0
 
   return (
     <section className="space-y-5 animate-in">
@@ -227,7 +232,9 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
             Inbox Intelligence
           </h2>
           <p className="text-sm font-sans text-ink-2 mt-2 leading-relaxed max-w-2xl">
-            {totalUrgent > 0
+            {inboxLoadFailedEmpty
+              ? 'Inbox could not be loaded — this is an error, not an empty inbox.'
+              : totalUrgent > 0
               ? `You have ${totalUrgent} thing${totalUrgent !== 1 ? 's' : ''} that need${totalUrgent === 1 ? 's' : ''} attention today.`
               : 'Everything looks good — nothing urgent right now.'}
           </p>
@@ -245,7 +252,12 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
       </header>
 
       {/* Narrative items */}
-      {narrative.items.length === 0 ? (
+      {inboxLoadFailedEmpty ? (
+        <EmptyState
+          title="Couldn’t load your inbox"
+          body="Gmail didn’t respond, so this list may be incomplete. Reconnect Google or retry — don’t treat this as an empty inbox."
+        />
+      ) : narrative.items.length === 0 ? (
         <EmptyState
           title="All clear"
           body="No slipping threads, overdue delegations, or stalling deals."

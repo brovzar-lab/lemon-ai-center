@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { CLAUDE_MODELS } from '@shared/models'
 import type { EnrichedRelationshipFlag } from '@shared/consolidation-types'
 import type { ContextSignal } from './priorityEngine'
 
@@ -45,7 +46,7 @@ ${briefs.join('\n')}`
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_MODELS.fast,
       max_tokens: 100 * slugs.length,
       messages: [{ role: 'user', content: prompt }],
       system: 'You write one-line relationship context for an executive daily briefing. Tight, factual, action-oriented.',

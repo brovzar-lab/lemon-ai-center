@@ -90,12 +90,11 @@ export const useTodayStore = create<TodayState>()((set, get) => ({
 
   triggerPrecompute: async () => {
     try {
-      const csrfRes = await fetch('/api/csrf', { credentials: 'include' })
-      const csrfJson = await csrfRes.json()
+      // CSRF is enforced by the sameSite cookie + Origin allowlist; no token needed.
       await fetch('/api/precompute', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfJson.data?.token ?? '' },
+        headers: { 'Content-Type': 'application/json' },
       })
       // Refresh after precompute
       await get().fetchToday()
@@ -106,12 +105,10 @@ export const useTodayStore = create<TodayState>()((set, get) => ({
 
   logInteraction: async (slug, note) => {
     try {
-      const csrfRes = await fetch('/api/csrf', { credentials: 'include' })
-      const csrfJson = await csrfRes.json()
       await fetch('/api/relationship/log', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfJson.data?.token ?? '' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, note }),
       })
       // Remove from local state

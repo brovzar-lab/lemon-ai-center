@@ -4,8 +4,9 @@ import { readTrackers, readSlips, readAdvisorTone } from '../data'
 import { committedMXN } from '../ranker'
 import { todayISO, daysBetween, BURNOUT } from '../constants'
 import type { AdvisorNote, AdvisorTone } from '@shared/types'
+import { CLAUDE_MODELS } from '@shared/models'
 
-const ADVISOR_MODEL = 'claude-sonnet-4-6'
+const ADVISOR_MODEL = CLAUDE_MODELS.balanced
 
 function toneInstructions(tone: AdvisorTone): string {
   if (tone === 'consigliere') {
