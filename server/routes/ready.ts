@@ -35,12 +35,14 @@ readyRouter.get('/', (_req, res) => {
             docCount: stats.docCount,
             chunkCount: stats.chunkCount,
             totalBytes: stats.totalBytes,
+            lastIndexedAt: stats.lastIndexedAt,
           }
         : {
             ready: false,
             docCount: 0,
             chunkCount: 0,
             totalBytes: 0,
+            lastIndexedAt: null,
           },
     },
   })

@@ -18,6 +18,8 @@ export class BrainEngine {
   private vaultRoot: string
   private index: BrainIndex
   private ready = false
+  /** ISO time of the last full scan or incremental update — for staleness checks */
+  private lastIndexedAt: string | null = null
 
   constructor(vaultRoot: string) {
     this.vaultRoot = path.resolve(vaultRoot)
@@ -39,6 +41,7 @@ export class BrainEngine {
     // Start file watcher for auto-updates
     startVaultWatcher(this.vaultRoot, this)
 
+    this.lastIndexedAt = new Date().toISOString()
     this.ready = true
   }
 
@@ -127,12 +130,13 @@ export class BrainEngine {
   }
 
   /** Get total stats */
-  getStats(): { docCount: number; chunkCount: number; totalBytes: number } {
+  getStats(): { docCount: number; chunkCount: number; totalBytes: number; lastIndexedAt: string | null } {
     const allDocs = this.index.getAllDocs()
     return {
       docCount: allDocs.length,
       chunkCount: allDocs.reduce((sum, d) => sum + d.chunks.length, 0),
       totalBytes: allDocs.reduce((sum, d) => sum + d.sizeBytes, 0),
+      lastIndexedAt: this.lastIndexedAt,
     }
   }
 
@@ -143,12 +147,14 @@ export class BrainEngine {
     const doc = scanFile(this.vaultRoot, absolutePath)
     if (doc) {
       this.index.addDoc(doc)
+      this.lastIndexedAt = new Date().toISOString()
     }
   }
 
   /** Remove a document from the index */
   removeDocument(relPath: string): void {
     this.index.removeDoc(relPath)
+    this.lastIndexedAt = new Date().toISOString()
   }
 }
 
