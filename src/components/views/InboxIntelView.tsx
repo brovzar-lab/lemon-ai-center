@@ -219,6 +219,10 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
   }
 
   const totalUrgent = narrative.items.filter((i) => i.priority !== 'info').length
+  // Show the inbox error state ONLY when there's genuinely nothing to display.
+  // A transient background-poll failure (usePollingEngine refetches every 2 min)
+  // must not blank good/stale threads or hide unrelated delegation/deal alerts.
+  const inboxLoadFailedEmpty = Boolean(inboxError) && narrative.items.length === 0
 
   return (
     <section className="space-y-5 animate-in">
@@ -228,7 +232,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
             Inbox Intelligence
           </h2>
           <p className="text-sm font-sans text-ink-2 mt-2 leading-relaxed max-w-2xl">
-            {inboxError
+            {inboxLoadFailedEmpty
               ? 'Inbox could not be loaded — this is an error, not an empty inbox.'
               : totalUrgent > 0
               ? `You have ${totalUrgent} thing${totalUrgent !== 1 ? 's' : ''} that need${totalUrgent === 1 ? 's' : ''} attention today.`
@@ -248,7 +252,7 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
       </header>
 
       {/* Narrative items */}
-      {inboxError ? (
+      {inboxLoadFailedEmpty ? (
         <EmptyState
           title="Couldn’t load your inbox"
           body="Gmail didn’t respond, so this list may be incomplete. Reconnect Google or retry — don’t treat this as an empty inbox."

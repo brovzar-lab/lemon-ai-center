@@ -1,4 +1,5 @@
 import type { Claim } from '@shared/types'
+import { useConnectionStore } from '@/stores/useConnectionStore'
 
 export type BriefSseEvent =
   | { type: 'cached'; jarvis: string; billy: string; generatedAt?: string; isStale: boolean; isDemo?: boolean; overview?: Claim[]; oneThing?: Claim & { why: string }; longBrief?: string; decisionOptions?: import('@shared/types').DecisionOption[]; soulNote?: string }
@@ -50,7 +51,21 @@ export function startBriefStream(
       })
 
       if (!response.ok) {
-        callbacks.onError('Brief request failed')
+        // Read the error body so a dead Google token (REAUTH_REQUIRED) raises
+        // the app-wide reconnect banner — the brief is the default, polled view,
+        // so this is the most likely place to hit it. Without this it failed
+        // completely silently (no body read, no banner).
+        let message = 'Brief request failed'
+        try {
+          const body = await response.json()
+          if (body?.error?.code === 'REAUTH_REQUIRED') {
+            useConnectionStore.getState().setReauthRequired(true)
+          }
+          message = body?.error?.message ?? message
+        } catch {
+          /* non-JSON error body */
+        }
+        callbacks.onError(message)
         return
       }
 
