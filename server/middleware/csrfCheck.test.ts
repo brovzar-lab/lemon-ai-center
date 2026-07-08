@@ -54,4 +54,20 @@ describe('csrfCheck', () => {
     const res = await request(makeApp()).put('/resource').set('Origin', 'https://myapp.railway.app')
     expect(res.status).toBe(200)
   })
+
+  test('trusts a trycloudflare quick tunnel outside production', async () => {
+    const res = await request(makeApp()).post('/resource').set('Origin', 'https://abc-def.trycloudflare.com')
+    expect(res.status).toBe(200)
+  })
+
+  test('rejects a trycloudflare origin in production', async () => {
+    const prev = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    try {
+      const res = await request(makeApp()).post('/resource').set('Origin', 'https://abc-def.trycloudflare.com')
+      expect(res.status).toBe(403)
+    } finally {
+      process.env.NODE_ENV = prev
+    }
+  })
 })

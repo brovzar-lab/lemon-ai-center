@@ -133,10 +133,11 @@ app.use(cors({
     if (!origin) return cb(null, true)
     const allowed = [
       /^http:\/\/localhost/,
-      /\.trycloudflare\.com$/,
       /\.lemonfilms\.com$/,
       /\.cloudflareaccess\.com$/,
       /\.billyrovzar\.com$/,
+      // Quick tunnels are dev-only (see csrfCheck.ts) — never trusted in prod.
+      ...(isProd ? [] : [/\.trycloudflare\.com$/]),
     ]
     if (allowed.some((re) => re.test(origin))) return cb(null, true)
     // Also allow the ALLOWED_ORIGIN env var if set
