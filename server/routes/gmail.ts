@@ -5,6 +5,7 @@ import { tagThread, prioritizeThread, DEFAULT_TAG_PATTERNS } from '../lib/thread
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { gmailLimit, gmailSendLimit } from '../middleware/rateLimit'
+import { respondIfReauthRequired } from '../lib/googleErrors'
 import { writeAuditLog } from '../lib/auditLog'
 import { db } from '../lib/firebase'
 import type { InboxThread, ThreadTag, ThreadPriority } from '@shared/types'
@@ -76,6 +77,7 @@ gmailRouter.get('/threads', gmailLimit, async (req, res) => {
     results.sort((a, b) => order[a.priority] - order[b.priority])
     res.json({ data: results })
   } catch (err: any) {
+    if (respondIfReauthRequired(res, err)) return
     if (err.code === 403 || err.message?.includes('PERMISSION_DENIED')) {
       return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Gmail access denied', retryable: false } })
     }
@@ -89,7 +91,8 @@ gmailRouter.get('/threads/:id', gmailLimit, async (req, res) => {
     const gmail = await getGmailClient(uid)
     const thread = await gmail.users.threads.get({ userId: 'me', id: req.params.id, format: 'FULL' })
     res.json({ data: thread.data })
-  } catch {
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
     res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Failed to fetch thread', retryable: true } })
   }
 })
@@ -112,7 +115,8 @@ gmailRouter.post('/send', csrfCheck, gmailSendLimit, async (req, res) => {
     await gmail.users.messages.send({ userId: 'me', requestBody: { raw, threadId } })
     writeAuditLog(uid, 'gmail_send', req.ip || '', req.headers['user-agent'] || '', { threadId }).catch(() => {})
     res.json({ data: { sent: true } })
-  } catch {
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
     res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Send failed', retryable: true } })
   }
 })
@@ -124,7 +128,8 @@ gmailRouter.post('/label', csrfCheck, gmailLimit, async (req, res) => {
     const gmail = await getGmailClient(uid)
     await gmail.users.messages.modify({ userId: 'me', id: messageId, requestBody: { addLabelIds, removeLabelIds } })
     res.json({ data: { ok: true } })
-  } catch {
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
     res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Label failed', retryable: true } })
   }
 })
@@ -141,7 +146,8 @@ gmailRouter.post('/archive', csrfCheck, gmailLimit, async (req, res) => {
       expiresAt: new Date(Date.now() + UNDO_TTL_MS),
     })
     res.json({ data: { archived: true } })
-  } catch {
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
     res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Archive failed', retryable: true } })
   }
 })
@@ -188,7 +194,8 @@ gmailRouter.post('/triage/defer', csrfCheck, gmailLimit, async (req, res) => {
     writeAuditLog(uid, 'triage_defer', req.ip || '', req.headers['user-agent'] || '', { messageId, deferLabel }).catch(() => {})
 
     res.json({ data: { deferred: true, label: deferLabel } })
-  } catch {
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
     res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Defer failed', retryable: true } })
   }
 })
@@ -228,7 +235,8 @@ gmailRouter.post('/triage/undo', csrfCheck, gmailLimit, async (req, res) => {
     writeAuditLog(uid, 'triage_undo', req.ip || '', req.headers['user-agent'] || '', { messageId, undoneAction: entry.action }).catch(() => {})
 
     res.json({ data: { undone: true, restoredLabels: addBack } })
-  } catch {
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
     res.status(500).json({ error: { code: 'UPSTREAM_ERROR', message: 'Undo failed', retryable: true } })
   }
 })

@@ -35,6 +35,7 @@ beforeAll(() => {
 })
 
 import { gmailRouter } from './gmail'
+import { getGmailClient } from '../lib/googleAuth'
 
 function makeApp() {
   const app = express()
@@ -79,5 +80,17 @@ describe('GET /api/gmail/threads/:id', () => {
     const res = await request(makeApp()).get('/api/gmail/threads/th1')
     expect(res.status).toBe(200)
     expect(res.body.data.id).toBe('th1')
+  })
+})
+
+describe('reauth surfacing', () => {
+  test('a dead Google token returns 409 REAUTH_REQUIRED, not a retryable 500', async () => {
+    vi.mocked(getGmailClient).mockRejectedValueOnce(
+      Object.assign(new Error('reconnect'), { code: 'REAUTH_REQUIRED' }),
+    )
+    const res = await request(makeApp()).get('/api/gmail/threads')
+    expect(res.status).toBe(409)
+    expect(res.body.error.code).toBe('REAUTH_REQUIRED')
+    expect(res.body.error.retryable).toBe(false)
   })
 })

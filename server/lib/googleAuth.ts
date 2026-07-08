@@ -2,7 +2,31 @@ import { google } from 'googleapis'
 import { FieldValue } from 'firebase-admin/firestore'
 import { db } from './firebase'
 import { decrypt, encrypt } from './encryption'
-import { getOrRefreshToken } from './tokenCache'
+import { getOrRefreshToken, clearAccessToken } from './tokenCache'
+
+/**
+ * Thrown when Google refuses to refresh the access token because the stored
+ * refresh token is dead (revoked consent / expired). The only fix is for the
+ * user to reconnect their Google account — retrying will never succeed — so
+ * callers must surface this distinctly (code REAUTH_REQUIRED), NOT as a
+ * generic retryable "unavailable" error.
+ */
+export class ReauthRequiredError extends Error {
+  readonly code = 'REAUTH_REQUIRED' as const
+  constructor(message = 'Google account must be reconnected') {
+    super(message)
+    this.name = 'ReauthRequiredError'
+  }
+}
+
+/** Detect Google's `invalid_grant` (revoked/expired refresh token). */
+function isInvalidGrant(err: unknown): boolean {
+  const e = err as { response?: { data?: { error?: string } }; message?: string } | null
+  return (
+    e?.response?.data?.error === 'invalid_grant' ||
+    /invalid_grant/i.test(e?.message ?? '')
+  )
+}
 
 async function getDecryptedRefreshToken(uid: string): Promise<string> {
   const doc = await db.collection(`users/${uid}/google_tokens`).doc('token').get()
@@ -21,7 +45,19 @@ async function buildOAuth2Client(uid: string) {
   const accessToken = await getOrRefreshToken(uid, async () => {
     const refreshToken = await getDecryptedRefreshToken(uid)
     oauth2Client.setCredentials({ refresh_token: refreshToken })
-    const { credentials } = await oauth2Client.refreshAccessToken()
+
+    let credentials
+    try {
+      ;({ credentials } = await oauth2Client.refreshAccessToken())
+    } catch (err) {
+      if (isInvalidGrant(err)) {
+        // Dead refresh token — drop any stale cached access token and signal
+        // that the user must reconnect. Retrying is futile until they do.
+        clearAccessToken(uid)
+        throw new ReauthRequiredError()
+      }
+      throw err
+    }
 
     if (credentials.refresh_token) {
       const encrypted = encrypt(credentials.refresh_token)

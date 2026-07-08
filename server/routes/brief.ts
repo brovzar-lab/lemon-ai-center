@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { FieldValue } from 'firebase-admin/firestore'
 import { db } from '../lib/firebase'
 import { getGmailClient, getCalendarClient } from '../lib/googleAuth'
+import { respondIfReauthRequired } from '../lib/googleErrors'
 import { getBrainEngine } from '../lib/brain'
 import {
   JARVIS_SYSTEM,
@@ -265,8 +266,19 @@ briefRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
   }
   const { forceRefresh = false } = req.body
 
-  // Assemble context (threads + calendar)
-  const { items, block: contextBlock, threadIds } = await assembleContext(uid)
+  // Assemble context (threads + calendar). This hits Gmail/Calendar and runs
+  // BEFORE the SSE stream opens, so surface a dead Google token / upstream
+  // failure as a normal JSON error here instead of hanging the request.
+  let ctx
+  try {
+    ctx = await assembleContext(uid)
+  } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
+    return res.status(500).json({
+      error: { code: 'UPSTREAM_ERROR', message: 'Failed to assemble briefing context', retryable: true },
+    })
+  }
+  const { items, block: contextBlock, threadIds } = ctx
   const contextIds = items.map((i) => i.id)
   const briefId = computeBriefId(threadIds)
 
