@@ -140,8 +140,8 @@ export function Dashboard() {
     // Load voice profile
     loadVoiceProfile().then(setVoiceProfile)
 
-    // LEMON workspace subscriptions for the workspace tabs (counts and intel).
-    // Each subscription is a no-op if VITE_LEMON_FIREBASE_* vars are missing.
+    // Workspace-tab subscriptions (counts and intel), gated on the opsViews flag.
+    // These now read the primary Firebase project under users/{uid}/... (see firestoreLemon.ts).
     const unsubDeals = opsViews ? subscribeDeals() : () => {}
     const unsubProjects = opsViews ? subscribeProjects() : () => {}
     const unsubLemonDelegations = opsViews ? subscribeLemonDelegations() : () => {}
