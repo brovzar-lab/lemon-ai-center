@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 
-const WRITE_METHODS = new Set(['POST', 'PATCH', 'DELETE'])
+const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 // Must match the CORS allowlist in server/index.ts
 const ALLOWED_ORIGIN_PATTERNS = [

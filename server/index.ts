@@ -2,7 +2,6 @@ if (process.env.NODE_ENV === 'production') require('module-alias/register')
 import 'dotenv/config'
 import express from 'express'
 import path from 'path'
-import crypto from 'crypto'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -177,13 +176,9 @@ app.use(
 
 app.use('/api/ready', readyRouter)
 
-// S-8: Use a dedicated random CSRF token — never expose the sessionID to JavaScript
-app.get('/api/csrf', (req, res) => {
-  if (!(req.session as any).csrfToken) {
-    (req.session as any).csrfToken = crypto.randomBytes(32).toString('hex')
-  }
-  res.json({ data: { token: (req.session as any).csrfToken } })
-})
+// CSRF is enforced by csrfCheck (Origin allowlist) + the sameSite='lax'
+// session cookie. There is no double-submit token: the old /api/csrf
+// endpoint minted a token the server never validated, so it was removed.
 
 app.get('/api/me', requireAuth, (req, res) => {
   res.json({ data: { uid: req.session.uid, email: req.session.email } })

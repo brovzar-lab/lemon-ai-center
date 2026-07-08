@@ -12,6 +12,7 @@ function makeApp() {
   app.use(csrfCheck)
   app.get('/resource', (_req, res) => res.json({ ok: true }))
   app.post('/resource', (_req, res) => res.json({ ok: true }))
+  app.put('/resource', (_req, res) => res.json({ ok: true }))
   app.delete('/resource', (_req, res) => res.json({ ok: true }))
   return app
 }
@@ -41,5 +42,16 @@ describe('csrfCheck', () => {
   test('rejects POST with no origin header', async () => {
     const res = await request(makeApp()).post('/resource')
     expect(res.status).toBe(403)
+  })
+
+  test('rejects PUT from wrong origin (PUT is a write method)', async () => {
+    const res = await request(makeApp()).put('/resource').set('Origin', 'https://evil.com')
+    expect(res.status).toBe(403)
+    expect(res.body.error.code).toBe('FORBIDDEN')
+  })
+
+  test('allows PUT from correct origin', async () => {
+    const res = await request(makeApp()).put('/resource').set('Origin', 'https://myapp.railway.app')
+    expect(res.status).toBe(200)
   })
 })

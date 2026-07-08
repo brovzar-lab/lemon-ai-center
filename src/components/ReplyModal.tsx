@@ -46,16 +46,12 @@ export default function ReplyModal({ email, onClose }: Props) {
     setSendError(null)
 
     try {
-      const csrfRes = await fetch('/api/csrf', { credentials: 'include' })
-      const csrfData = await csrfRes.json()
-      const csrfToken = csrfData.data?.token || ''
-
+      // CSRF is enforced by the sameSite cookie + Origin allowlist; no token needed.
       const res = await fetch('/api/claude/draft-reply', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken,
         },
         body: JSON.stringify({
           email: {
