@@ -153,6 +153,7 @@ voiceRouter.post('/train', csrfCheck, trainLimit, async (req, res) => {
   try {
     const response = await anthropic.messages.create({
       model: MODEL,
+      thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
       max_tokens: 2000,
       system: `You are analyzing a CEO's sent emails to extract their writing voice profile. Return ONLY valid JSON with this exact structure:
 {

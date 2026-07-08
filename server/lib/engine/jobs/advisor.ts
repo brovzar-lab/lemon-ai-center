@@ -94,6 +94,7 @@ Respond with ONLY JSON (no fencing):
   try {
     const response = await anthropic.messages.create({
       model: ADVISOR_MODEL,
+      thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
       max_tokens: 800,
       system,
       messages: [{ role: 'user', content: `FACTS (${date}):\n${facts.join('\n')}` }],

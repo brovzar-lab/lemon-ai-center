@@ -205,6 +205,7 @@ Respond with a single JSON object (no markdown fencing):
 
   const response = await anthropic.messages.create({
     model: CLAUDE_MODELS.balanced,
+    thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
     max_tokens: 4096,
     system: systemPrompt,
     messages: [

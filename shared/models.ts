@@ -1,17 +1,17 @@
 // Current Claude model ids. Every server AI call routes through these so a
 // model refresh is a one-line change here (audit #7).
 //
-// `balanced` is still Sonnet 4.6, NOT Sonnet 5, on purpose: Sonnet 5 runs
-// adaptive thinking by default and the only way to preserve the current
-// thinking-off behavior is `thinking: { type: 'disabled' }`, which the pinned
-// @anthropic-ai/sdk (0.27.x) does not type. Upgrade the SDK first, then flip
-// `balanced` to 'claude-sonnet-5' and add thinking:disabled at the small
-// max_tokens call sites (aiChat 1024, priorityEngine 512) — do those together.
+// `balanced` is Sonnet 5. Sonnet 5 runs ADAPTIVE THINKING by default, so every
+// balanced call site passes `thinking: { type: 'disabled' }` to preserve the
+// prior (Sonnet 4.6, thinking-off) behavior and keep tight max_tokens budgets
+// intact (aiChat 1024, priorityEngine 512). To enable adaptive thinking on a
+// given route, drop the `thinking` line there and raise max_tokens to leave
+// room for the reasoning tokens.
 export const CLAUDE_MODELS = {
   /** Deep work: slate chat, briefings, skill dispatch, coverage. */
   smart: 'claude-opus-4-8',
   /** General reasoning: chat, drafts, priority ranking, brief prose. */
-  balanced: 'claude-sonnet-4-6',
+  balanced: 'claude-sonnet-5',
   /** Cheap + fast: filing confirmations, classification, small parses. */
   fast: 'claude-haiku-4-5',
 } as const

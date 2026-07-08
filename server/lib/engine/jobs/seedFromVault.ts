@@ -69,6 +69,7 @@ export async function runSeedFromVault(uid: string): Promise<void> {
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const response = await anthropic.messages.create({
     model: SEED_MODEL,
+    thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
     max_tokens: 4000,
     system: `You are seeding a CEO dashboard from Billy Rovzar's knowledge vault. Extract ONLY facts present in the notes — never invent names, amounts, or dates.
 

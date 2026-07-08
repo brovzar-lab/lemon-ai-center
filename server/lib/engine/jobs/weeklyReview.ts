@@ -125,6 +125,7 @@ Respond ONLY with a JSON array of bucket strings, one per event, same order.`,
   try {
     const response = await anthropic.messages.create({
       model: REVIEW_MODEL,
+      thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
       max_tokens: 1200,
       system: `You are the Advisor writing the weekly CEO review for Billy Rovzar (Lemon Studios). ${
         tone === 'brutal'

@@ -81,6 +81,7 @@ draftReplyRouter.post('/', csrfCheck, chatLimit, async (req, res) => {
   try {
     const stream: any = anthropic.messages.stream({
       model: MODEL,
+      thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
       max_tokens: 600,
       system: `You are drafting an email reply AS Billy Rovzar, CEO of Lemon Studios.
 
