@@ -1,5 +1,6 @@
 import { db } from '../firebase'
 import { ENGINE_TZ } from './constants'
+import { notifyJobFailure } from './alert'
 import type { EngineJobId } from '@shared/types'
 import { runInboxScan } from './jobs/inboxScan'
 import { runMorningAssembly } from './jobs/morningAssembly'
@@ -109,6 +110,9 @@ export async function runJob(uid: string, jobId: EngineJobId): Promise<void> {
   running.add(jobId)
   const ledger = db.doc(`users/${uid}/engine_jobs/${jobId}`)
   const startedAt = Date.now()
+  // Capture the prior status BEFORE we overwrite it, so we alert only on the
+  // transition into failure (not on every retry of an already-failing job).
+  const priorStatus = (await ledger.get()).data()?.status as string | undefined
   await ledger.set(
     { jobId, status: 'running', lastRun: new Date().toISOString() },
     { merge: true },
@@ -141,6 +145,11 @@ export async function runJob(uid: string, jobId: EngineJobId): Promise<void> {
       { merge: true },
     )
     console.error(`[engine] ${jobId} FAILED: ${message}`)
+    // Alert out-of-app only when the job just STARTED failing, so a persistent
+    // failure (e.g. dead Google token) doesn't spam every scheduled run.
+    if (priorStatus !== 'error') {
+      void notifyJobFailure(jobId, message)
+    }
   } finally {
     running.delete(jobId)
   }
