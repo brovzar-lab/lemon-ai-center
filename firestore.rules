@@ -6,9 +6,22 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Allowed users list
+    // A legitimate session always authenticates via a server-minted custom
+    // token (src/lib/firebaseAuth.ts -> signInWithCustomToken), and the server
+    // only mints those for emails on ALLOWED_EMAILS (server/routes/auth.ts).
+    // Requiring the 'custom' provider therefore blocks any OTHER Firebase
+    // sign-in provider (Google, anonymous, password) that might be enabled on
+    // the project from reading the shared corpus below. User-scoped and
+    // owner-scoped collections stay on isAuthed() because they are already
+    // gated by request.auth.uid, which an outside identity can never match.
+    function isServerAuthed() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'custom';
+    }
+
+    // Allowed users list — server-authed only (prevents enumerating who is permitted)
     match /allowed_users/{email} {
-      allow read: if isAuthed();
+      allow read: if isServerAuthed();
       allow write: if false;
     }
 
@@ -60,31 +73,31 @@ service cloud.firestore {
       }
     }
 
-    // Drive corpus — server write only, authenticated read
+    // Drive corpus — server write only; server-authed read (confidential CFO archive)
     match /system/corpus/chunks/{chunkId} {
-      allow read: if isAuthed();
+      allow read: if isServerAuthed();
       allow write: if false;
     }
     match /system/corpus/files/{fileId} {
-      allow read: if isAuthed();
+      allow read: if isServerAuthed();
       allow write: if false;
     }
 
-    // Obsidian notes — localhost-only write (enforced in API), authenticated read
+    // Obsidian notes — localhost-only write (enforced in API); server-authed read
     match /system/obsidian/notes/{noteId} {
-      allow read: if isAuthed();
+      allow read: if isServerAuthed();
       allow write: if false;
     }
 
     // Sync status docs
     match /system/{docId} {
-      allow read: if isAuthed();
+      allow read: if isServerAuthed();
       allow write: if false;
     }
 
     // Documents metadata
     match /documents/{documentId} {
-      allow read: if isAuthed();
+      allow read: if isServerAuthed();
       allow write: if false;
     }
 
