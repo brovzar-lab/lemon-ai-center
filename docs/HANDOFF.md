@@ -1,60 +1,51 @@
 # HANDOFF — LEMON-AI-CENTER (2026-07-08)
 
 ## Where we left off
-This session did no new code. It re-verified and refreshed this handoff. The live state below is confirmed as of 2026-07-08.
+Big day, all verified. Three things happened in this session, in order:
 
-The real work all landed earlier on 2026-07-08: the full code audit (10 fixes) plus a follow-up SDK and model upgrade, across three stacked branches.
+1. **PR #4 (the 10-fix audit) is MERGED into main and LIVE in prod.** Merged with a merge commit (8d40b8b). Railway auto-deployed; prod verified healthy after the deploy: `/health` ok, Brain ready (4415 docs), and `/api/ready` now shows `lastIndexedAt` — a field added by audit #10, which proves the new code is what is running. The vault-clone PAT gotcha did not bite.
+2. **The two blockers on the SDK work are CLEARED.** (a) The adversarial review ran: two independent agents swept all 23 Anthropic call sites and the 0.27-to-0.110 SDK jump. All param/thinking/prefill/registry verdicts PASS. The review caught one real critical bug (see below), now fixed. (b) The live API test ran: 4 real calls on all three tiers including the streaming path — 4/4 passed on SDK 0.110.
+3. **PR #5 is open and fully verified: https://github.com/brovzar-lab/lemon-ai-center/pull/5** (sdk-upgrade into main). It contains the SDK 0.27.3 to 0.110.0 upgrade, the Sonnet 5 flip (thinking disabled at all 10 balanced sites), the draft-reply fix, and handoff docs. Full verification evidence is posted as a PR comment. No rebase was ever needed — the merge-commit topology means PR #5 shows only its own commits.
 
-- `audit` — the reviewed core. Superseded by audit_2. Ignore it.
-- `audit_2` — 15 commits, all 10 audit fixes. This is open as PR #4 (audit_2 into main): "Audit 2026-07-08: 10 security, reliability & cleanup fixes". Every one of the 10 items came back clean in review. The Firestore rules from that PR are ALREADY DEPLOYED to prod.
-- `sdk-upgrade` — the current branch, working tree clean. It has audit_2's 15 commits PLUS 2 new ones: (1) upgraded `@anthropic-ai/sdk` from 0.27.3 to 0.110.0, (2) flipped the Sonnet tier to Sonnet 5 with thinking disabled at all 10 call sites. Those 17 commits are pushed to origin. The handoff commit sits on top of them locally and is NOT pushed yet.
-
-The SDK and Sonnet 5 work passed typecheck, build, all 384 tests, and a runtime construction smoke test in the session that built it. Its adversarial reviewer was still running when that session ended, so that review never finished (see Open loops).
+**The bug the review caught (fixed in 5e8dadc):** `/api/claude/draft-reply` consumed `stream.textStream`, which does not exist in SDK 0.110 — or in 0.27. The feature was silently broken BEFORE the upgrade: every call threw at runtime, a bare catch swallowed it, and the frontend dropped the SSE error event, so the reply modal just sat blank. It was invisible to typecheck (`any`-casts) and to tests (the mock faked the old stream shape). Fixed: draftReply.ts now streams via `on('text')` + `finalMessage()` (same pattern as aiChat/brief) with the any-casts removed, ReplyModal.tsx now shows an error message on the SSE error event, the test mock now models the real 0.110 MessageStream, and draftReply.test.ts adds regression coverage. After the fix: typecheck clean, 386/386 tests, build green.
 
 ## Next action
-Merge PR #4 (audit_2 into main) on GitHub, then rebase `sdk-upgrade` onto the updated main and open its own PR. Copy-paste block:
+Merge PR #5 when Billy gives the word. Everything is verified; it is one command:
 ```
 cd /Users/quantumcode/CODE/LEMON-AI-CENTER
-gh pr merge 4 --merge          # or --squash, your call
-git checkout sdk-upgrade
-git fetch origin && git rebase origin/main
-npm run typecheck && npm test && npm run build   # confirm still green after rebase
-git push --force-with-lease
-gh pr create --base main --head sdk-upgrade --title "Upgrade Anthropic SDK 0.27 to 0.110 + Sonnet 5" --body "Upgrades the Anthropic SDK and moves the balanced tier to Sonnet 5 with thinking disabled."
+gh pr merge 5 --merge
 ```
-After the rebase, `sdk-upgrade` should show only its 2 SDK and Sonnet commits, because audit_2's commits become part of main.
+Merging deploys the SDK upgrade + Sonnet 5 + the draft-reply fix to prod. After it deploys, spot-check prod: open the app, use Reply on an email (draft should stream in), and check `GET /api/ready` still shows brain ready.
 
-Then start the killer-features work (see the last Open loop).
+Then start the killer-features work (see Open loops).
 
 ## Locked decisions
-- Model IDs route through `shared/models.ts` (`CLAUDE_MODELS`): smart = claude-opus-4-8, balanced = claude-sonnet-5, fast = claude-haiku-4-5. Do not hardcode a model ID anywhere else.
-- Sonnet 5 runs adaptive thinking by default, so every balanced call site passes `thinking: { type: 'disabled' }` to keep behavior identical and protect small token budgets. To turn thinking on for a route later, drop that line AND raise max_tokens.
-- SDK is now 0.110.0 (pinned `^0.110.0`). It supports the `thinking` param. Version 0.27 did not, which was the whole reason Sonnet 5 was blocked before.
-- Firestore rules gate the shared corpus on `sign_in_provider == 'custom'` and are DEPLOYED to prod (project gen-lang-client-0882654423). Do not revert.
-- Session cookie stays named `sid` with NO `__Host-` prefix. The prefix breaks behind the Cloudflare Tunnel. Do not "harden" it.
-- Big-ticket changes go on their own branches, never piled onto a PR branch. Keep PRs clean and independently reviewable.
-- Every substantive change is verified with multi-agent adversarial review, one item at a time. Standing rule: be smart, do not break anything.
+- Model IDs route through `shared/models.ts` (`CLAUDE_MODELS`): smart = claude-opus-4-8, balanced = claude-sonnet-5, fast = claude-haiku-4-5. Do not hardcode a model ID anywhere else. (Review verdict (e) confirmed zero violations.)
+- Every balanced (Sonnet 5) call site passes `thinking: { type: 'disabled' }`. Exactly 10 such sites exist; review confirmed one-to-one coverage. To enable thinking on a route, drop that line AND raise max_tokens.
+- SDK is 0.110.0 (pinned `^0.110.0`). Streams are consumed via `stream.on('text', cb)` + `await stream.finalMessage()`. `textStream` does not exist. NEVER type an SDK stream as `any` — that is exactly what hid the draft-reply outage from typecheck.
+- Test mocks for the Anthropic SDK must model the 0.110 MessageStream shape (`on` + `finalMessage`), not the old `textStream` shape. claude.test.ts and draftReply.test.ts are the reference.
+- Firestore rules gate the shared corpus on `sign_in_provider == 'custom'` and are deployed to prod. Do not revert.
+- Session cookie stays named `sid` with NO `__Host-` prefix (breaks behind the Cloudflare Tunnel). Do not "harden" it.
+- `thinking: { type: 'disabled' }` is valid on Sonnet 5 and Opus 4.8 but REJECTED (400) on claude-fable-5. On Sonnet 5, OMITTING thinking runs adaptive thinking by default (spends tokens, can blow small budgets); on Opus 4.8 omitting it runs without thinking. temperature/top_p/top_k also 400 on Sonnet 5 and Opus 4.8.
+- Every substantive change is verified with multi-agent adversarial review. Standing rule: be smart, do not break anything. (This session is the proof it pays: the review found a silent full outage.)
 
 ## Open loops
-1. PR #4 not merged yet. Confirmed still OPEN. Done when: audit_2 is merged into main on GitHub.
-2. `sdk-upgrade` not rebased or PR'd yet. Done when: it is rebased onto the post-merge main, still green, pushed, and has its own open PR.
-3. SDK and Sonnet 5 adversarial review never finished (its agent was stopped when the session cycled). Done when: a fresh code-review agent confirms the SDK upgrade and Sonnet 5 flip is clean, specifically (a) no call site passes params the current models reject (temperature, top_p, top_k, budget_tokens, trailing assistant prefill), (b) all 10 balanced sites have thinking disabled, (c) no opus or haiku site wrongly got thinking config. Re-run this before merging sdk-upgrade.
-4. Live Anthropic call never exercised. Everything is verified except a real paid API call. Done when: a preview deploy confirms chat, brief, and priority all return correctly on Sonnet 5 and SDK 0.110.
-5. Firebase console sign-in-provider check (a 2-minute manual task for Billy). Confirm only the intended providers are enabled. This is defense in depth. The deployed rules already protect the corpus regardless. Done when: Billy reports what is enabled.
-6. Killer features build, the next big phase. New branch `killer_features` off the merged main. Build the proposal in `docs/product/2026-07-08-killer-features.md`, one feature at a time, each verified with multi-agent review. Suggested order (improve if you see better): Propose Times (S), then Do-Anything Bar (S), then Inbox Copilot (M), then One-Key Delegate (M), then Promise Keeper (M), then Relationship Radar (M), then Decision Echo (S), then Ask the Brain by voice (M). The "build this weekend" pick is Inbox Copilot. The cheapest first delight is Do-Anything Bar or Propose Times. Done when: features shipped per the proposal.
-7. Minor cleanup deferred (from audit #8): deleting `SparkCard` orphaned the `/api/claude/spark` route and the `spark` seed in `shared/seeds.ts` and `shared/types.ts`. Inert, no caller. Sweep when convenient. Keep `SPARK_SYSTEM` in prompts.ts, still used by brief.ts.
+1. **PR #5 awaiting Billy's go to merge.** Everything verified (review, live smoke, 386 tests, build). Done when: merged and prod spot-checked (draft-reply streams, `/api/ready` healthy).
+2. **Firebase console sign-in-provider check (Billy's 2-minute manual task).** Confirm only intended providers are enabled — defense in depth; deployed rules already protect the corpus. Done when: Billy reports what is enabled.
+3. **Killer features build — the next big phase.** New branch `killer_features` off main (after PR #5 merges). Build the proposal in `docs/product/2026-07-08-killer-features.md`, one feature at a time, each verified with multi-agent review. Suggested order: Propose Times (S), Do-Anything Bar (S), Inbox Copilot (M), One-Key Delegate (M), Promise Keeper (M), Relationship Radar (M), Decision Echo (S), Ask the Brain by voice (M). "Build this weekend" pick = Inbox Copilot. Note: the draft-reply fix directly benefits One-Key Delegate / reply flows.
+4. **Minor cleanup deferred (audit #8):** the orphaned `/api/claude/spark` route and `spark` seed in `shared/seeds.ts` / `shared/types.ts` (SparkCard was deleted; no caller). Inert. Sweep when convenient; keep `SPARK_SYSTEM` in prompts.ts (used by brief.ts).
 
 ## How to run and verify
-- Dev server: `npm run dev` (Vite on port 5175 plus Express on 3001, via concurrently). Open the app at http://localhost:5175, not 3001. Port 5175 is this app's fixed port. Check it is free first with `lsof -i:5175` and kill any stale process before starting, so a stale server does not make a fix look broken.
-- Checks (all green on sdk-upgrade as of the build session): `npm run typecheck`, `npm test` (384 tests), `npm run build`.
-- Prod is https://ceo.billyrovzar.com (single Railway service behind a Cloudflare Tunnel). Health: `GET /health`. Config and brain status: `GET /api/ready`.
-- Engine and Brain need env: `CEO_UID`, `ENGINE_CRON_SECRET`, and `OBSIDIAN_VAULT_GIT_URL` (must embed a read-only PAT). New optional var `ALERT_WEBHOOK_URL` enables job-failure alerts (audit #6).
+- Dev server: `npm run dev` (Vite on port 5175 + Express on 3001). Open http://localhost:5175, not 3001. Check the port first (`lsof -i:5175`), kill stale processes — a stale server is the usual reason a fix looks broken.
+- Checks (all green as of 5e8dadc): `npm run typecheck`, `npm test` (386 tests, 62 files), `npm run build`.
+- Prod: https://ceo.billyrovzar.com (Railway behind Cloudflare Tunnel). `GET /health` -> ok. `GET /api/ready` -> config + brain status (now includes `lastIndexedAt`).
+- Live-API smoke pattern (if ever needed again): tiny node script requiring the repo's own `node_modules/@anthropic-ai/sdk`, .env key never printed, one call per tier + one streaming call with `on('text')`/`finalMessage`. The exact results are in the PR #5 verification comment.
+- Engine + Brain env: `CEO_UID`, `ENGINE_CRON_SECRET`, `OBSIDIAN_VAULT_GIT_URL` (must embed the read-only PAT). Optional `ALERT_WEBHOOK_URL` for job-failure alerts.
 
 ## Gotchas / context not on disk
-- The handoff commit is local only. origin/sdk-upgrade sits at the Sonnet 5 commit (0751dc7); the handoff commit on top is not pushed. That is fine and expected. Push it whenever, or let the next real push carry it.
-- Full audit write-up: `docs/audits/2026-07-08-audit.md`. Killer-features proposal: `docs/product/2026-07-08-killer-features.md`. Both committed.
-- A separate worktree session may have been spawned for the SDK task (a task chip showed "already started"). THIS repo's `sdk-upgrade` branch (pushed to origin) is the authoritative one. If a duplicate branch or worktree exists, discard it to avoid confusion.
-- `thinking: { type: 'disabled' }` is valid on Sonnet 5 and Opus 4.7 and 4.8 but is REJECTED (400) on claude-fable-5. Keep that in mind if any tier ever moves to Fable 5.
-- Build toolchain (vite, tailwind, tsc, and the rest) lives in `dependencies`, not devDependencies, on purpose. Railway runs `npm ci` in production mode and skips devDependencies. Do not move them.
-- Styling obeys `DESIGN.md`: never use warm, brown, cream, amber, or gold colors. Never hardcode rosters, people, or legal facts. Read them from the Obsidian brain.
-- This HANDOFF.md is committed on the `sdk-upgrade` branch. If you are on main and cannot see it, run `git show sdk-upgrade:docs/HANDOFF.md`.
+- Branch state: `sdk-upgrade` = main's history + 2 SDK commits + 2 handoff commits + the draft-reply fix (5e8dadc) + this handoff commit. All pushed. PR #5 diff = exactly those commits; the handoff docs commits in the PR are harmless.
+- The old `audit` and `audit_2` branches are merged/superseded. Safe to delete whenever, not urgent.
+- Full audit write-up: `docs/audits/2026-07-08-audit.md`. Killer-features proposal: `docs/product/2026-07-08-killer-features.md`.
+- Build toolchain (vite, tailwind, tsc, @types) lives in `dependencies` on purpose — Railway runs `npm ci` in production mode. Do not move to devDependencies.
+- Styling obeys `DESIGN.md`: never warm/brown/cream/amber/gold. Never hardcode rosters/people/legal facts — read them from the Obsidian brain.
+- This HANDOFF.md lives on `sdk-upgrade` until PR #5 merges; from main use `git show sdk-upgrade:docs/HANDOFF.md`.
