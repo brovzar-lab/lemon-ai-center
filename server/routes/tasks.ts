@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { tasksGenerateLimit } from '../middleware/rateLimit'
 import { getGmailClient, getCalendarClient } from '../lib/googleAuth'
+import { respondIfReauthRequired } from '../lib/googleErrors'
 import { TASKS_GENERATE_SYSTEM } from '../lib/prompts'
 
 export const tasksRouter = Router()
@@ -113,6 +114,7 @@ tasksRouter.post('/generate', csrfCheck, tasksGenerateLimit, async (req, res) =>
   const maxProcess = windowDays <= 14 ? 20 : windowDays <= 56 ? 35 : 45
 
   const items: ContextItem[] = []
+  let reauthNeeded = false
 
   // ── Gmail ────────────────────────────────────────────────────────────────
   let emailCount = 0
@@ -160,7 +162,8 @@ tasksRouter.post('/generate', csrfCheck, tasksGenerateLimit, async (req, res) =>
       }
     }
   } catch (err) {
-    console.warn('[tasks/generate] Gmail fetch skipped:', (err as Error).message)
+    if ((err as { code?: string })?.code === 'REAUTH_REQUIRED') reauthNeeded = true
+    else console.warn('[tasks/generate] Gmail fetch skipped:', (err as Error).message)
   }
 
   // ── Calendar ──────────────────────────────────────────────────────────────
@@ -194,7 +197,14 @@ tasksRouter.post('/generate', csrfCheck, tasksGenerateLimit, async (req, res) =>
       calCount++
     }
   } catch (err) {
-    console.warn('[tasks/generate] Calendar fetch skipped:', (err as Error).message)
+    if ((err as { code?: string })?.code === 'REAUTH_REQUIRED') reauthNeeded = true
+    else console.warn('[tasks/generate] Calendar fetch skipped:', (err as Error).message)
+  }
+
+  // A dead Google token fails BOTH fetches — say "reconnect", not "no items found".
+  if (reauthNeeded && items.length === 0) {
+    respondIfReauthRequired(res, { code: 'REAUTH_REQUIRED' })
+    return
   }
 
   // ── Build CONTEXT block ──────────────────────────────────────────────────

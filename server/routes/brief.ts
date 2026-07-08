@@ -87,6 +87,9 @@ export async function assembleContext(uid: string): Promise<{ items: ContextItem
       }
     }
   } catch (err) {
+    // A dead Google token must NOT be swallowed — let it propagate so the
+    // route returns REAUTH_REQUIRED instead of a briefing missing its inbox.
+    if ((err as { code?: string })?.code === 'REAUTH_REQUIRED') throw err
     console.warn('[brief] Gmail fetch failed:', err)
   }
 
@@ -119,6 +122,7 @@ export async function assembleContext(uid: string): Promise<{ items: ContextItem
       items.push({ type: 'calendar', id, label: `${summary} at ${start}`, snippet: desc })
     }
   } catch (err) {
+    if ((err as { code?: string })?.code === 'REAUTH_REQUIRED') throw err
     console.warn('[brief] Calendar fetch failed:', err)
   }
 
@@ -282,38 +286,47 @@ briefRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
   const contextIds = items.map((i) => i.id)
   const briefId = computeBriefId(threadIds)
 
-  // Check cache (unless forceRefresh)
-  if (!forceRefresh) {
-    const cacheDoc = await db.collection(`users/${uid}/briefs`).doc(briefId).get()
-    if (cacheDoc.exists) {
-      const cached = cacheDoc.data()!
-      // Time-based TTL: regenerate if brief is older than 4 hours
-      const cachedGeneratedAt = cached.generatedAt?.toDate?.() ?? cached.generatedAt
-      const briefAgeMs = cachedGeneratedAt ? Date.now() - new Date(cachedGeneratedAt).getTime() : Infinity
-      if (briefAgeMs < 4 * 60 * 60 * 1000) {
-        return res.json({ data: { ...cached, isStale: false }, streaming: false })
-      }
-      // Brief is older than 4 hours — fall through to regeneration
-    }
-  }
-
-  // Fetch last brief for stale fallback
+  // Cache check + stale-fallback load. Both are Firestore reads that run BEFORE
+  // the SSE stream opens, so guard them: a Firestore failure must return an
+  // error, not hang the request with no response ever sent.
   let staleBrief: { jarvis: string; billy: string; generatedAt?: string; overview?: any; oneThing?: any; longBrief?: string } | null = null
-  const lastBriefSnap = await db
-    .collection(`users/${uid}/briefs`)
-    .orderBy('generatedAt', 'desc')
-    .limit(1)
-    .get()
-  if (!lastBriefSnap.empty) {
-    const d = lastBriefSnap.docs[0].data()
-    staleBrief = {
-      jarvis: d.jarvis,
-      billy: d.billy,
-      generatedAt: d.generatedAt?.toDate?.()?.toISOString(),
-      overview: d.overview,
-      oneThing: d.oneThing,
-      longBrief: d.longBrief,
+  try {
+    if (!forceRefresh) {
+      const cacheDoc = await db.collection(`users/${uid}/briefs`).doc(briefId).get()
+      if (cacheDoc.exists) {
+        const cached = cacheDoc.data()!
+        // Time-based TTL: regenerate if brief is older than 4 hours
+        const cachedGeneratedAt = cached.generatedAt?.toDate?.() ?? cached.generatedAt
+        const briefAgeMs = cachedGeneratedAt ? Date.now() - new Date(cachedGeneratedAt).getTime() : Infinity
+        if (briefAgeMs < 4 * 60 * 60 * 1000) {
+          return res.json({ data: { ...cached, isStale: false }, streaming: false })
+        }
+        // Brief is older than 4 hours — fall through to regeneration
+      }
     }
+
+    // Fetch last brief for stale fallback
+    const lastBriefSnap = await db
+      .collection(`users/${uid}/briefs`)
+      .orderBy('generatedAt', 'desc')
+      .limit(1)
+      .get()
+    if (!lastBriefSnap.empty) {
+      const d = lastBriefSnap.docs[0].data()
+      staleBrief = {
+        jarvis: d.jarvis,
+        billy: d.billy,
+        generatedAt: d.generatedAt?.toDate?.()?.toISOString(),
+        overview: d.overview,
+        oneThing: d.oneThing,
+        longBrief: d.longBrief,
+      }
+    }
+  } catch (err) {
+    console.error('[brief] Firestore cache read failed:', (err as Error).message)
+    return res.status(500).json({
+      error: { code: 'UPSTREAM_ERROR', message: 'Failed to load briefing cache', retryable: true },
+    })
   }
 
   // Begin SSE stream

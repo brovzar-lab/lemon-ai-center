@@ -3,6 +3,7 @@ import { db } from '../lib/firebase'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { makeRateLimit } from '../middleware/rateLimit'
+import { respondIfReauthRequired } from '../lib/googleErrors'
 import { runJob, JOBS } from '../lib/engine'
 import type { EngineJobId } from '@shared/types'
 
@@ -90,6 +91,7 @@ engineRouter.post('/actions/:id/:verdict', csrfCheck, async (req, res) => {
     await ref.update({ approvalStatus: 'approved' })
     res.json({ data: { status: 'approved' } })
   } catch (err) {
+    if (respondIfReauthRequired(res, err)) return
     console.error('[engine] Approval execution failed:', (err as Error).message)
     res.status(500).json({
       error: { code: 'EXEC_FAILED', message: 'Action approved but execution failed — try again', retryable: true },
