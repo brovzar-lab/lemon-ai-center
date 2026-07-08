@@ -71,6 +71,8 @@ Rules:
 
   const response = await anthropic.messages.create({
     model: CLAUDE_MODELS.balanced,
+    // Sonnet 5 defaults to adaptive thinking; keep it off — 512 tokens is JSON-only.
+    thinking: { type: 'disabled' },
     max_tokens: 512,
     messages: [{ role: 'user', content: prompt }],
     system: 'You produce concise executive priority lists. Output only valid JSON arrays. No prose.',

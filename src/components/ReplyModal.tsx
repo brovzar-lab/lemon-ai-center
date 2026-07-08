@@ -84,6 +84,9 @@ export default function ReplyModal({ email, onClose }: Props) {
               } else if (parsed.type === 'done') {
                 accumulated = parsed.draft || accumulated
                 setDraft(accumulated)
+              } else if (parsed.type === 'error') {
+                accumulated = ''
+                setDraft('Could not draft reply. Please try again.')
               }
             } catch {}
           }

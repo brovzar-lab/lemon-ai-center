@@ -79,8 +79,9 @@ draftReplyRouter.post('/', csrfCheck, chatLimit, async (req, res) => {
 
   const anthropic = getAnthropicClient()
   try {
-    const stream: any = anthropic.messages.stream({
+    const stream = anthropic.messages.stream({
       model: MODEL,
+      thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
       max_tokens: 600,
       system: `You are drafting an email reply AS Billy Rovzar, CEO of Lemon Studios.
 
@@ -96,13 +97,16 @@ Subject: ${email.subject}
 Content: ${email.snippet}`,
         },
       ],
-    } as any)
+    })
 
+    // SDK 0.110: MessageStream has no `textStream`; stream text via on('text')
+    // and wait for finalMessage() — same pattern as aiChat.ts and brief.ts.
     let fullDraft = ''
-    for await (const text of stream.textStream) {
+    stream.on('text', (text: string) => {
       fullDraft += text
       res.write(`data: ${JSON.stringify({ type: 'token', text })}\n\n`)
-    }
+    })
+    await stream.finalMessage()
 
     res.write(`data: ${JSON.stringify({ type: 'done', draft: fullDraft })}\n\n`)
   } catch {

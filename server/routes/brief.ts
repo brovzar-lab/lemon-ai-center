@@ -392,6 +392,7 @@ briefRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
       // Long brief: dual-voice prose conditioned on pass-1 JSON
       const longBriefStream: any = anthropic.messages.stream({
         model: MODEL_PROSE,
+        thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
         max_tokens: 600,
         system: BILLY_LONG_BRIEF_SYSTEM,
         messages: [{ role: 'user', content: JSON.stringify({ overview: parsedOverview, oneThing: parsedOneThing }) }],
@@ -447,6 +448,7 @@ briefRouter.post('/brief', csrfCheck, briefLimit, async (req, res) => {
 
       const billyStream: any = anthropic.messages.stream({
         model: MODEL_CHAT,
+        thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
         max_tokens: 400,
         system: BILLY_SYSTEM,
         messages: [{ role: 'user', content: jarvisText }],

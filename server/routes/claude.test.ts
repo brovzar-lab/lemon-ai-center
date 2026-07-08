@@ -29,9 +29,21 @@ vi.mock('../lib/googleAuth', () => ({
 vi.mock('@anthropic-ai/sdk', () => ({
   default: vi.fn().mockImplementation(() => ({
     messages: {
-      stream: vi.fn().mockReturnValue({
-        textStream: (async function* () { yield 'hello world' })(),
-        finalText: vi.fn().mockResolvedValue('hello world'),
+      // SDK 0.110 MessageStream shape: on('text') callbacks + finalMessage().
+      // (The old mock faked the removed 0.27-era `textStream` property.)
+      stream: vi.fn(() => {
+        const stream: any = {
+          on(event: string, cb: (text: string) => void) {
+            if (event === 'text') cb('hello world')
+            return stream
+          },
+          finalMessage: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'hello world' }],
+            stop_reason: 'end_turn',
+            usage: { input_tokens: 1, output_tokens: 1 },
+          }),
+        }
+        return stream
       }),
       create: vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: 'A thought-provoking question.' }],

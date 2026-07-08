@@ -54,6 +54,9 @@ ${stateBlock}`
     for (let round = 0; round < 5; round++) {
       const stream = anthropic.messages.stream({
         model: MODEL_CHAT,
+        // Sonnet 5 defaults to adaptive thinking; keep it off to preserve
+        // behavior and protect the small token budget.
+        thinking: { type: 'disabled' },
         max_tokens: 1024,
         system,
         tools: CHAT_TOOLS,
