@@ -23,6 +23,7 @@ import { InboxIntelView } from './views/InboxIntelView'
 import type { Bucket } from '@shared/types'
 import { loadVoiceProfile, DEFAULT_VOICE_PROFILE } from '@/lib/voiceProfile'
 import type { VoiceProfile } from '@/lib/voiceProfile'
+import { extractEmail } from '@/lib/inbox/extractEmail'
 import type { InboxThread } from '@shared/types'
 import { Header } from './Header'
 import { DemoBanner } from './DemoBanner'
@@ -165,10 +166,7 @@ export function Dashboard() {
   }, [isAuthenticated, user?.uid, opsViews, subscribeDeals, subscribeProjects, subscribeLemonDelegations, subscribeTrackers, subscribeMission])
 
   const handleReply = (thread: InboxThread) => {
-    // M-6: Extract actual email from the From header (e.g. "John Smith <john@example.com>")
-    // instead of guessing by converting the display name to dots.
-    const emailMatch = thread.from.match(/<([^>]+)>/)
-    const fromEmail = emailMatch?.[1] ?? `${thread.from.toLowerCase().replace(/\s/g, '.')}@${thread.fromDomain}`
+    const fromEmail = extractEmail(thread.from, thread.fromDomain)
     setReplyEmail({
       threadId: thread.id,
       from: thread.from,
