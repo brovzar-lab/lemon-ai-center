@@ -1,7 +1,7 @@
 import { describe, expect, test, vi, afterEach } from 'vitest'
 import { sendReply } from './sendReply'
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('sendReply', () => {
   test('POSTs the reply and resolves on ok', async () => {

@@ -126,7 +126,7 @@ git commit -m "refactor(inbox): extract extractEmail helper, reuse in Dashboard"
 import { describe, expect, test, vi, afterEach } from 'vitest'
 import { sendReply } from './sendReply'
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('sendReply', () => {
   test('POSTs the reply and resolves on ok', async () => {
@@ -227,7 +227,7 @@ function sseBody(events: object[]) {
     i < chunks.length ? { done: false, value: chunks[i++] } : { done: true, value: undefined } } } }
 }
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('generateDraftForThread', () => {
   test('accumulates tokens and resolves the full draft', async () => {
@@ -361,7 +361,7 @@ beforeEach(() => {
   useCopilotStore.setState({ isOpen: false, index: 0, drafts: {} })
   vi.clearAllMocks()
 })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('useCopilotStore navigation', () => {
   test('open resets to first card; next/prev clamp', () => {
@@ -513,7 +513,7 @@ describe('useCopilotStore unsend queue', () => {
     vi.clearAllMocks()
     vi.useFakeTimers()
   })
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => { vi.useRealTimers() })
 
   const args = { threadId: 't1', to: 'a@b.com', subject: 'Re: s', body: 'Hello' }
 
@@ -658,7 +658,7 @@ beforeEach(() => {
   useInboxStore.setState({ threads: [hot('1'), hot('2'), { ...hot('3'), priority: 'LOW' }], loading: false, error: null })
   useCopilotStore.setState({ isOpen: false, index: 0, drafts: {}, pending: [] })
 })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('CopilotTriage', () => {
   test('renders nothing when closed', () => {

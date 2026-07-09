@@ -19,7 +19,7 @@ function sseBody(events: object[]) {
   return sseBodyFromChunks([text])
 }
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('generateDraftForThread', () => {
   test('accumulates tokens and resolves the full draft', async () => {
