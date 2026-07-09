@@ -26,25 +26,39 @@ export async function generateDraftForThread(
   const decoder = new TextDecoder()
   let accumulated = ''
   let buffer = ''
+  let sawTerminal = false // saw a `done` or `error` event
+
+  const handleLine = (line: string) => {
+    if (!line.startsWith('data: ')) return
+    let parsed: { type?: string; text?: string; draft?: string; message?: string }
+    try {
+      parsed = JSON.parse(line.slice(6))
+    } catch {
+      return
+    }
+    if (parsed.type === 'token') {
+      accumulated += parsed.text ?? ''
+      if (parsed.text) onToken?.(parsed.text)
+    } else if (parsed.type === 'done') {
+      if (typeof parsed.draft === 'string') accumulated = parsed.draft
+      sawTerminal = true
+    } else if (parsed.type === 'error') {
+      throw new Error(parsed.message || 'Draft generation failed')
+    }
+  }
+
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
     buffer += decoder.decode(value, { stream: true })
     const lines = buffer.split('\n')
     buffer = lines.pop() ?? ''
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue
-      let parsed: any
-      try { parsed = JSON.parse(line.slice(6)) } catch { continue }
-      if (parsed.type === 'token') {
-        accumulated += parsed.text
-        onToken?.(parsed.text)
-      } else if (parsed.type === 'done') {
-        accumulated = parsed.draft || accumulated
-      } else if (parsed.type === 'error') {
-        throw new Error(parsed.message || 'Draft generation failed')
-      }
-    }
+    for (const line of lines) handleLine(line)
   }
+  // Flush a trailing line left without a terminating newline, then require a
+  // terminal event so a truncated stream surfaces as an error instead of a
+  // silently-partial "success" (mirrors src/lib/briefStream.ts).
+  if (buffer.trim()) handleLine(buffer)
+  if (!sawTerminal) throw new Error('Draft stream ended before completion')
   return accumulated
 }
