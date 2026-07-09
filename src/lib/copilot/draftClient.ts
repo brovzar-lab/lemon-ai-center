@@ -36,6 +36,7 @@ export async function generateDraftForThread(
     } catch {
       return
     }
+    if (!parsed || typeof parsed !== 'object') return
     if (parsed.type === 'token') {
       accumulated += parsed.text ?? ''
       if (parsed.text) onToken?.(parsed.text)

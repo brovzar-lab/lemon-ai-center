@@ -39,6 +39,7 @@ describe('generateDraftForThread', () => {
     expect(url).toBe('/api/claude/draft-reply')
     expect(opts.method).toBe('POST')
     expect(opts.credentials).toBe('include')
+    expect(opts.headers['Content-Type']).toBe('application/json')
     const body = JSON.parse(opts.body)
     expect(body.email.fromEmail).toBe('ana@gbm.com')
     expect(body.toneTier).toBe('peer')
@@ -68,5 +69,13 @@ describe('generateDraftForThread', () => {
       ok: true, body: sseBody([{ type: 'token', text: 'Adjunto ' }]),
     }))
     await expect(generateDraftForThread(thread)).rejects.toThrow('Draft stream ended before completion')
+  })
+
+  test('flushes a final event that has no trailing newline', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, body: sseBodyFromChunks(['data: ' + JSON.stringify({ type: 'done', draft: 'X' })]),
+    }))
+    const draft = await generateDraftForThread(thread)
+    expect(draft).toBe('X')
   })
 })
