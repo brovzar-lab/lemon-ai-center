@@ -11,6 +11,7 @@ export function CopilotTriage(): JSX.Element | null {
   const drafts = useCopilotStore((s) => s.drafts)
   const pending = useCopilotStore((s) => s.pending)
   const requestDraft = useCopilotStore((s) => s.requestDraft)
+  const hydrateFromCache = useCopilotStore((s) => s.hydrateFromCache)
   const setDraftText = useCopilotStore((s) => s.setDraftText)
   const queueSend = useCopilotStore((s) => s.queueSend)
   const undoSend = useCopilotStore((s) => s.undoSend)
@@ -29,6 +30,13 @@ export function CopilotTriage(): JSX.Element | null {
   const current = hotThreads[safeIndex]
   const draft = current ? drafts[current.id] : undefined
   const latestPending = pending[pending.length - 1]
+
+  // Seed any cached drafts (Task 13's pre-generation) the instant the deck
+  // opens, so hot threads the inbox scan already drafted show up right away
+  // instead of every card starting from "Drafting in your voice…".
+  useEffect(() => {
+    if (isOpen) hydrateFromCache(hotThreads)
+  }, [isOpen, hotThreads, hydrateFromCache])
 
   useEffect(() => {
     if (isOpen && current) requestDraft(current)

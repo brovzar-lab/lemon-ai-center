@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { InboxThread } from '@shared/types'
-import { generateDraftForThread } from '@/lib/copilot/draftClient'
+import { fetchCachedDrafts, generateDraftForThread } from '@/lib/copilot/draftClient'
 import { sendReply } from '@/lib/copilot/sendReply'
 
 export const UNSEND_MS = 5000
@@ -34,6 +34,7 @@ interface CopilotState {
   next: (count: number) => void
   prev: () => void
   requestDraft: (thread: InboxThread) => Promise<void>
+  hydrateFromCache: (threads: InboxThread[]) => Promise<void>
   setDraftText: (threadId: string, text: string) => void
   queueSend: (args: { threadId: string; to: string; subject: string; body: string }) => string
   undoSend: (id: string) => void
@@ -74,6 +75,32 @@ export const useCopilotStore = create<CopilotState>()((set, get) => ({
         if (d?.edited) return {}
         return { drafts: { ...s.drafts, [thread.id]: { text: '', status: 'error', edited: false } } }
       })
+    }
+  },
+
+  // Seeds `drafts` from the server cache (Task 13's pre-generated drafts) so
+  // the deck can show a reply instantly instead of always drafting on open.
+  // Only fills threads with no existing draft entry — requestDraft already
+  // no-ops once a draft is 'ready' (or 'loading'), so a hydrated card won't
+  // re-draft. Staleness isn't checked here: the client can't see a thread's
+  // latest message id, so any cache hit is treated as ready and left to the
+  // next inbox scan to refresh (documented limitation, Task 14 brief).
+  // A failed cache probe (network error, bad JSON, etc.) degrades to a no-op
+  // rather than throwing — the on-demand path in requestDraft still covers
+  // every thread regardless.
+  hydrateFromCache: async (threads) => {
+    try {
+      const cached = await fetchCachedDrafts()
+      set((s) => {
+        const drafts = { ...s.drafts }
+        for (const t of threads) {
+          const hit = cached[t.id]
+          if (hit && !drafts[t.id]) drafts[t.id] = { text: hit.draft, status: 'ready', edited: false }
+        }
+        return { drafts }
+      })
+    } catch {
+      // no-op: leave drafts as-is, on-demand generation still covers every thread
     }
   },
 

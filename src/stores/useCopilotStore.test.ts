@@ -1,12 +1,22 @@
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('@/lib/copilot/draftClient', () => ({
-  generateDraftForThread: vi.fn().mockResolvedValue('Drafted reply.'),
-}))
+// Reconciled: this module now also exports fetchCachedDrafts (Task 14). Spread
+// the real module so any future exports aren't silently dropped, then pin down
+// both mocked functions explicitly.
+vi.mock('@/lib/copilot/draftClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/copilot/draftClient')>()
+  return {
+    ...actual,
+    generateDraftForThread: vi.fn().mockResolvedValue('Drafted reply.'),
+    fetchCachedDrafts: vi.fn().mockResolvedValue({
+      t1: { threadId: 't1', draft: 'Cached!', generatedAt: 'x', basedOnMessageId: 'm1', tone: 'peer' },
+    }),
+  }
+})
 
 vi.mock('@/lib/copilot/sendReply', () => ({ sendReply: vi.fn().mockResolvedValue(undefined) }))
 
-import { generateDraftForThread } from '@/lib/copilot/draftClient'
+import { generateDraftForThread, fetchCachedDrafts } from '@/lib/copilot/draftClient'
 import { sendReply } from '@/lib/copilot/sendReply'
 import { useCopilotStore, UNSEND_MS } from './useCopilotStore'
 import type { InboxThread } from '@shared/types'
@@ -20,6 +30,11 @@ beforeEach(() => {
   useCopilotStore.setState({ isOpen: false, index: 0, drafts: {} })
   vi.clearAllMocks()
   ;(generateDraftForThread as any).mockResolvedValue('Drafted reply.')
+  // Same re-arm as above: restoreAllMocks() (afterEach) wipes a bare vi.fn()'s
+  // resolved value since it has no "original" to restore to.
+  ;(fetchCachedDrafts as any).mockResolvedValue({
+    t1: { threadId: 't1', draft: 'Cached!', generatedAt: 'x', basedOnMessageId: 'm1', tone: 'peer' },
+  })
 })
 afterEach(() => { vi.restoreAllMocks() })
 
@@ -136,5 +151,33 @@ describe('useCopilotStore unsend queue', () => {
     expect(useCopilotStore.getState().pending.some((p) => p.status === 'counting')).toBe(true)
     await vi.advanceTimersByTimeAsync(UNSEND_MS)
     expect(sendReply).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('useCopilotStore cache hydration', () => {
+  beforeEach(() => useCopilotStore.setState({ drafts: {} }))
+
+  test('hydrateFromCache seeds ready drafts from the server cache', async () => {
+    await useCopilotStore.getState().hydrateFromCache([thread('t1'), thread('t2')])
+    expect(useCopilotStore.getState().drafts['t1']).toEqual({ text: 'Cached!', status: 'ready', edited: false })
+    expect(useCopilotStore.getState().drafts['t2']).toBeUndefined()
+  })
+
+  test('does not clobber a draft that already exists for a cache-hit thread', async () => {
+    useCopilotStore.setState({
+      drafts: { t1: { text: 'Already in progress.', status: 'loading', edited: false } },
+    })
+    await useCopilotStore.getState().hydrateFromCache([thread('t1')])
+    // t1 has a cache hit, but it was already present before hydration ran —
+    // the existing (in this case in-flight) draft must win.
+    expect(useCopilotStore.getState().drafts['t1']).toEqual({
+      text: 'Already in progress.', status: 'loading', edited: false,
+    })
+  })
+
+  test('a fetchCachedDrafts failure is swallowed — hydration is a no-op, not a crash', async () => {
+    ;(fetchCachedDrafts as any).mockRejectedValueOnce(new Error('network down'))
+    await expect(useCopilotStore.getState().hydrateFromCache([thread('t1')])).resolves.toBeUndefined()
+    expect(useCopilotStore.getState().drafts['t1']).toBeUndefined()
   })
 })
