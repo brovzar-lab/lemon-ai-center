@@ -130,7 +130,7 @@ export function CopilotTriage(): JSX.Element | null {
             <p className="text-[11px] text-ink-2 mt-2">Mentions an attachment. Add the attachment in Gmail before or after sending.</p>
           )}
         </div>
-        <p className="text-[11px] text-ink-3">Enter/S send · E edit · Space/→ skip · ← back · Esc close</p>
+        <p className="text-[11px] text-ink-3">Enter/S send · E edit · Space/→ skip · ← back · U undo · R retry · Esc close</p>
       </div>
 
       {latestPending && (

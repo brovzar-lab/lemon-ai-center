@@ -144,7 +144,9 @@ describe('CopilotTriage keyboard', () => {
     render(<CopilotTriage />)
     await screen.findByText('Subject 1')
     fireEvent.keyDown(window, { key: 's' })
-    expect(screen.getByText(/Undo/i)).toBeInTheDocument()
+    // getByRole (not getByText) because the footer hint's "U undo" copy also
+    // matches a loose /Undo/i text query, making it ambiguous which one this means.
+    expect(screen.getByRole('button', { name: /undo/i })).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'u' })
     expect(useCopilotStore.getState().pending).toHaveLength(0)
   })
@@ -182,8 +184,25 @@ describe('CopilotTriage keyboard', () => {
     await screen.findByText('Subject 1')
     fireEvent.keyDown(window, { key: 's' }) // queues a 'counting' send
     expect(screen.queryByRole('button', { name: /retry/i })).not.toBeInTheDocument()
+    const idBefore = useCopilotStore.getState().pending[0].id
     fireEvent.keyDown(window, { key: 'r' })
     expect(useCopilotStore.getState().pending).toHaveLength(1)
+    expect(useCopilotStore.getState().pending[0].id).toBe(idBefore)      // retry did NOT fire
     expect(useCopilotStore.getState().pending[0].status).toBe('counting')
+  })
+
+  test('R does nothing while a send is in flight (sending)', async () => {
+    useCopilotStore.setState({
+      pending: [
+        { id: 'snd_x', threadId: '1', to: 'a1@b.com', subject: 'Re: Subject 1', body: 'Ready draft.', status: 'sending' },
+      ],
+    })
+    render(<CopilotTriage />)
+    await screen.findByText('Subject 1')
+    fireEvent.keyDown(window, { key: 'r' })
+    const p = useCopilotStore.getState().pending
+    expect(p).toHaveLength(1)
+    expect(p[0].id).toBe('snd_x')       // not replaced
+    expect(p[0].status).toBe('sending') // still in flight, no re-queue
   })
 })
