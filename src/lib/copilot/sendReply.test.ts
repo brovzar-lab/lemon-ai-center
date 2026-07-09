@@ -15,13 +15,15 @@ describe('sendReply', () => {
     expect(url).toBe('/api/gmail/send')
     expect(JSON.parse(opts.body)).toEqual({ threadId: 't1', to: 'a@b.com', subject: 'Re: Hi', body: 'Hello' })
     expect(opts.credentials).toBe('include')
+    expect(opts.method).toBe('POST')
+    expect(opts.headers['Content-Type']).toBe('application/json')
   })
 
   test('throws the server error message on failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: false, json: async () => ({ error: { message: 'Send failed' } }),
+      ok: false, json: async () => ({ error: { message: 'Gmail quota exceeded' } }),
     }))
     await expect(sendReply({ threadId: 't1', to: 'a@b.com', subject: 'Re', body: 'x' }))
-      .rejects.toThrow('Send failed')
+      .rejects.toThrow('Gmail quota exceeded')
   })
 })
