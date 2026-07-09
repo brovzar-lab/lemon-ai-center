@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { CopilotTriage } from './CopilotTriage'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useCopilotStore } from '@/stores/useCopilotStore'
+import { generateDraftForThread } from '@/lib/copilot/draftClient'
 import type { InboxThread } from '@shared/types'
 
 vi.mock('@/lib/copilot/draftClient', () => ({
@@ -17,6 +18,10 @@ const hot = (id: string): InboxThread => ({
 beforeEach(() => {
   useInboxStore.setState({ threads: [hot('1'), hot('2'), { ...hot('3'), priority: 'LOW' }], loading: false, error: null })
   useCopilotStore.setState({ isOpen: false, index: 0, drafts: {}, pending: [] })
+  // afterEach's restoreAllMocks() wipes the module-level mockResolvedValue below
+  // (a bare vi.fn() has no "original" impl to restore to), so re-arm the default
+  // here to keep tests order-independent.
+  ;(generateDraftForThread as any).mockResolvedValue('Ready draft.')
 })
 afterEach(() => { vi.restoreAllMocks() })
 
@@ -38,5 +43,28 @@ describe('CopilotTriage', () => {
     useCopilotStore.setState({ isOpen: true })
     render(<CopilotTriage />)
     expect(screen.getByText(/Inbox is calm/i)).toBeInTheDocument()
+  })
+
+  test('clamps an out-of-range index instead of crashing', async () => {
+    useInboxStore.setState({ threads: [hot('1'), hot('2')], loading: false, error: null })
+    useCopilotStore.setState({ isOpen: true, index: 5, drafts: {} })
+    render(<CopilotTriage />)
+    expect(await screen.findByText('Subject 2')).toBeInTheDocument() // clamped to last HOT card
+    expect(screen.getByText('2 of 2')).toBeInTheDocument()
+  })
+
+  test('renders the drafted reply text when the draft is ready', async () => {
+    useInboxStore.setState({ threads: [hot('1')], loading: false, error: null })
+    useCopilotStore.setState({ isOpen: true, index: 0, drafts: {} })
+    render(<CopilotTriage />)
+    expect(await screen.findByText('Ready draft.')).toBeInTheDocument()
+  })
+
+  test('shows the write-your-own message when drafting fails', async () => {
+    ;(generateDraftForThread as any).mockRejectedValueOnce(new Error('boom'))
+    useInboxStore.setState({ threads: [hot('1')], loading: false, error: null })
+    useCopilotStore.setState({ isOpen: true, index: 0, drafts: {} })
+    render(<CopilotTriage />)
+    expect(await screen.findByText(/write it/i)).toBeInTheDocument()
   })
 })
