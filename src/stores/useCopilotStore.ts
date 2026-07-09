@@ -99,7 +99,8 @@ export const useCopilotStore = create<CopilotState>()((set, get) => ({
 
   undoSend: (id) => {
     const t = timers.get(id)
-    if (t) clearTimeout(t)
+    if (!t) return // no live timer => already sending/committed (or gone): cannot undo
+    clearTimeout(t)
     timers.delete(id)
     set((s) => ({ pending: s.pending.filter((p) => p.id !== id) }))
   },
@@ -107,7 +108,12 @@ export const useCopilotStore = create<CopilotState>()((set, get) => ({
   retrySend: (id) => {
     const p = get().pending.find((x) => x.id === id)
     if (!p) return
-    get().undoSend(id)
+    const t = timers.get(id)
+    if (t) {
+      clearTimeout(t)
+      timers.delete(id)
+    }
+    set((s) => ({ pending: s.pending.filter((x) => x.id !== id) }))
     get().queueSend({ threadId: p.threadId, to: p.to, subject: p.subject, body: p.body })
   },
 }))

@@ -112,4 +112,29 @@ describe('useCopilotStore unsend queue', () => {
     await vi.advanceTimersByTimeAsync(UNSEND_MS)
     expect(useCopilotStore.getState().pending.find((p) => p.id === id)?.status).toBe('error')
   })
+
+  test('undoSend after the timer fires is a no-op — the send is already committed', async () => {
+    let resolveSend: () => void = () => {}
+    ;(sendReply as any).mockImplementationOnce(() => new Promise<void>((res) => { resolveSend = res }))
+    const id = useCopilotStore.getState().queueSend(args)
+    await vi.advanceTimersByTimeAsync(UNSEND_MS) // fire() runs: status -> 'sending', awaiting sendReply
+    expect(useCopilotStore.getState().pending.find((p) => p.id === id)?.status).toBe('sending')
+    useCopilotStore.getState().undoSend(id) // too late to undo
+    expect(useCopilotStore.getState().pending.find((p) => p.id === id)?.status).toBe('sending')
+    expect(sendReply).toHaveBeenCalledTimes(1)
+    resolveSend()
+  })
+
+  test('retrySend re-queues a failed send', async () => {
+    ;(sendReply as any).mockRejectedValueOnce(new Error('nope'))
+    const id = useCopilotStore.getState().queueSend(args)
+    await vi.advanceTimersByTimeAsync(UNSEND_MS)
+    expect(useCopilotStore.getState().pending.find((p) => p.id === id)?.status).toBe('error')
+    ;(sendReply as any).mockResolvedValueOnce(undefined)
+    useCopilotStore.getState().retrySend(id)
+    expect(useCopilotStore.getState().pending.find((p) => p.id === id)).toBeUndefined()
+    expect(useCopilotStore.getState().pending.some((p) => p.status === 'counting')).toBe(true)
+    await vi.advanceTimersByTimeAsync(UNSEND_MS)
+    expect(sendReply).toHaveBeenCalledTimes(2)
+  })
 })
