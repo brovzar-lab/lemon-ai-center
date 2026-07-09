@@ -1010,11 +1010,11 @@ And render the flag right below the draft `<p data-testid="draft-text">…</p>` 
 
 ```tsx
           {!editing && draft?.status === 'ready' && ATTACHMENT_HINT.test(draft.text) && (
-            <p className="text-[11px] text-amber-400 mt-2">Mentions an attachment — add the attachment in Gmail before or after sending.</p>
+            <p className="text-[11px] text-ink-2 mt-2">Mentions an attachment. Add the attachment in Gmail before or after sending.</p>
           )}
 ```
 
-(`amber-400` is used here as a caution accent consistent with the existing `attention` dot in `InboxIntelView`; it is not a background/brand color, so it does not violate the DESIGN.md warm-color ban.)
+(Uses the neutral `text-ink-2` token, not a warm accent, to comply with the DESIGN.md ban on amber/gold/cream. Copy avoids em dashes per Billy's voice rule.)
 
 Run: `npx vitest run src/components/CopilotTriage.test.tsx`
 Expected: PASS (8 tests).
