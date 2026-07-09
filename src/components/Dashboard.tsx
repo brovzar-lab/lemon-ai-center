@@ -33,6 +33,7 @@ import { BillyDrawer } from './BillyDrawer'
 import { MeetingPrepModal } from './MeetingPrepModal'
 import { SkillModal } from './SkillModal'
 import ReplyModal from './ReplyModal'
+import { CopilotTriage } from './CopilotTriage'
 import SettingsModal from './SettingsModal'
 // Editorial redesign components
 import { FocusModeProvider } from './FocusModeProvider'
@@ -244,6 +245,7 @@ export function Dashboard() {
       <MeetingPrepModal />
       <SkillModal />
       <ReplyModal email={replyEmail} onClose={() => setReplyEmail(null)} />
+      <CopilotTriage />
       <SettingsModal
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}

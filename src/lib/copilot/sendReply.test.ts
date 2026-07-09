@@ -1,7 +1,15 @@
-import { describe, expect, test, vi, afterEach } from 'vitest'
+import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 import { sendReply } from './sendReply'
+import { useConnectionStore } from '@/stores/useConnectionStore'
 
-afterEach(() => { vi.restoreAllMocks() })
+beforeEach(() => {
+  useConnectionStore.getState().setReauthRequired(false)
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  useConnectionStore.getState().setReauthRequired(false)
+})
 
 describe('sendReply', () => {
   test('POSTs the reply and resolves on ok', async () => {
@@ -25,5 +33,15 @@ describe('sendReply', () => {
     }))
     await expect(sendReply({ threadId: 't1', to: 'a@b.com', subject: 'Re', body: 'x' }))
       .rejects.toThrow('Gmail quota exceeded')
+  })
+
+  test('a REAUTH_REQUIRED failure raises the reconnect flag AND still throws the message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: { code: 'REAUTH_REQUIRED', message: 'Google connection expired' } }),
+    }))
+    await expect(sendReply({ threadId: 't1', to: 'a@b.com', subject: 'Re', body: 'x' }))
+      .rejects.toThrow('Google connection expired')
+    expect(useConnectionStore.getState().reauthRequired).toBe(true)
   })
 })
