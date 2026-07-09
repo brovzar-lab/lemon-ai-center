@@ -22,6 +22,7 @@ afterEach(() => { vi.restoreAllMocks() })
 describe('useCopilotStore navigation', () => {
   test('open resets to first card; next/prev clamp', () => {
     const s = useCopilotStore.getState()
+    useCopilotStore.setState({ index: 3 })
     s.open()
     expect(useCopilotStore.getState().isOpen).toBe(true)
     expect(useCopilotStore.getState().index).toBe(0)
@@ -43,6 +44,7 @@ describe('useCopilotStore navigation', () => {
     useCopilotStore.setState({ drafts: { t1: { text: 'x', status: 'ready', edited: false } } })
     await useCopilotStore.getState().requestDraft(thread('t1'))
     expect(generateDraftForThread).not.toHaveBeenCalled()
+    expect(useCopilotStore.getState().drafts['t1']).toEqual({ text: 'x', status: 'ready', edited: false })
   })
 
   test('requestDraft sets error status when drafting throws', async () => {
@@ -56,5 +58,19 @@ describe('useCopilotStore navigation', () => {
     expect(useCopilotStore.getState().drafts['t1']).toEqual({
       text: 'my words', status: 'ready', edited: true,
     })
+  })
+
+  test('a mid-flight edit survives a subsequent draft error', async () => {
+    let rejectFn: (e: Error) => void = () => {}
+    ;(generateDraftForThread as any).mockImplementationOnce(
+      () => new Promise((_resolve, reject) => { rejectFn = reject }),
+    )
+    const p = useCopilotStore.getState().requestDraft(thread('t1'))
+    useCopilotStore.getState().setDraftText('t1', 'my words') // user edits while loading
+    rejectFn(new Error('boom'))
+    await p
+    const d = useCopilotStore.getState().drafts['t1']
+    expect(d.text).toBe('my words')
+    expect(d.edited).toBe(true)
   })
 })

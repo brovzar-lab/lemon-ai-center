@@ -48,7 +48,11 @@ export const useCopilotStore = create<CopilotState>()((set, get) => ({
         return { drafts: { ...s.drafts, [thread.id]: { text, status: 'ready', edited: false } } }
       })
     } catch {
-      set((s) => ({ drafts: { ...s.drafts, [thread.id]: { text: '', status: 'error', edited: false } } }))
+      set((s) => {
+        const d = s.drafts[thread.id]
+        if (d?.edited) return {}
+        return { drafts: { ...s.drafts, [thread.id]: { text: '', status: 'error', edited: false } } }
+      })
     }
   },
 
