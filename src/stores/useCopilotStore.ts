@@ -30,6 +30,7 @@ interface CopilotState {
   hydrated: boolean
   drafts: Record<string, DraftState>
   pending: PendingSend[]
+  sentThreadIds: string[]
   open: () => void
   close: () => void
   next: (count: number) => void
@@ -48,6 +49,7 @@ export const useCopilotStore = create<CopilotState>()((set, get) => ({
   hydrated: false,
   drafts: {},
   pending: [],
+  sentThreadIds: [],
 
   open: () => set({ isOpen: true, index: 0, hydrated: false }),
   close: () => set({ isOpen: false }),
@@ -123,7 +125,12 @@ export const useCopilotStore = create<CopilotState>()((set, get) => ({
       set((s) => ({ pending: s.pending.map((p) => (p.id === id ? { ...p, status: 'sending' } : p)) }))
       try {
         await sendReply(args)
-        set((s) => ({ pending: s.pending.filter((p) => p.id !== id) }))
+        set((s) => ({
+          pending: s.pending.filter((p) => p.id !== id),
+          sentThreadIds: s.sentThreadIds.includes(args.threadId)
+            ? s.sentThreadIds
+            : [...s.sentThreadIds, args.threadId],
+        }))
       } catch {
         set((s) => ({ pending: s.pending.map((p) => (p.id === id ? { ...p, status: 'error' } : p)) }))
       }

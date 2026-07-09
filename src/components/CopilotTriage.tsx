@@ -11,6 +11,7 @@ export function CopilotTriage(): JSX.Element | null {
   const hydrated = useCopilotStore((s) => s.hydrated)
   const drafts = useCopilotStore((s) => s.drafts)
   const pending = useCopilotStore((s) => s.pending)
+  const sentThreadIds = useCopilotStore((s) => s.sentThreadIds)
   const requestDraft = useCopilotStore((s) => s.requestDraft)
   const hydrateFromCache = useCopilotStore((s) => s.hydrateFromCache)
   const setDraftText = useCopilotStore((s) => s.setDraftText)
@@ -31,6 +32,10 @@ export function CopilotTriage(): JSX.Element | null {
   const current = hotThreads[safeIndex]
   const draft = current ? drafts[current.id] : undefined
   const latestPending = pending[pending.length - 1]
+  // A card is "already handled" once its send is queued (counting/sending) or
+  // has already completed — either way a second S/Enter must never re-send it.
+  const alreadyHandled =
+    !!current && (pending.some((p) => p.threadId === current.id) || sentThreadIds.includes(current.id))
 
   // Seed any cached drafts (Task 13's pre-generation) the instant the deck
   // opens, so hot threads the inbox scan already drafted show up right away
@@ -54,6 +59,11 @@ export function CopilotTriage(): JSX.Element | null {
   useEffect(() => {
     if (!isOpen) return
     function onKey(e: KeyboardEvent) {
+      // OS key auto-repeat (holding Enter/S down) must never drive a second deck
+      // action — most importantly it must never queue a second send. Typing in
+      // the edit textarea is unaffected: that path returns early below without
+      // ever calling preventDefault, so native key-repeat still reaches the input.
+      if (e.repeat) return
       if (editing) {
         if (e.key === 'Escape') { e.preventDefault(); setEditing(false) }
         return // let the textarea receive all other keys
@@ -74,15 +84,17 @@ export function CopilotTriage(): JSX.Element | null {
       if (!current) return
       if (e.key === 'Enter' || e.key === 's' || e.key === 'S') {
         e.preventDefault()
-        if (draft?.status === 'ready' && draft.text.trim()) {
+        if (draft?.status === 'ready' && draft.text.trim() && !alreadyHandled) {
           queueSend({
             threadId: current.id,
             to: extractEmail(current.from, current.fromDomain),
             subject: `Re: ${current.subject}`,
             body: draft.text,
           })
-          next(hotThreads.length)
         }
+        // Advance regardless: an already-handled (queued or already-sent) card
+        // just gets skipped past, it is never re-sent.
+        next(hotThreads.length)
       } else if (e.key === 'e' || e.key === 'E') {
         e.preventDefault(); setEditing(true)
       } else if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'j' || e.key === 'J') {
@@ -93,7 +105,7 @@ export function CopilotTriage(): JSX.Element | null {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen, editing, current, draft, latestPending, hotThreads.length, queueSend, undoSend, retrySend, next, prev, close])
+  }, [isOpen, editing, current, draft, alreadyHandled, latestPending, hotThreads.length, queueSend, undoSend, retrySend, next, prev, close])
 
   if (!isOpen) return null
 
@@ -141,6 +153,9 @@ export function CopilotTriage(): JSX.Element | null {
           )}
           {!editing && draft?.status === 'ready' && ATTACHMENT_HINT.test(draft.text) && (
             <p className="text-[11px] text-ink-2 mt-2">Mentions an attachment. Add the attachment in Gmail before or after sending.</p>
+          )}
+          {current && sentThreadIds.includes(current.id) && (
+            <p className="text-sm text-data-teal mt-2">✓ Sent</p>
           )}
         </div>
         <p className="text-[11px] text-ink-3">Enter/S send · E edit · Space/→ skip · ← back · U undo · R retry · Esc close</p>

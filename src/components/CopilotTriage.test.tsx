@@ -31,7 +31,7 @@ beforeEach(() => {
   useInboxStore.setState({ threads: [hot('1'), hot('2'), { ...hot('3'), priority: 'LOW' }], loading: false, error: null })
   // hydrated: false so every test starts from a clean gate — the hydrate-on-open
   // effect flips it true (asynchronously) once cache seeding has been attempted.
-  useCopilotStore.setState({ isOpen: false, index: 0, drafts: {}, pending: [], hydrated: false })
+  useCopilotStore.setState({ isOpen: false, index: 0, drafts: {}, pending: [], hydrated: false, sentThreadIds: [] })
   // afterEach's restoreAllMocks() wipes the module-level mockResolvedValue below
   // (a bare vi.fn() has no "original" impl to restore to), so re-arm the default
   // here to keep tests order-independent.
@@ -131,6 +131,35 @@ describe('CopilotTriage keyboard', () => {
       threadId: '1', to: 'a1@b.com', subject: 'Re: Subject 1', body: 'Ready draft.',
     })
     expect(useCopilotStore.getState().index).toBe(1)
+  })
+
+  // Load-bearing (Task 15 fix): holding Enter/S down fires repeated `keydown`
+  // events with `repeat: true`. Without the `if (e.repeat) return` guard at
+  // the top of onKey, each of those would independently pass the ready-draft
+  // check and queue its own send.
+  test('auto-repeat does not queue duplicate sends', async () => {
+    render(<CopilotTriage />)
+    await screen.findByText('Subject 1')
+    fireEvent.keyDown(window, { key: 's', repeat: true })
+    expect(useCopilotStore.getState().pending).toHaveLength(0)
+    fireEvent.keyDown(window, { key: 's' })
+    expect(useCopilotStore.getState().pending).toHaveLength(1)
+  })
+
+  // Load-bearing (Task 15 fix): a card can still be "current" and 'ready' after
+  // its reply was already sent (user navigated back, or the next scan hasn't
+  // run yet to drop it from the deck). Without the `!alreadyHandled` guard,
+  // pressing S again would queue a second real send.
+  test('a sent card cannot be re-sent', async () => {
+    useCopilotStore.setState({ sentThreadIds: ['1'] })
+    render(<CopilotTriage />)
+    await screen.findByText('Subject 1')
+    // The Sent indicator shows while the already-sent card is still current —
+    // S then advances past it (per "advance regardless"), so this must be
+    // checked before pressing S, not after.
+    expect(screen.getByText(/sent/i)).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 's' })
+    expect(useCopilotStore.getState().pending).toHaveLength(0)
   })
 
   test('E reveals an editable textarea bound to the draft', async () => {

@@ -102,7 +102,7 @@ describe('useCopilotStore navigation', () => {
 
 describe('useCopilotStore unsend queue', () => {
   beforeEach(() => {
-    useCopilotStore.setState({ pending: [] })
+    useCopilotStore.setState({ pending: [], sentThreadIds: [] })
     vi.clearAllMocks()
     vi.useFakeTimers()
   })
@@ -117,6 +117,14 @@ describe('useCopilotStore unsend queue', () => {
     await vi.advanceTimersByTimeAsync(UNSEND_MS)
     expect(sendReply).toHaveBeenCalledWith(args)
     expect(useCopilotStore.getState().pending.find((p) => p.id === id)).toBeUndefined()
+  })
+
+  test('a successful send records the thread as sent', async () => {
+    useCopilotStore.getState().queueSend(args)
+    expect(useCopilotStore.getState().sentThreadIds).not.toContain(args.threadId)
+    await vi.advanceTimersByTimeAsync(UNSEND_MS)
+    expect(sendReply).toHaveBeenCalledWith(args)
+    expect(useCopilotStore.getState().sentThreadIds).toContain(args.threadId)
   })
 
   test('undoSend within the window cancels the send', async () => {

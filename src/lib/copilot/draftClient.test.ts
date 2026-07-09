@@ -1,5 +1,5 @@
 import { describe, expect, test, vi, afterEach } from 'vitest'
-import { generateDraftForThread } from './draftClient'
+import { generateDraftForThread, fetchCachedDrafts } from './draftClient'
 import type { InboxThread } from '@shared/types'
 
 const thread: InboxThread = {
@@ -77,5 +77,16 @@ describe('generateDraftForThread', () => {
     }))
     const draft = await generateDraftForThread(thread)
     expect(draft).toBe('X')
+  })
+})
+
+describe('fetchCachedDrafts', () => {
+  // A hung/aborted/failed cache probe must degrade to "no cache" rather than
+  // throwing, so it can never leave the deck's `hydrated` gate stuck false
+  // (Task 15 fix). Simulates the abort/network-error case directly since we
+  // don't want this test to actually wait out the real 4s timeout.
+  test('returns {} and does not throw when fetch rejects (timeout/abort/network error)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('aborted')))
+    await expect(fetchCachedDrafts()).resolves.toEqual({})
   })
 })
