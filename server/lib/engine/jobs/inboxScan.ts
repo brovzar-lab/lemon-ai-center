@@ -8,6 +8,8 @@ import type {
   LemonDelegationStatus,
 } from '@shared/types'
 import { CLAUDE_MODELS } from '@shared/models'
+import { tagThread, prioritizeThread, DEFAULT_TAG_PATTERNS } from '../../threadTags'
+import { pregenerateCopilotDrafts, type DraftCandidate } from '../../copilot/pregenerate'
 
 /**
  * Headless inbox scan — extracted from routes/scan.ts so both the SSE
@@ -107,8 +109,11 @@ export async function runInboxScan(
     threadId: string
     subject: string
     from: string
+    fromDomain: string
     date: string
     body: string
+    latestMessageId: string
+    labels: string[]
   }
 
   const emails: EmailDigest[] = []
@@ -131,12 +136,18 @@ export async function runInboxScan(
           name: string
           value: string
         }>
+        const from = extractHeader(headers, 'From')
+        const fromDomain = from.match(/<([^>]+)>/)?.[1]?.split('@')[1]?.toLowerCase()
+          ?? from.split('@')[1]?.toLowerCase() ?? ''
         return {
           threadId: t.id,
           subject: extractHeader(headers, 'Subject'),
-          from: extractHeader(headers, 'From'),
+          from,
+          fromDomain,
           date: extractHeader(headers, 'Date'),
           body: extractBody(latest.payload).slice(0, 1500),
+          latestMessageId: latest.id ?? '',
+          labels: latest.labelIds ?? [],
         } as EmailDigest
       }),
     )
@@ -169,6 +180,42 @@ export async function runInboxScan(
     'saving',
     `Saved: ${stats.deals} deals, ${stats.projects} projects, ${stats.delegations} delegations, ${stats.memories} memories`,
   )
+
+  // ── Phase 4: pre-generate Copilot drafts for HOT reply-owed threads ──
+  try {
+    onProgress('saving', 'Pre-writing Copilot drafts…')
+    const profile = await gmail.users.getProfile({ userId: 'me' })
+    const selfEmail = profile.data.emailAddress ?? ''
+    const candidates: DraftCandidate[] = emails.map((e) => {
+      const tag = tagThread(
+        { from: e.from, fromDomain: e.fromDomain, subject: e.subject, labels: e.labels },
+        DEFAULT_TAG_PATTERNS,
+      )
+      const priority = prioritizeThread({
+        tag,
+        unread: e.labels.includes('UNREAD'),
+        receivedAt: e.date ? new Date(e.date).toISOString() : new Date().toISOString(),
+        subject: e.subject,
+        fromDomain: e.fromDomain,
+        from: e.from,
+      })
+      const fromEmail = e.from.match(/<([^>]+)>/)?.[1] ?? e.from
+      return {
+        threadId: e.threadId,
+        from: e.from,
+        fromEmail,
+        subject: e.subject,
+        snippet: e.body.slice(0, 300),
+        latestMessageId: e.latestMessageId,
+        priority,
+        latestFrom: e.from,
+      }
+    })
+    if (selfEmail) await pregenerateCopilotDrafts(uid, selfEmail, candidates)
+  } catch (err) {
+    console.warn('[scan] Copilot pre-generation skipped:', (err as Error).message)
+  }
+
   return stats
 }
 
