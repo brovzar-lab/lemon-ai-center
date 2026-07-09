@@ -3,8 +3,12 @@ import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('@/lib/copilot/draftClient', () => ({
   generateDraftForThread: vi.fn().mockResolvedValue('Drafted reply.'),
 }))
+
+vi.mock('@/lib/copilot/sendReply', () => ({ sendReply: vi.fn().mockResolvedValue(undefined) }))
+
 import { generateDraftForThread } from '@/lib/copilot/draftClient'
-import { useCopilotStore } from './useCopilotStore'
+import { sendReply } from '@/lib/copilot/sendReply'
+import { useCopilotStore, UNSEND_MS } from './useCopilotStore'
 import type { InboxThread } from '@shared/types'
 
 const thread = (id: string): InboxThread => ({
@@ -72,5 +76,40 @@ describe('useCopilotStore navigation', () => {
     const d = useCopilotStore.getState().drafts['t1']
     expect(d.text).toBe('my words')
     expect(d.edited).toBe(true)
+  })
+})
+
+describe('useCopilotStore unsend queue', () => {
+  beforeEach(() => {
+    useCopilotStore.setState({ pending: [] })
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+  afterEach(() => { vi.useRealTimers() })
+
+  const args = { threadId: 't1', to: 'a@b.com', subject: 'Re: s', body: 'Hello' }
+
+  test('queueSend holds for 5s then sends', async () => {
+    const id = useCopilotStore.getState().queueSend(args)
+    expect(useCopilotStore.getState().pending).toHaveLength(1)
+    expect(sendReply).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(UNSEND_MS)
+    expect(sendReply).toHaveBeenCalledWith(args)
+    expect(useCopilotStore.getState().pending.find((p) => p.id === id)).toBeUndefined()
+  })
+
+  test('undoSend within the window cancels the send', async () => {
+    const id = useCopilotStore.getState().queueSend(args)
+    useCopilotStore.getState().undoSend(id)
+    await vi.advanceTimersByTimeAsync(UNSEND_MS)
+    expect(sendReply).not.toHaveBeenCalled()
+    expect(useCopilotStore.getState().pending).toHaveLength(0)
+  })
+
+  test('a failed send is marked error and kept for retry', async () => {
+    ;(sendReply as any).mockRejectedValueOnce(new Error('nope'))
+    const id = useCopilotStore.getState().queueSend(args)
+    await vi.advanceTimersByTimeAsync(UNSEND_MS)
+    expect(useCopilotStore.getState().pending.find((p) => p.id === id)?.status).toBe('error')
   })
 })
