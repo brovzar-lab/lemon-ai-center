@@ -27,7 +27,7 @@ const thread = (id: string): InboxThread => ({
 })
 
 beforeEach(() => {
-  useCopilotStore.setState({ isOpen: false, index: 0, drafts: {} })
+  useCopilotStore.setState({ isOpen: false, index: 0, hydrated: false, drafts: {} })
   vi.clearAllMocks()
   ;(generateDraftForThread as any).mockResolvedValue('Drafted reply.')
   // Same re-arm as above: restoreAllMocks() (afterEach) wipes a bare vi.fn()'s
@@ -49,6 +49,12 @@ describe('useCopilotStore navigation', () => {
     expect(useCopilotStore.getState().index).toBe(1)
     s.prev(); s.prev()
     expect(useCopilotStore.getState().index).toBe(0)
+  })
+
+  test('open resets hydrated to false so a stale deck re-gates requestDraft', () => {
+    useCopilotStore.setState({ hydrated: true })
+    useCopilotStore.getState().open()
+    expect(useCopilotStore.getState().hydrated).toBe(false)
   })
 
   test('requestDraft sets loading then ready with text', async () => {
@@ -155,12 +161,18 @@ describe('useCopilotStore unsend queue', () => {
 })
 
 describe('useCopilotStore cache hydration', () => {
-  beforeEach(() => useCopilotStore.setState({ drafts: {} }))
+  beforeEach(() => useCopilotStore.setState({ drafts: {}, hydrated: false }))
 
   test('hydrateFromCache seeds ready drafts from the server cache', async () => {
     await useCopilotStore.getState().hydrateFromCache([thread('t1'), thread('t2')])
     expect(useCopilotStore.getState().drafts['t1']).toEqual({ text: 'Cached!', status: 'ready', edited: false })
     expect(useCopilotStore.getState().drafts['t2']).toBeUndefined()
+  })
+
+  test('hydrateFromCache sets hydrated true after a successful seed', async () => {
+    expect(useCopilotStore.getState().hydrated).toBe(false)
+    await useCopilotStore.getState().hydrateFromCache([thread('t1')])
+    expect(useCopilotStore.getState().hydrated).toBe(true)
   })
 
   test('does not clobber a draft that already exists for a cache-hit thread', async () => {
@@ -179,5 +191,12 @@ describe('useCopilotStore cache hydration', () => {
     ;(fetchCachedDrafts as any).mockRejectedValueOnce(new Error('network down'))
     await expect(useCopilotStore.getState().hydrateFromCache([thread('t1')])).resolves.toBeUndefined()
     expect(useCopilotStore.getState().drafts['t1']).toBeUndefined()
+  })
+
+  test('hydrated still flips true when fetchCachedDrafts rejects, so on-demand drafting is not blocked', async () => {
+    ;(fetchCachedDrafts as any).mockRejectedValueOnce(new Error('network down'))
+    expect(useCopilotStore.getState().hydrated).toBe(false)
+    await useCopilotStore.getState().hydrateFromCache([thread('t1')])
+    expect(useCopilotStore.getState().hydrated).toBe(true)
   })
 })

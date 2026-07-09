@@ -27,6 +27,7 @@ let seq = 0
 interface CopilotState {
   isOpen: boolean
   index: number
+  hydrated: boolean
   drafts: Record<string, DraftState>
   pending: PendingSend[]
   open: () => void
@@ -44,10 +45,11 @@ interface CopilotState {
 export const useCopilotStore = create<CopilotState>()((set, get) => ({
   isOpen: false,
   index: 0,
+  hydrated: false,
   drafts: {},
   pending: [],
 
-  open: () => set({ isOpen: true, index: 0 }),
+  open: () => set({ isOpen: true, index: 0, hydrated: false }),
   close: () => set({ isOpen: false }),
   next: (count) => set((s) => ({ index: Math.min(s.index + 1, Math.max(0, count - 1)) })),
   prev: () => set((s) => ({ index: Math.max(s.index - 1, 0) })),
@@ -102,6 +104,12 @@ export const useCopilotStore = create<CopilotState>()((set, get) => ({
     } catch {
       // no-op: leave drafts as-is, on-demand generation still covers every thread
     }
+    // Gate for requestDraft (CopilotTriage): flips true whether the cache probe
+    // succeeded or failed, so a network/cache hiccup falls through to on-demand
+    // drafting instead of permanently blocking it. Set unconditionally, after
+    // the seed attempt above, so requestDraft never races hydration's read of
+    // `drafts` for the very first card (Task 14 fix).
+    set({ hydrated: true })
   },
 
   setDraftText: (threadId, text) =>

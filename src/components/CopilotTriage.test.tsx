@@ -3,11 +3,16 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { CopilotTriage } from './CopilotTriage'
 import { useInboxStore } from '@/stores/useInboxStore'
 import { useCopilotStore } from '@/stores/useCopilotStore'
-import { generateDraftForThread } from '@/lib/copilot/draftClient'
+import { generateDraftForThread, fetchCachedDrafts } from '@/lib/copilot/draftClient'
 import type { InboxThread } from '@shared/types'
 
+// fetchCachedDrafts defaults to an empty cache so existing tests (which don't
+// care about hydration) behave exactly as before: hydrate resolves with no
+// hits, hydrated flips true, and requestDraft falls through to on-demand
+// drafting. Tests that care about cache hits override this per-test.
 vi.mock('@/lib/copilot/draftClient', () => ({
   generateDraftForThread: vi.fn().mockResolvedValue('Ready draft.'),
+  fetchCachedDrafts: vi.fn().mockResolvedValue({}),
 }))
 
 // queueSend/retrySend hold sends behind a real 5s setTimeout (see useCopilotStore).
@@ -24,11 +29,14 @@ const hot = (id: string): InboxThread => ({
 
 beforeEach(() => {
   useInboxStore.setState({ threads: [hot('1'), hot('2'), { ...hot('3'), priority: 'LOW' }], loading: false, error: null })
-  useCopilotStore.setState({ isOpen: false, index: 0, drafts: {}, pending: [] })
+  // hydrated: false so every test starts from a clean gate — the hydrate-on-open
+  // effect flips it true (asynchronously) once cache seeding has been attempted.
+  useCopilotStore.setState({ isOpen: false, index: 0, drafts: {}, pending: [], hydrated: false })
   // afterEach's restoreAllMocks() wipes the module-level mockResolvedValue below
   // (a bare vi.fn() has no "original" impl to restore to), so re-arm the default
   // here to keep tests order-independent.
   ;(generateDraftForThread as any).mockResolvedValue('Ready draft.')
+  ;(fetchCachedDrafts as any).mockResolvedValue({})
 })
 afterEach(() => { vi.restoreAllMocks() })
 
@@ -65,6 +73,25 @@ describe('CopilotTriage', () => {
     useCopilotStore.setState({ isOpen: true, index: 0, drafts: {} })
     render(<CopilotTriage />)
     expect(await screen.findByText('Ready draft.')).toBeInTheDocument()
+  })
+
+  // Regression test (Task 14 fix): requestDraft's bail check reads `drafts`
+  // synchronously, before hydrateFromCache's async fetch resolves. Without the
+  // `hydrated` gate, the first card's requestDraft effect fires immediately on
+  // open — while drafts[current.id] is still undefined — and starts an
+  // on-demand draft that wins the race against the cache seed. Gating on
+  // `hydrated` defers requestDraft until hydration has had its chance to seed
+  // the cache hit, so the first HOT card is instant instead of always showing
+  // "Drafting in your voice…".
+  test('first card shows the cached draft instantly, no on-demand draft', async () => {
+    ;(fetchCachedDrafts as any).mockResolvedValue({
+      '1': { threadId: '1', draft: 'CACHED reply', generatedAt: 'x', basedOnMessageId: 'm', tone: 'peer' },
+    })
+    useInboxStore.setState({ threads: [hot('1')], loading: false, error: null })
+    useCopilotStore.setState({ isOpen: true, index: 0, drafts: {}, pending: [], hydrated: false })
+    render(<CopilotTriage />)
+    expect(await screen.findByText('CACHED reply')).toBeInTheDocument()
+    expect(generateDraftForThread).not.toHaveBeenCalled()
   })
 
   test('shows the write-your-own message when drafting fails', async () => {

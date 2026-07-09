@@ -8,6 +8,7 @@ const ATTACHMENT_HINT = /\b(adjunto|adjunta|attached|attachment|se adjunta|enclo
 export function CopilotTriage(): JSX.Element | null {
   const isOpen = useCopilotStore((s) => s.isOpen)
   const index = useCopilotStore((s) => s.index)
+  const hydrated = useCopilotStore((s) => s.hydrated)
   const drafts = useCopilotStore((s) => s.drafts)
   const pending = useCopilotStore((s) => s.pending)
   const requestDraft = useCopilotStore((s) => s.requestDraft)
@@ -38,9 +39,13 @@ export function CopilotTriage(): JSX.Element | null {
     if (isOpen) hydrateFromCache(hotThreads)
   }, [isOpen, hotThreads, hydrateFromCache])
 
+  // Gated on `hydrated` (set by the hydrate-on-open effect above, once cache
+  // seeding has been attempted) so this doesn't read `drafts` before the cache
+  // hydration for the current card has had a chance to land — otherwise the
+  // first card always misses its cache hit and takes the slow on-demand path.
   useEffect(() => {
-    if (isOpen && current) requestDraft(current)
-  }, [isOpen, current, requestDraft])
+    if (isOpen && hydrated && current) requestDraft(current)
+  }, [isOpen, hydrated, current, requestDraft])
 
   // Leaving edit mode when the displayed card changes (send/skip/back) avoids
   // carrying a stale textarea into the next thread's draft.
