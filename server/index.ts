@@ -28,6 +28,7 @@ import { readyRouter } from './routes/ready'
 import { scanRouter } from './routes/scan'
 import { engineRouter } from './routes/engine'
 import { slateRouter } from './routes/slate'
+import { copilotRouter } from './routes/copilot'
 import { initBrainEngine } from './lib/brain'
 import { initVaultSync } from './lib/vaultSync'
 import { initEngine, stopEngine } from './lib/engine'
@@ -219,6 +220,7 @@ app.use('/api', todayRouter)
 app.use('/api/scan', scanRouter)
 app.use('/api/engine', engineRouter)
 app.use('/api/slate', slateRouter)
+app.use('/api/copilot', copilotRouter)
 
 if (isProd) {
   // Use process.cwd() — always the project root regardless of how tsx is invoked

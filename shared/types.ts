@@ -56,6 +56,14 @@ export interface InboxThread {
   labels?: string[]
 }
 
+export interface CopilotDraft {
+  threadId: string
+  draft: string
+  generatedAt: string
+  basedOnMessageId: string
+  tone: string
+}
+
 export interface MeetingEvent {
   id: string
   title: string
