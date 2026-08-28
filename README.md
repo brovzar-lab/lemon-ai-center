@@ -4,6 +4,10 @@ Billy Rovzar's command center for Lemon Studios. Gmail + Google Calendar + Obsid
 
 **Production URL:** [https://ceo.billyrovzar.com/](https://ceo.billyrovzar.com/) — canonical. Same Railway service as any legacy hostname; see **[docs/OPERATIONS.md](docs/OPERATIONS.md)** for DNS, OAuth, and cleanup in plain language.
 
+## Main page
+
+![Lemon AI Center main page](docs/main-page.png)
+
 ## Setup
 
 1. Clone repo
