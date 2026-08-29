@@ -1,48 +1,15 @@
 import { Router } from 'express'
 import Anthropic from '@anthropic-ai/sdk'
-import { db } from '../lib/firebase'
 import { requireAuth } from '../middleware/requireAuth'
 import { csrfCheck } from '../middleware/csrfCheck'
 import { chatLimit } from '../middleware/rateLimit'
 import { CLAUDE_MODELS } from '@shared/models'
+import { loadVoiceProfile, buildDraftRequest } from '../lib/copilot/generateDraft'
 
 export const draftReplyRouter = Router()
 draftReplyRouter.use(requireAuth)
 
 const MODEL = CLAUDE_MODELS.balanced
-
-interface VoiceProfile {
-  trained: boolean
-  emailsAnalyzed: number
-  lastUpdated: string | null
-  summary: string
-  patterns: {
-    openings: string[]
-    closings: string[]
-    avoid: string[]
-    signature: string
-  }
-  tones: Record<string, string>
-}
-
-function buildVoicePrompt(profile: VoiceProfile, toneTier: string): string {
-  const tone = profile.tones[toneTier] || profile.tones.peer || ''
-  return `BILLY ROVZAR'S VOICE PROFILE:
-${profile.summary}
-
-TONE FOR THIS RECIPIENT (${toneTier}): ${tone}
-
-SIGNATURE PATTERNS:
-- Openings he uses: ${profile.patterns.openings.join(', ') || 'direct openings, no preamble'}
-- Closings: ${profile.patterns.closings.join(' or ') || 'Billy'}
-- Always avoids: ${profile.patterns.avoid.join(', ') || 'em dashes, corporate speak'}
-
-${profile.trained
-  ? `Profile trained on ${profile.emailsAnalyzed} of his sent emails.`
-  : 'Profile not yet trained. Using base description.'}
-
-NEVER use em dashes. Use commas or periods. Match the language of the original (ES or EN).`
-}
 
 function getAnthropicClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -61,16 +28,10 @@ draftReplyRouter.post('/', csrfCheck, chatLimit, async (req, res) => {
     return res.status(400).json({ error: { message: 'Email context required' } })
   }
 
-  // Load voice profile
-  let voiceProfile: VoiceProfile
-  try {
-    const snap = await db.collection('users').doc(uid).collection('voiceProfile').doc('current').get()
-    voiceProfile = snap.exists ? (snap.data() as VoiceProfile) : getDefaultProfile()
-  } catch {
-    voiceProfile = getDefaultProfile()
-  }
-
-  const voicePrompt = buildVoicePrompt(voiceProfile, toneTier)
+  // Load voice profile + build the request (shared with the non-streaming
+  // scan-job path in lib/copilot/generateDraft.ts).
+  const voiceProfile = await loadVoiceProfile(uid)
+  const { system, messages } = buildDraftRequest(voiceProfile, email, toneTier)
 
   // Stream the reply
   res.setHeader('Content-Type', 'text/event-stream')
@@ -83,20 +44,8 @@ draftReplyRouter.post('/', csrfCheck, chatLimit, async (req, res) => {
       model: MODEL,
       thinking: { type: 'disabled' }, // Sonnet 5 defaults to adaptive thinking; keep it off.
       max_tokens: 600,
-      system: `You are drafting an email reply AS Billy Rovzar, CEO of Lemon Studios.
-
-${voicePrompt}
-
-Write ONLY the email body. No subject line. No "Dear" unless the tone tier calls for formality. Keep it concise. Match the language of the incoming email (Spanish or English).`,
-      messages: [
-        {
-          role: 'user',
-          content: `Draft a reply to this email:
-From: ${email.from} <${email.fromEmail}>
-Subject: ${email.subject}
-Content: ${email.snippet}`,
-        },
-      ],
+      system,
+      messages,
     })
 
     // SDK 0.110: MessageStream has no `textStream`; stream text via on('text')
@@ -114,25 +63,3 @@ Content: ${email.snippet}`,
   }
   res.end()
 })
-
-function getDefaultProfile(): VoiceProfile {
-  return {
-    trained: false,
-    emailsAnalyzed: 0,
-    lastUpdated: null,
-    summary: "Direct, peer-to-peer. Bilingual ES/EN. Never uses em dashes. Short sentences.",
-    patterns: {
-      openings: ['Quick one:', 'Heads up:', 'Just confirming:'],
-      closings: ['Billy', 'B.'],
-      avoid: ['em dashes', 'I hope this finds you well', 'circling back'],
-      signature: 'Billy',
-    },
-    tones: {
-      inner: 'Casual, direct, mixed Spanish/English.',
-      peer: 'Warm but efficient. Match their language.',
-      exec: 'Crisp, careful. No slang.',
-      legal: 'Precise, formal-ish. Reference specifics.',
-      talent: 'Generous, encouraging. Lead with the positive.',
-    },
-  }
-}

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"vite\" \"node --require dotenv/config ./node_modules/.bin/tsx watch server/index.ts\"",
+    "dev:preview": "concurrently \"vite\" \"PORT=3001 node --require dotenv/config ./node_modules/.bin/tsx watch server/index.ts\"",
     "build": "vite build && tsc -p server/tsconfig.json",
     "start": "node server/dist/server/index.js",
     "test": "vitest run",

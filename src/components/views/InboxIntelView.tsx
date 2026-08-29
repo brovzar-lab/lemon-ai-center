@@ -10,6 +10,7 @@ import {
   detectStallingDeals,
 } from '@/lib/inbox/slipDetection'
 import { useViewStore } from '@/stores/useViewStore'
+import { useCopilotStore } from '@/stores/useCopilotStore'
 import { EmptyState } from '@/components/workspace/EmptyState'
 import type { InboxThread, InboxSlip, LemonDelegation, LemonDeal } from '@shared/types'
 
@@ -66,8 +67,10 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
   const openDrawer = useUIStore((s) => s.openDrawer)
   const setActiveContext = useUIStore((s) => s.setActiveContext)
   const setView = useViewStore((s) => s.setView)
+  const openCopilot = useCopilotStore((s) => s.open)
 
   const [showInfo, setShowInfo] = useState(false)
+  const hotCount = useMemo(() => threads.filter((t) => t.priority === 'HOT').length, [threads])
 
   useEffect(() => {
     if (threads.length === 0 && !inboxLoading) fetchInbox()
@@ -239,16 +242,27 @@ export function InboxIntelView({ onReply }: InboxIntelViewProps) {
               : 'Everything looks good — nothing urgent right now.'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveContext({ kind: null, id: null })
-            openDrawer()
-          }}
-          className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-3.5 py-1.5 rounded-md hover:brightness-110 transition-all"
-        >
-          Ask Billy: what am I missing?
-        </button>
+        <div className="flex items-center gap-2">
+          {hotCount > 0 && (
+            <button
+              type="button"
+              onClick={openCopilot}
+              className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-data-coral text-white px-3.5 py-1.5 rounded-md hover:brightness-110 transition-all"
+            >
+              Triage {hotCount} hot
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveContext({ kind: null, id: null })
+              openDrawer()
+            }}
+            className="text-[11px] font-sans font-semibold uppercase tracking-wider bg-accent text-bg px-3.5 py-1.5 rounded-md hover:brightness-110 transition-all"
+          >
+            Ask Billy: what am I missing?
+          </button>
+        </div>
       </header>
 
       {/* Narrative items */}
